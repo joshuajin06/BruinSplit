@@ -9,10 +9,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center; 
-  padding: 1rem 2rem;
+  padding: 0.5rem 1.5rem;
+  gap: 2rem;
   box-shadow: 0 2xpx 5px rgba(0,0,0,0.3);
 }
-
+;
 .siteTitle {
   font-size: 1.5rem;
   font-weight: bold;

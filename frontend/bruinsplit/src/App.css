@@ -8,3 +8,13 @@
 .content {  
   padding-top: 80px;
 }
+footer {
+  background-color: #222;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  left: 0;
+}
