@@ -5,10 +5,9 @@ import "./navbar.css"; // Import the CSS file
 export default function Navbar() {
   return (
     <nav className="navbar">
-      <h2 className="siteTitle"><Link to="/">BruinSplit</Link></h2>
+      <h2 className="siteTitle"><Link to="/">BruinSplit</Link></h2> 
       <ul className="nav-links">
-        <li><Link to="/about">About</Link></li>
-        <li><Link to="/contact">Contact</Link></li>
+        <li><Link to="/login">Login</Link></li>
       </ul>
     </nav>
   );
