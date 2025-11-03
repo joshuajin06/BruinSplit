@@ -10,17 +10,20 @@ function App() {
  
   return (
     <>
-      <Router>
-        <Navbar />
-        <div className="content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </div>
-      </Router>
-      
-      <Footer />
+      <div className='page-container'>
+        <main className='content-wrap'>
+        <Router>
+          <Navbar />
+            <div className="content">
+             <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+              </Routes>
+            </div>
+          </Router>
+        </main>      
+        <Footer />
+      </div>
    </>
   )
 }

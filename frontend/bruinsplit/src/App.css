@@ -1,20 +1,21 @@
-#root {
-  max-width: 1280px;
+html, body, #root {
+  height:100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   text-align: center;
 }
 
 .content {  
   padding-top: 80px;
 }
-footer {
-  background-color: #222;
-  color: white;
-  padding: 20px;
-  text-align: center;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  left: 0;
+
+.page-container{
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
+
+.content-wrap {
+      flex-grow: 1; 
+    }
