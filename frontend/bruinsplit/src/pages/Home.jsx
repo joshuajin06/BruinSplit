@@ -8,11 +8,12 @@ export default function Home() {
         <div className="page-container">
           <div className='content-wrap'>
           <h1>Welcome to BruinSplit!</h1>
-            <Card title="Ride Dest 1 -> Dest 2" content="Yeah this is a ride"/>
-            <Card title="Ride Dest 3 -> Dest 4" content="This is another ride"/>
+          <div> 
+            <Card title="Ride Dest 1 to Dest 2" content="Yeah this is a ride"/>
+            <Card title="Ride Dest 3 to Dest 4" content="This is another ride"/>
+          </div>
           </div>
         </div>
-
     </>
   );
 } 
