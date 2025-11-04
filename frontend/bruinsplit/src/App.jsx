@@ -5,6 +5,7 @@ import Footer from './components/footer.jsx'
 import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
+import Events from './pages/Events.jsx'
 
 function App() {
   
@@ -17,6 +18,7 @@ function App() {
             <div className="content">
              <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/events" element={<Events />} />
                 <Route path="/login" element={<Login />} />
               </Routes>
             </div>
