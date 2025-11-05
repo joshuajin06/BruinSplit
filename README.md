@@ -8,6 +8,6 @@ Setup:
 
 # Creators 
 Jaden Ho
-Anish
-Josh
-Justin
+Anish Kumar
+Joshua Jin
+Justin Luc
