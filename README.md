@@ -3,7 +3,8 @@ With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to desig
 
 Setup:
  - Make sure you have Node and Express set up
- - Install Supabase, npm install @supabase/supabase-js
+ - Install Supabase, `npm install @supabase/supabase-js`
+ - Install React Router, `npm install react-router-dom`
 
 
 # Creators 
