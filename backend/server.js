@@ -1,16 +1,26 @@
-import supabase from "./supaBaseClient.js"
+import { supabase } from "./supabase.js"
+import express from 'express';
 
-const express = require("express");
+
 const app = express();
 app.use(express.json()); // Middleware
 
 
 
-app.get("/", (req, res) => {
-  res.send("Hello World");
+app.get("/api/events", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+    .from("events")
+    .select('*')
+
+    if(error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 })
 
-const PORT = 3000;
+const PORT = 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 })
