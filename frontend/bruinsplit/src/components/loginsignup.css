@@ -1,0 +1,18 @@
+ .login-signup-button {
+    background-color: #333;
+    border-radius: 8px;
+    width: auto;
+    height: auto;
+}
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-content: center;
+}
+
+.username-input, .password-input, .email-input {
+    align-content: center;
+
+}
