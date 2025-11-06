@@ -1,3 +1,19 @@
+import React from 'react';
+import './pages.css';
+import LoginSignup from '../components/loginsignup';
+
 export default function Login() {
-  return <h1>Hello 2!</h1>;
+  return (<>
+  
+        <div className="page-container">
+            <div className='Login-Box'>
+                <LoginSignup />
+            </div>
+        </div>
+  
+  
+  </>
+  );
+
+
 }
