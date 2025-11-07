@@ -1,6 +1,32 @@
+ .body{  
+    width: 500px;
+    height: 550px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #2774AE;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 50px;
+    margin-bottom: 10px;
+}
+
+.toggle-action{
+    background-color: transparent;
+    border: none;
+    color: white;
+    margin-top: 15px;
+    font-size: 15px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
  .login-signup-button {
     background-color: #333;
     border-radius: 8px;
+    margin-top: 20px;
     width: auto;
     height: auto;
 }
@@ -11,6 +37,7 @@
     margin: auto;
     margin-top: 50px;
     align-items: center;
+    justify-content: center;
 }
 
 
@@ -52,16 +79,6 @@
 
 ::placeholder {
     color: black;
-}
-
-.body{  
-    width: 500px;
-    height: 500px;
-    display: flex;
-
-    flex-direction: column;
-    align-items: center;
-    background-color: #2774AE;
 }
 
 .underline {
