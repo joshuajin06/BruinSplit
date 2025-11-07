@@ -7,6 +7,7 @@ export default function Card({ title, content, image = "https://wp.dailybruin.co
             {image && <img src={image} alt={title} className="card-image" />}
             <h2 className="card-title">{title}</h2>
             <p className="card-content">{content}</p>
+            <button className="card-button">Join Ride</button>
         </div>
     );
 }   
