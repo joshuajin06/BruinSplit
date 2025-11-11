@@ -3,7 +3,7 @@ import Person from '../assets/person.png';
 import './loginsignup.css';
 
 export default function LoginSignup() {
-    const [loggedIn, setLoggedIn] = useState(true);
+    const [loggedIn, setLoggedIn] = useState(true); // true for login, false for signup
 
     return (
         <div className="body">

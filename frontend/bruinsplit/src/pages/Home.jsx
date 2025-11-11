@@ -7,6 +7,7 @@ export default function Home() {
     <>
         <div className="page-container">
           <h1>Welcome to BruinSplit!</h1>
+          <h2>Share Rides. Split Costs. <br/>All in one place</h2>
         </div>
     </>
   );
