@@ -1,5 +1,6 @@
 import { supabase } from "./src/lib/supabase.js"
 import cors from 'cors';
+import { verifyToken } from './utils/auth.js'
 
 import express from 'express';
 
@@ -32,10 +33,21 @@ export async function authenticateUser(req, res, next) {
     
     const token = authHeader.replace('Bearer ', '');
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid or expired token' });
+    const decoded = verifyToken(token);
+
+    if(!decoded) {
+      return res.status(401).json({error: 'invalid or expired token'});
+    }
+
+    const {data: user, error} = await supabase
+      .from('users')
+      .select('id, email, username, first_name, last_name')
+      .eq('id', decoded.userId)
+      .single();
+
+
+    if(error || !user) {
+      return res.status(401).json({erorr: 'user not found'});
     }
     
     req.user = user;
