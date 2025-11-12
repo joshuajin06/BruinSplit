@@ -65,7 +65,7 @@ export default function LoginSignup() {
                         {loggedIn ? false : true}
                     </span>
                 </div>
-                    <button className='login-signup-button'>{loggedIn ? "Login" : "Sign Up"}</button>
+                    <button className='login-signup-button' onClick={handleSubmit}>{loggedIn ? "Login" : "Sign Up"}</button>
                 </div>
             </div>
         </div>
