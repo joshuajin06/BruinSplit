@@ -5,6 +5,7 @@ Setup:
  - Make sure you have Node and Express set up
  - Install Dependencies `npm install`
  - Install Supabase, `npm install @supabase/supabase-js`
+ - Install .env, `npm install dotenv`
  - Install React Router, `npm install react-router-dom`
 
 
