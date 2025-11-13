@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+console.log("Supabase URL:", process.env.SUPABASE_URL)
+
 import { supabase } from "./src/lib/supabase.js"
 import cors from 'cors';
 import { verifyToken } from './utils/auth.js'
@@ -77,7 +81,7 @@ app.get("/api/events", async (req, res) => {
   }
 })
 
-app.post('/api/users', createUser);
+//app.post('/api/users', createUser);
 
 // 404 handler
 app.use((req, res) => {
