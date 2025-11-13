@@ -24,8 +24,8 @@ export default function LoginSignup() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...formData })
         });
+        console.log("handleSubmit Run");
     }
-
 
     return (
         <div className="body">
