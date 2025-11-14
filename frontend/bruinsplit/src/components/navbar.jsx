@@ -21,7 +21,8 @@ export default function Navbar() {
     <nav className="navbar">
       <h2 className="siteTitle"><Link to="/">BruinSplit</Link></h2> 
       <ul className="nav-linksC">
-        <li><Link to="/postings">Postings</Link></li>
+        <li><Link to="/posts">Posts</Link></li>
+        <a>|</a>
         <li><Link to="/events">Events</Link></li>
       </ul>
       <ul className="nav-linksR">
