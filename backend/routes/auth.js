@@ -87,10 +87,6 @@ router.post('/login', async (req, res) => {
       .eq('email', email)
       .single();
 
-    console.log('Login attempt for email:', email);
-    console.log('User found:', user);
-    console.log('Query error:', error);
-
     if (error || !user) {
       console.log('User not found or query error');
       return res.status(401).json({

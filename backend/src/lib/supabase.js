@@ -9,9 +9,6 @@ dotenv.config();
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // or SUPABASE_ANON_KEY for frontend
 
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY);
-
 
 // Initialize the client
 export const supabase = createClient(supabaseUrl, supabaseKey);
