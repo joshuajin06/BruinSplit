@@ -6,13 +6,13 @@ export default function Navbar() {
   const [loginClicked, setLoginClicked] = useState(false);
   const menuRef = useRef(null);
 
-  //written with the aid of claude ai
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setLoginMenuOpen(false);
+   useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setLoginClicked(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -24,11 +24,11 @@ export default function Navbar() {
         <li><Link to="/postings">Postings</Link></li>
         <li><Link to="/events">Events</Link></li>
       </ul>
-      <ul className="nav-linksR" ref={menuRef}>
+      <ul className="nav-linksR">
         <li className="myrides"><Link to="/myrides">My Rides</Link></li>
 
-        <li className="navButtonLogin">
-          <button className="profileButton" onClick={() => setLoginClicked(!loginClicked)}>Profile</button>
+        <li className="navButtonLogin" ref={menuRef}>
+          <a className="profileButton" onClick={() => setLoginClicked(!loginClicked)}>Profile</a>
         
           {loginClicked && (
               <div className="submenu">
@@ -36,9 +36,6 @@ export default function Navbar() {
               </div>
             )}
         </li>
-
-
-
       </ul>
     </nav>
   );
