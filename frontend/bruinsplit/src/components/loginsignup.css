@@ -5,13 +5,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #2774AE;
+    background-color: #2774AE; 
     justify-content: center;
     align-items: center;
     margin-left: auto;
     margin-right: auto;
     margin-top: 50px;
     margin-bottom: 10px;
+    box-shadow: #333;
+    border-radius: 1rem;
 }
 
 .toggle-action{
