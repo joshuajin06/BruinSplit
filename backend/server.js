@@ -6,10 +6,10 @@ import express from 'express';
 
 //Import Routes
 import authRoutes from './routes/auth.js';
-import ridesRoutes from './routes/rides.js';
-import bookingsRoutes from './routes/bookings.js';
-import eventsRoutes from './routes/events.js';
-import usersRoutes from './routes/users.js';
+// import ridesRoutes from './routes/rides.js';
+// import bookingsRoutes from './routes/bookings.js';
+// import eventsRoutes from './routes/events.js'; 
+// import usersRoutes from './routes/users.js';
 
 
 const app = express();
@@ -19,7 +19,8 @@ app.use(cors());
 app.use(express.json()); // Middleware
 
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString} - ${req.method} ${req.path}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
 })
 
 // Authentication Middleware
@@ -58,10 +59,11 @@ export async function authenticateUser(req, res, next) {
 }
 
 
-app.use('/api/rides', ridesRoutes);
-app.use('/api/messages', messagesRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/users', usersRoutes);
+// app.use('/api/rides', ridesRoutes);
+// app.use('/api/messages', messagesRoutes);
+// app.use('/api/events', eventsRoutes);
+// app.use('/api/users', usersRoutes);
+app.use('/api/auth', authRoutes);
 
 
 app.get("/api/events", async (req, res) => {
@@ -77,7 +79,7 @@ app.get("/api/events", async (req, res) => {
   }
 })
 
-app.post('/api/users', createUser);
+// app.post('/api/users', createUser);
 
 // 404 handler
 app.use((req, res) => {
