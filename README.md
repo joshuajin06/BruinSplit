@@ -11,5 +11,9 @@ Setup:
  - Install React Router, `npm install react-router-dom`
 
 
+Frontend Server: npm run dev in /frontend/bruinsplit
+Backend Server: npm run dev:api   or   node server.js
+
+
 # Creators 
 Jaden Ho, Anish Kumar, Joshua Jin, Justin Luc
