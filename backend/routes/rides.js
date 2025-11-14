@@ -37,3 +37,49 @@ async function enrichRide(ride) {
         owner: owner || null
     };
 }
+
+// GET /api/rides - get all rides with an optional filter
+router.get('/', async (req, res) => {
+    try {
+        const { origin, destination, platform, min_seats } = req.query;
+
+        let query = supabase
+            .from('rides')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+            // apply filters if used
+            if (origin) {
+                query = query.ilike('origin_text', '%${origin}%');
+            }
+            if (destination) {
+                query.ilike('origin_text', '%${origin}%');
+            }
+            if (platform) {
+                const platformUpper = platform.toUpperCase();
+                if (['UBER', 'LYFT', 'WAYMO', 'OTHER'].includes(platformUpper)) {
+                    query = query.eq('platform', platformUpper);
+                }
+            }
+
+            const { data: rides, error } = await query;
+
+            if (error) throw error;
+
+            // enrich each ride with available seats and owner info using helper function defined above
+            const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride)));
+
+            // filter by min_seats if provided (after calculating the available seats)
+            const filteredRides = min_seats
+                ? enrichedRides.filter(ride => ride.available_seats >= parseInt(min_seats)) : enrichedRides;
+
+            res.json({
+                message: 'Rides retrieved successfully',
+                rides: filteredRides
+            });
+
+    } catch (error) {
+        console.error('Get rides error:', error);
+        res.status(500).json({ error: error.message || 'Failed to retrieve rides' });
+    }
+});
