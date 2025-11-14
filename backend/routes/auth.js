@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../supabase.js';
+import { supabase } from '../src/lib/supabase.js';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
 import { authenticateUser } from '../server.js';
 
@@ -24,13 +24,12 @@ router.post('/signup', async (req, res) => {
       })
     }
 
-    const {data : existingUser} = await supabase
+    const {data : existingUsers} = await supabase
       .from('users')
       .select('id')
-      .or(`email.eq.${email}, username.eq.${username}`)
-      .single();
+      .or(`email.eq.${email}, username.eq.${username}`);
 
-    if(existingUser) {
+    if(existingUsers && existingUsers.length > 0) {
       return res.status(400).json({
         error: 'Email or username already exists'
       })
@@ -64,7 +63,7 @@ router.post('/signup', async (req, res) => {
       },
       token
     });
-  } catch {
+  } catch (error) {
     console.error('Signup error:', error);
     res.status(400).json({ error: error.message });
   }
@@ -84,13 +83,18 @@ router.post('/login', async (req, res) => {
     // Get user from database (including password_hash)
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, username, full_name, password_hash, rating, profile_picture_url')
+      .select('id, email, username, password_hash')
       .eq('email', email)
       .single();
-    
+
+    console.log('Login attempt for email:', email);
+    console.log('User found:', user);
+    console.log('Query error:', error);
+
     if (error || !user) {
-      return res.status(401).json({ 
-        error: 'Invalid email or password' 
+      console.log('User not found or query error');
+      return res.status(401).json({
+        error: 'Invalid email or password'
       });
     }
     
@@ -119,3 +123,5 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Login failed' });
   }
 });
+
+export default router;
