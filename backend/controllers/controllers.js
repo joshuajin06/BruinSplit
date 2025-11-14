@@ -85,5 +85,76 @@ export const getUser = async (req, res) => {
     }
 };
 
-export default { createUser, getUser };
+// Create a new ride/event in the `events` table
+export const createRide = async (req, res) => {
+    try {
+        const { title, description, location, event_date, event_type, created_by } = req.body;
+
+        if (!title || !location || !event_date || !created_by) {
+            return res.status(400).json({ error: 'Missing required fields: title, location, event_date, created_by' });
+        }
+
+        const { data, error } = await supabase
+            .from('events')
+            .insert([
+                {
+                    title,
+                    description: description || null,
+                    location,
+                    event_date,
+                    event_type: event_type || null,
+                    created_by,
+                },
+            ])
+            .select()
+            .limit(1);
+
+        if (error) {
+            console.error('Error creating event:', error);
+            return res.status(500).json({ error: 'Error creating event' });
+        }
+
+        return res.status(201).json({ event: data && data[0] ? data[0] : data });
+    } catch (err) {
+        console.error('Unexpected error creating event:', err);
+        return res.status(500).json({ error: 'Unexpected server error' });
+    }
+};
+
+export const getRide = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id) return res.status(400).json({ error: 'Missing event id' });
+
+        const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+
+        if (error) {
+            console.error('Error fetching event:', error);
+            return res.status(500).json({ error: 'Error fetching event' });
+        }
+
+        if (!data) return res.status(404).json({ error: 'Event not found' });
+
+        return res.status(200).json({ event: data });
+    } catch (err) {
+        console.error('Unexpected error fetching event:', err);
+        return res.status(500).json({ error: 'Unexpected server error' });
+    }
+};
+
+export const listRides = async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: true });
+        if (error) {
+            console.error('Error listing events:', error);
+            return res.status(500).json({ error: 'Error listing events' });
+        }
+        return res.status(200).json({ events: data });
+    } catch (err) {
+        console.error('Unexpected error listing events:', err);
+        return res.status(500).json({ error: 'Unexpected server error' });
+    }
+};
+
+export default { createUser, getUser, createRide, getRide, listRides };
 
