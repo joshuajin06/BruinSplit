@@ -6,7 +6,7 @@ import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Events from './pages/Events.jsx'
-import Posts from './pages/Posts.jsx'
+import Postings from './pages/Postings.jsx'
 import MyRides from './pages/MyRides.jsx'
 
 
@@ -23,7 +23,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/posts" element={<Posts />} />
+                <Route path="/postings" element={<Postings />} />
                 <Route path="/myrides" element={<MyRides />} />
               </Routes>
             </div>
