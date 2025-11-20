@@ -36,18 +36,10 @@ export default function LoginSignup() {
 
                 const data = await response.json();
 
-<<<<<<< HEAD
-        await fetch('http://localhost:8080/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...formData })
-        });
-        console.log("handleSubmit Run");
-=======
                 if(!response.ok) {
                     throw new Error(data.error || 'Login failed');
                 }
-
+                
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -90,7 +82,6 @@ export default function LoginSignup() {
     const toggleMode = () => {
         setLoggedIn(!loggedIn);
         setError('');
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
     }
 
     return (
