@@ -120,4 +120,62 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
+router.get('/me', authenticateUser, async (req, res) => {
+  try {
+    res.json(req.user);
+  } catch {
+    res.status(400).json({error: error.message});
+  }
+})
+
+
+router.post('/logout', authenticateUser, async (req, res) => {
+  res.json({message: 'Logged out successfully'});
+})
+
+
+router.post('/change-password', authenticateUser, async (req, res) => {
+  try {
+    const {currentPassword, newPassword} = req.body;
+
+    if(!currentPassword || !newPassword) {
+      res.status(400).json({error: "Current and new password are both required"});
+    }
+
+    if(newPassword.length < 8) {
+      res.status(400).json({error: "Password length must be longer than 8"});
+    }
+
+    if(currentPassword == newPassword) {
+      res.status(400).json({error: "New Password cannot be the same as the old password"});
+    }
+
+    const {data: user} = await supabase
+      .from('users')
+      .select('password_hash')
+      .eq('id', user.id)
+      .single()
+
+    const validPassword = comparePassword(currentPassword, user.password_hash);
+
+    if(!validPassword) {
+      res.status(400).json({error: "Current password is not valid"});
+    }
+
+    const passwordHash = hashPassword(newPassword);
+
+    const { error } = await supabase
+      .from('users')
+      .update({password_hash : newPassword})
+      .eq('id', user.id)
+
+    if(error) throw error;
+
+    res.json({ message: 'Password changed successfully' });
+  } catch {
+    res.status(400).json({ error: error.message });
+  }
+})
+
 export default router;
