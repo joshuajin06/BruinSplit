@@ -5,8 +5,6 @@ import { authenticateUser } from '../server.js';
 
 const router = express.Router()
 
-
-
 //SIGNUP
 router.post('/signup', async (req, res) => {
   try {
