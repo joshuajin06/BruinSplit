@@ -1,17 +1,13 @@
- .body{  
+.body{  
     width: 500px;
     height: auto;
     padding-bottom: 50px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-<<<<<<< HEAD
-    background-color: #2774AE; 
-=======
+    align-items: center; 
     background-color: #2774AE;
     border: 2px solid #353333;
     border-radius: 10px;
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
     justify-content: center;
     align-items: center;
     margin-left: auto;
@@ -65,16 +61,15 @@
 
 .input{
     display: flex;
-    background-color: white;
+    background-color: #d1d1d1;
     flex-direction: column;
     align-self: center;
     margin-top: 10px;
     width: 300px;
     height: 40px;
     border-radius: 8px;
-    border: 2px solid #353333;
+    border: 1px solid #d1d1d1;
     padding: 0 10px;
-    color: black;
 }
 
 .input input {
@@ -99,4 +94,3 @@
     align-self: center;
     
 }
-
