@@ -1,17 +1,21 @@
- .body{  
+.body{  
     width: 500px;
     height: auto;
     padding-bottom: 50px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; 
     background-color: #2774AE;
+    border: 2px solid #353333;
+    border-radius: 10px;
     justify-content: center;
     align-items: center;
     margin-left: auto;
     margin-right: auto;
     margin-top: 50px;
     margin-bottom: 10px;
+    box-shadow: #333;
+    border-radius: 1rem;
 }
 
 .toggle-action{
@@ -90,4 +94,3 @@
     align-self: center;
     
 }
-
