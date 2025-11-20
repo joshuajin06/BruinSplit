@@ -1,4 +1,4 @@
-const supabase = require('../src/lib/supabase');
+const supabase = require('../src/supabase');
 
 const createUser = async (req, res) => {
     try {
