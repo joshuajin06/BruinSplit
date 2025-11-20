@@ -16,5 +16,6 @@ if (!supabaseUrl || !supabaseKey) {
   throw new Error("Supabase URL and Key are required");
 }
 
+
 // Initialize the client
 export const supabase = createClient(supabaseUrl, supabaseKey);
