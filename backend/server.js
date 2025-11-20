@@ -1,4 +1,4 @@
-import { supabase } from "./src/lib/supabase.js"
+import { supabase } from "./src/supabase.js"
 import cors from 'cors';
 import { verifyToken } from './utils/auth.js'
 
@@ -16,7 +16,8 @@ const app = express();
 
 app.use(cors());
 
-app.use(express.json()); // Middleware
+// parse JSON request bodies
+app.use(express.json()); 
 
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString} - ${req.method} ${req.path}`);
