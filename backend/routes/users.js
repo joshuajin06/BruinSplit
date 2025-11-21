@@ -4,7 +4,7 @@ import { createUser, getUser } from "../controllers/controllers.js";
 
 const router = express.Router();
 
-router.post("/", createUser); // Route for creating a new user
-router.get("/:id", getUser); // Route for fetching a user by id
+router.post("/", createUser); // POST endpoint to create new users
+router.get("/:id", getUser); // GET endpoint to retrieve user by ID
 
 export default router;
