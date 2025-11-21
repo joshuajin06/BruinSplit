@@ -1,10 +1,11 @@
-import express from 'express';
+console.log("**Events router loaded**");
+
+import express from "express";
 import * as eventsController from "../controllers/eventsController.js";
-import { supabase } from '../src/lib/supabase.js';
 
 const router = express.Router();
 
 router.get("/", eventsController.getEvents);
-
+router.post("/", eventsController.createEvent);
 
 export default router;

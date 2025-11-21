@@ -12,7 +12,7 @@ import express from 'express';
 import authRoutes from './routes/auth.js';
 // import ridesRoutes from './routes/rides.js';
 // import bookingsRoutes from './routes/bookings.js';
-// import eventsRoutes from './routes/events.js'; 
+import eventsRoutes from './routes/events.js'; 
 // import usersRoutes from './routes/users.js';
 
 
@@ -65,11 +65,13 @@ export async function authenticateUser(req, res, next) {
 
 // app.use('/api/rides', ridesRoutes);
 // app.use('/api/messages', messagesRoutes);
-// app.use('/api/events', eventsRoutes);
+console.log("Loading events routes...");
+app.use('/api/events', eventsRoutes);
+console.log("Events routes mounted");
 // app.use('/api/users', usersRoutes);
 app.use('/api/auth', authRoutes);
 
-
+/*
 app.get("/api/events", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -82,12 +84,9 @@ app.get("/api/events", async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 })
+  */
 
-<<<<<<< HEAD
 //app.post('/api/users', createUser);
-=======
-// app.post('/api/users', createUser);
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
 
 // 404 handler
 app.use((req, res) => {
