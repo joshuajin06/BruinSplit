@@ -6,9 +6,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-// Debug: Check if env variables are loading
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Found' : 'NOT FOUND');
-console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Found' : 'NOT FOUND');
 
 // import routes
 import authRoutes from './src/routes/authRoute.js';
