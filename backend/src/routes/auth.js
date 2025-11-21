@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from '../supabase.js';
+import { supabase } from '../src/supabase.js';
 import { hashPassword, comparePassword, generateToken } from '../utils/auth.js';
 import { authenticateUser } from '../server.js';
 
