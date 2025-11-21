@@ -2,11 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
+// load environment variables
+dotenv.config();
+
+
+// Debug: Check if env variables are loading
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Found' : 'NOT FOUND');
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Found' : 'NOT FOUND');
+
 // import routes
 import authRoutes from './src/routes/authRoute.js';
 import ridesRoutes from './src/routes/ridesRoute.js';
 import eventsRoutes from './src/routes/eventsRoute.js';
-import usersRoutes from './src/routes/usersRoute.js';
 import messagesRoutes from './src/routes/messagesRoute.js';
 
 
@@ -14,8 +21,6 @@ import messagesRoutes from './src/routes/messagesRoute.js';
 import { logger } from './src/middleware/logger.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 
-// load environment variables
-dotenv.config();
 
 const app = express();
 
@@ -30,7 +35,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
-app.use('/api/users', usersRoutes);
 
 
 
