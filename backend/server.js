@@ -1,6 +1,6 @@
 import { supabase } from "./src/supabase.js"
 import cors from 'cors';
-import { verifyToken } from './utils/auth.js'
+import { verifyToken } from './src/utils/auth.js'
 
 import express from 'express';
 
@@ -20,8 +20,9 @@ app.use(cors());
 app.use(express.json()); 
 
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString} - ${req.method} ${req.path}`);
-})
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 // Authentication Middleware
 export async function authenticateUser(req, res, next) {
