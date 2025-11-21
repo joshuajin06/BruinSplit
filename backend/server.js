@@ -10,7 +10,7 @@ import express from 'express';
 
 //Import Routes
 import authRoutes from './routes/auth.js';
-// import ridesRoutes from './routes/rides.js';
+import ridesRoutes from './routes/rides.js';
 // import bookingsRoutes from './routes/bookings.js';
 import eventsRoutes from './routes/events.js'; 
 // import usersRoutes from './routes/users.js';
@@ -70,6 +70,7 @@ app.use('/api/events', eventsRoutes);
 console.log("Events routes mounted");
 // app.use('/api/users', usersRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/rides', ridesRoutes);
 
 /*
 app.get("/api/events", async (req, res) => {
@@ -85,8 +86,8 @@ app.get("/api/events", async (req, res) => {
   }
 })
   */
-
-//app.post('/api/users', createUser);
+ 
+// app.post('/api/users', createUser);
 
 // 404 handler
 app.use((req, res) => {
