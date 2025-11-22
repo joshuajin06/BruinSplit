@@ -1,4 +1,9 @@
+<<<<<<<<< Temporary merge branch 1
+import { supabase } from '../src/lib/supabase.js';
+=========
 const supabase = require('../src/supabase');
+>>>>>>>>> Temporary merge branch 2
+
 
 export const createUser = async (req, res) => {
     try {

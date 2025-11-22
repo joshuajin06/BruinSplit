@@ -39,7 +39,7 @@ export default function LoginSignup() {
                 if(!response.ok) {
                     throw new Error(data.error || 'Login failed');
                 }
-
+                
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
 
@@ -83,7 +83,6 @@ export default function LoginSignup() {
         setLoggedIn(!loggedIn);
         setError('');
     }
-
 
     return (
         <div className="body">
