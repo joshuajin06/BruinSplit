@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { supabase } from "../src/lib/supabase.js";
-=======
-import { supabase } from '../src/lib/supabase.js';
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
 
 
 export const createUser = async (req, res) => {
@@ -11,33 +7,6 @@ export const createUser = async (req, res) => {
         if (!email || !password || !first_name || !last_name || !user_name || !age) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-<<<<<<< HEAD
-        // check if username already exists
-        const {data : existingUser} = await supabase
-            .from('users')
-            .select('user_name')
-            .eq('user_name', user_name)
-            .single();
-
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email or username already exists' });
-        }
-
-        // create new user created with the aid of copilot 
-        const {data, error} = await supabase
-        .from('users') 
-        .insert([{
-            email,
-            password, //should be hashed in future implementation
-            first_name,
-            last_name,
-            user_name,
-            age
-        }])
-        .select()
-        .single();
-        
-=======
 
         const { data: existingByUsername, error: usernameErr } = await supabase
             .from('users')
@@ -83,22 +52,10 @@ export const createUser = async (req, res) => {
             ])
             .select()
             .limit(1);
-
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
         if (error) {
             console.error('Error creating user:', error);
             return res.status(500).json({ error: 'Error creating user' });
         }
-<<<<<<< HEAD
-        
-    } catch (error) {
-        console.error("Authentication error:", error.message)
-    }
-
-};
-
-export { createUser };
-=======
         return res.status(201).json({ user: data && data[0] ? data[0] : data });
     } catch (err) {
         console.error('Unexpected error creating user:', err);
@@ -128,5 +85,4 @@ export const getUser = async (req, res) => {
 };
 
 export default { createUser, getUser };
->>>>>>> e761bf75260667572dd64df07c83610d9e7c80f5
 

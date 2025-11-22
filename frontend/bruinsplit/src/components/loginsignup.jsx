@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function LoginSignup() {
     const [loggedIn, setLoggedIn] = useState(true); // true for login, false for signup
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: '', //should be held as a hash -> leaving as it would be a secuirity risk
@@ -20,6 +21,7 @@ export default function LoginSignup() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
         
         try {
             if(loggedIn) {
@@ -76,6 +78,8 @@ export default function LoginSignup() {
             }
         } catch(error) {
             setError(error.message);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -118,7 +122,12 @@ export default function LoginSignup() {
                         {loggedIn ? false : true}
                     </span>
                 </div>
-                    <button className='login-signup-button' onClick={handleSubmit}>{loggedIn ? "Login" : "Sign Up"}</button>
+                    <button className='login-signup-button' onClick={handleSubmit} disabled={loading}>
+                        {loading ? 
+                            (loggedIn ? "Logging in..." : "Creating Account...") :
+                            (loggedIn ? "Login" : "Sign Up")
+                        }
+                    </button>
                 </div>
             </div>
         </div>
