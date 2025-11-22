@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file in root directory
+// Load environment variables (this runs when the module is imported)
 dotenv.config();
 
 // Your Supabase credentials (stored securely in .env)
