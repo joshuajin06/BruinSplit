@@ -1,9 +1,8 @@
 const supabase = require('../src/supabase');
 
-const createUser = async (req, res) => {
+export const createUser = async (req, res) => {
     try {
-        const {email, password, first_name, last_name, user_name, age} = req.body;
-        // check if all fields are provided
+        const { email, password, first_name, last_name, user_name, age } = req.body;
         if (!email || !password || !first_name || !last_name || !user_name || !age) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
@@ -13,13 +12,13 @@ const createUser = async (req, res) => {
             .select('user_name')
             .eq('user_name', user_name)
             .single();
-        
-    } catch (error) {
-        console.error('')
-    }
 
-    // create new user created with the aid of copilot 
-    const {data, error} = await supabase
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email or username already exists' });
+        }
+
+        // create new user created with the aid of copilot 
+        const {data, error} = await supabase
         .from('users') 
         .insert([{
             email,
@@ -36,7 +35,12 @@ const createUser = async (req, res) => {
             console.error('Error creating user:', error);
             return res.status(500).json({ error: 'Error creating user' });
         }
+        
+    } catch (error) {
+        console.error("Authentication error:", error.message)
+    }
+
 };
 
-module.exports = { createUser };
+export { createUser };
 
