@@ -47,3 +47,15 @@ export const createEvent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const getEventById = async (req, res) => {
+  const { id } = 1;//req.params; Place holder for now
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return res.status(404).json({ error: "Event not found" });
+  res.json(data);
+};
