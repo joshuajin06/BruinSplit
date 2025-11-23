@@ -1,8 +1,6 @@
-<<<<<<< HEAD:backend/controllers/eventsController.js
-import { supabase } from "../src/lib/supabase.js"; 
+import { supabase } from "../supabase.js"; 
 
 console.log("Supabase client URL from controller:", supabase.restUrl);
-
 
 export const getEvents = async (req, res) => {
     console.log("Controller hit for GET /api/events");
@@ -14,25 +12,6 @@ export const getEvents = async (req, res) => {
     if (error) return res.status(400).json({ error });
     res.json(data);
 };  
-
-/*
-export const getEvents = async (req, res) => {
-    console.log("🔥 getEvents CONTROLLER HIT");
-    
-    const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("event_date", { ascending: true });
-
-    if (error) {
-        console.log("❌ Supabase error:", error);
-        return res.status(400).json({ error });
-    }
-
-    console.log("✔ Got events:", data);
-    res.json(data);
-};
-*/
 
 export const createEvent = async (req, res) => {
   // Mock user for testing
@@ -68,19 +47,3 @@ export const createEvent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-=======
-
-
-app.get("/api/events", async (req, res) => {
-    try {
-      const { data, error } = await supabase
-      .from("events")
-      .select('*')
-  
-      if(error) throw error;
-      res.json(data);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  })
->>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8:backend/src/controllers/eventsController.js
