@@ -1,15 +1,42 @@
 {
   "dependencies": {
     "@supabase/supabase-js": "^2.79.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
+<<<<<<< HEAD
     "node-fetch": "^3.3.2",
+=======
+    "pg": "^8.16.3",
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
     "react-router-dom": "^7.9.5",
     "zod": "^4.1.12"
+  },
+  "name": "bruinsplit",
+  "version": "1.0.0",
+  "description": "With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to design an app called BruinSplit which helps UCLA students find other students to split the cost of a ride somewhere. This app will let users log in with their UCLA email, post or join ride requests based on time and destination.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuajin06/BruinSplit.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joshuajin06/BruinSplit/issues"
+  },
+  "homepage": "https://github.com/joshuajin06/BruinSplit#readme",
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }

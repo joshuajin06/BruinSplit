@@ -1,3 +1,4 @@
+<<<<<<< HEAD:backend/controllers/eventsController.js
 import { supabase } from "../src/lib/supabase.js"; 
 
 console.log("Supabase client URL from controller:", supabase.restUrl);
@@ -67,3 +68,19 @@ export const createEvent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+=======
+
+
+app.get("/api/events", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+      .from("events")
+      .select('*')
+  
+      if(error) throw error;
+      res.json(data);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  })
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8:backend/src/controllers/eventsController.js
