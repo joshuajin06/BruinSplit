@@ -1,56 +1,45 @@
-import dotenv from "dotenv";
-dotenv.config();
-console.log("Supabase URL:", process.env.SUPABASE_URL)
-
-import { supabase } from "./src/lib/supabase.js"
-import cors from 'cors';
-import { verifyToken } from './utils/auth.js'
-
 import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
 
+<<<<<<< HEAD
 //Import Routes
 import authRoutes from './routes/auth.js';
 import ridesRoutes from './routes/rides.js';
 // import bookingsRoutes from './routes/bookings.js';
 import eventsRoutes from './routes/events.js'; 
 // import usersRoutes from './routes/users.js';
+=======
+// load environment variables
+dotenv.config();
+
+
+// Debug: Check if env variables are loading
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Found' : 'NOT FOUND');
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Found' : 'NOT FOUND');
+
+// import routes
+import authRoutes from './src/routes/authRoute.js';
+import ridesRoutes from './src/routes/ridesRoute.js';
+import eventsRoutes from './src/routes/eventsRoute.js';
+import messagesRoutes from './src/routes/messagesRoute.js';
+
+
+// import middleware
+import { logger } from './src/middleware/logger.js';
+import { errorHandler } from './src/middleware/errorHandler.js';
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8
 
 
 const app = express();
 
-app.use(cors());
-
-app.use(express.json()); // Middleware
-
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-})
-
-// Authentication Middleware
-export async function authenticateUser(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const token = authHeader.replace('Bearer ', '');
-    
-    const decoded = verifyToken(token);
-
-    if(!decoded) {
-      return res.status(401).json({error: 'invalid or expired token'});
-    }
-
-    const {data: user, error} = await supabase
-      .from('users')
-      .select('id, email, username, first_name, last_name')
-      .eq('id', decoded.userId)
-      .single();
+// middleware (runs on every request)
+app.use(cors()); // allow the frontend to access the backend
+app.use(express.json()); // parse JSON request bodies
+app.use(logger); // log every request
 
 
+<<<<<<< HEAD
     if(error || !user) {
       return res.status(401).json({erorr: 'user not found'});
     }
@@ -69,9 +58,15 @@ console.log("Loading events routes...");
 app.use('/api/events', eventsRoutes);
 console.log("Events routes mounted");
 // app.use('/api/users', usersRoutes);
+=======
+// register routes
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/events', eventsRoutes);
 
+<<<<<<< HEAD
 /*
 app.get("/api/events", async (req, res) => {
   try {
@@ -90,19 +85,21 @@ app.get("/api/events", async (req, res) => {
 // app.post('/api/users', createUser);
 
 // 404 handler
+=======
+
+
+// 404 handler - no route is found
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8
 app.use((req, res) => {
-  res.status(400).json({ error: 'Route not Found'});
+  res.status(404).json({ error: 'Route not found' });
 })
 
-// Error handler
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+// Error handler - cathces all errors
+app.use(errorHandler);
 
 
-//Run server
-const PORT = 8080;
+//start and run server
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 })

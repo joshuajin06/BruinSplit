@@ -1,4 +1,8 @@
+<<<<<<< HEAD:backend/controllers/controllers.js
 import { supabase } from "../src/lib/supabase.js";
+=======
+const supabase = require('../src/supabase');
+>>>>>>> e7060ec459fbaa01082fe561ee6da1182af486a8:backend/src/controllers/controllers.js
 
 export const createUser = async (req, res) => {
     try {
