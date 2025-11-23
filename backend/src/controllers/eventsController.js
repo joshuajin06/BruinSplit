@@ -50,7 +50,7 @@ export const createEvent = async (req, res) => {
 
 //useful for event details
 export const getEventById = async (req, res) => {
-  const { id } = req.params; 
+  const  id  =  Number(req.params.id); //req.params; 
   const { data, error } = await supabase
     .from("events")
     .select("*")
@@ -62,7 +62,7 @@ export const getEventById = async (req, res) => {
 };
 
 export const deleteEvent = async (req, res) => {
-  const { id } = req.params;
+  const id = Number(req.params.id);//req.params;
   const { data, error } = await supabase
   .from("events")
   .delete()
@@ -73,7 +73,7 @@ export const deleteEvent = async (req, res) => {
 }
 
 export const updateEvent = async (req, res) => {
-  const { id } = reqparams;
+  const id = Number(req.params.id);
   const updates = req.body;
 
   const { data, error } = await supabase
