@@ -25,8 +25,7 @@ export default function Card({ title, content, image, rideDetails }) {
                 <button 
                     className="card-button" 
                     onClick={handleJoinClick}
-                    type="button"
-                >
+                    type="button">
                     Join Ride
                 </button>
             </div>

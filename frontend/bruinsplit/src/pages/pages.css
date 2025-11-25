@@ -13,3 +13,13 @@
   gap: 1rem;
   justify-content: center;
 }   
+
+/*Events Page*/
+.event-item{
+  color: black;
+  list-style: none;
+}
+
+label{
+  color: black;
+}
