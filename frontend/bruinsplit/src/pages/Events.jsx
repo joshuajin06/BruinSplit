@@ -62,13 +62,15 @@ export default function Events() {
         }
 
         // Convert datetime-local value into ISO string accepted by backend
-        const eventDateISO = new Date(form.event_date).toISOString();
+        //const eventDateISO = new Date(form.event_date).toISOString();
+
+        const eventDateRaw = form.event_date;
 
         const payload = {
             title: form.title,
             description: form.description,
             location: form.location,
-            event_date: eventDateISO,
+            event_date: eventDateRaw,//eventDateISO,
             event_type: form.event_type || 'General'
         };
 
@@ -123,19 +125,24 @@ export default function Events() {
 
                 //Map of events
                 <ul>
+                    <div className='event-grid'>
                     {events.map(ev => (
                         <li key={ev.id} className="event-item">
-                            <strong>{ev.title}</strong>
-                            <div className="meta">
-                                <span>{ev.location}</span>
-                                <span>{ev.event_type}</span>
-                                <span>{ev.event_date ? new Date(ev.event_date).toLocaleString() : ''}</span>
-                            </div>
-                            {ev.description && <p className="desc">{ev.description}</p>}
+                            <EventCard 
+                                title={ev.title} 
+                                description={ev.description} 
+                                location={ev.location}
+                                dateTime={ev.event_date ? new Date(ev.event_date).toLocaleString('en-US', {year: 'numeric', 
+                                                                                                            month: 'numeric', 
+                                                                                                            day: 'numeric', 
+                                                                                                            hour: '2-digit', 
+                                                                                                            minute: '2-digit'}) : ''}
+                                type={ev.event_type}/>
                         </li>
                     ))}
+                    </div>
                 </ul>
-            </section>
+            </section>  
 
 
             //Form to create a new event (Change to a modal)
