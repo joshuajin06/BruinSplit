@@ -6,6 +6,7 @@ export default function Events() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
     const handleNewEventClick = () => {
@@ -58,11 +59,11 @@ export default function Events() {
 
     async function handleSubmit(e) {
         e.preventDefault();
-        setError(null);
+        setModalError(null);
 
         // Basic validation
         if (!form.title || !form.event_date) {
-            setError('Please provide a title and date');
+            setModalError('Please provide a title and date');
             return;
         }
 
@@ -151,32 +152,36 @@ export default function Events() {
             </section>  
 
         {showModal && (
-            <section className="events-form" onClick={(e) => e.stopPropagation()}>
+            <section className="events-form" onClick={() => setShowModal(false)}>
                 
-                <form className="modal-content" onSubmit={handleSubmit}>
+                <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
                     <button 
                             className="modal-close" 
                             onClick={() => setShowModal(false)}
-                            aria-label="Close modal" >
+                            aria-label="Close modal" 
+                            type="button">
                     ×
                     </button>
                     <h2>Create Event</h2>
-                    <div>
+                    
+                    {modalError && <p className="error">{modalError}</p>}
+                    
+                    <label>
                         Title
                         <input name="title" value={form.title} onChange={handleChange} />
-                    </div>
+                    </label>
 
-                    <div>
+                    <label>
                         Description
                         <textarea name="description" value={form.description} onChange={handleChange} />
-                    </div>
+                    </label>
 
-                    <div>
+                    <label>
                         Location
                         <input name="location" value={form.location} onChange={handleChange} />
-                    </div>
+                    </label>
 
-                    <div>
+                    <label>
                         Date & Time
                         <input
                             name="event_date"
@@ -184,12 +189,12 @@ export default function Events() {
                             value={form.event_date}
                             onChange={handleChange}
                         />
-                    </div>
+                    </label>
 
-                    <div>
+                    <label>
                         Type
                         <input name="event_type" value={form.event_type} onChange={handleChange} placeholder="e.g. Study, Social" />
-                    </div>
+                    </label>
 
                     <div className="form-actions">
                         <button type="submit">Create</button>
