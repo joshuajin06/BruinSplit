@@ -1,13 +1,62 @@
 .card-container {
-    width: 20rem;
-    justify-content: center;
-    border: 1px solid #ddd;
-    border-radius: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 22rem;
+    margin: 1.5rem auto;
+    padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    border: none;
+    border-radius: 1.25rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
     display: flex;
     flex-direction: column;
-    min-height: 12rem;
-    color: black;
-    text-align: center;
-    background: white;
+    min-height: 13rem;
+    color: #222;
+    text-align: left;
+    background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card-container:hover {
+    box-shadow: 0 12px 32px rgba(60, 60, 120, 0.18), 0 2px 8px rgba(0,0,0,0.10);
+    transform: translateY(-1px) scale(1.008);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2d3a5a;
+    letter-spacing: 0.01em;
+}
+
+.type {
+    display: inline-block;
+    background: #6366f1;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.7rem;
+    margin-bottom: 0.7rem;
+    margin-right: 0.5rem;
+    letter-spacing: 0.03em;
+}
+
+.location {
+    font-size: 1.05rem;
+    color: #475569;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+}
+
+.date-time {
+    font-size: 0.98rem;
+    color: #64748b;
+    margin-bottom: 0.7rem;
+}
+
+.content {
+    font-size: 1.08rem;
+    color: #334155;
+    margin-top: 0.2rem;
+    line-height: 1.5;
+    word-break: break-word;
 }

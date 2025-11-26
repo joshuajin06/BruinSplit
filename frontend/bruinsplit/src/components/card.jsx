@@ -75,14 +75,12 @@ export default function Card({ title, content, image, rideDetails }) {
                         <div className="modal-actions">
                             <button 
                                 className="btn-secondary" 
-                                onClick={() => setShowModal(false)}
-                            >
+                                onClick={() => setShowModal(false)}>
                                 Cancel
                             </button>
                             <button 
                                 className="btn-primary" 
-                                onClick={handleConfirmJoin}
-                            >
+                                onClick={handleConfirmJoin}>
                                 Confirm Join
                             </button>
                         </div>

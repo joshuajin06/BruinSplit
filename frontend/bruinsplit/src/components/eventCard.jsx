@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import "./eventCard.css"
 
 export default function EventCard ({title, description, location, dateTime, type}){
+    
     return (
         <>
             <div className="card-container">
