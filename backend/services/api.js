@@ -1,6 +1,6 @@
 const API_URL = 'http://localhost:8080/api';
 
-const getToken = () => useLocalStorage.getItem('token');
+const getToken = () => localStorage.getItem('token');
 
 async function fetchWithAuth(url, options = {}) {
   const token  = getToken();

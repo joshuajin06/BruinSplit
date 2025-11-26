@@ -7,7 +7,7 @@ export default function LoginSignup() {
     const [loggedIn, setLoggedIn] = useState(true); // true for login, false for signup
     const [formData, setFormData] = useState({
         email: '',
-        password: '', //should be held as a hash -> leaving as it would be a secuirity risk
+        password: '', //should be held as a hash -> leaving as it would be a security risk
         first_name: '',
         last_name: '',
         user_name: ''
