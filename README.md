@@ -11,8 +11,9 @@ Setup:
  - Install React Router, `npm install react-router-dom`
 
 
-Frontend Server: npm run dev in /frontend/bruinsplit
-Backend Server: npm run dev:api   or   node server.js
+Frontend Server: `npm run dev` in /BruinSplit/frontend/bruinsplit
+
+Backend Server: `npm run dev:api`   or   `node server.js` in /BruinSplit/backend
 
 
 # Creators 
