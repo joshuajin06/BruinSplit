@@ -35,7 +35,7 @@ export const createUser = async (req, res) => {
             console.error('Error creating user:', error);
             return res.status(500).json({ error: 'Error creating user' });
         }
-        
+
     } catch (error) {
         console.error("Authentication error:", error.message)
     }

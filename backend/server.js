@@ -1,10 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
 // load environment variables
 dotenv.config();
-
 
 // Debug: Check if env variables are loading
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Found' : 'NOT FOUND');
@@ -35,8 +33,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
-
-
 
 // 404 handler - no route is found
 app.use((req, res) => {
