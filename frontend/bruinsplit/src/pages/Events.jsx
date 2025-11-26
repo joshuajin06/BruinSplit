@@ -6,12 +6,17 @@ export default function Events() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+
+    const handleNewEventClick = () => {
+        setShowModal(true);
+    }
 
     const [form, setForm] = useState({
         title: '',
         description: '',
         location: '',
-        event_date: '', // will hold datetime-local value
+        event_date: '', 
         event_type: ''
     });
 
@@ -108,6 +113,7 @@ export default function Events() {
 
             // clear form
             setForm({ title: '', description: '', location: '', event_date: '', event_type: '' });
+            setShowModal(false);
         } catch (err) {
             console.error('create event error:', err);
             setError(err.message || 'Failed to create event');
@@ -116,14 +122,14 @@ export default function Events() {
 
     return (
         <div className="events-page">
+            <button className='add-event' onClick={() => setShowModal(!showModal)}>TEST</button>
             <h1>Events</h1>
-
+        
             <section className="events-list">               
                 {loading && <p>Loading events…</p>}
                 {error && <p className="error">{error}</p>}
                 {!loading && events.length === 0 && <p>No events found.</p>}
 
-                //Map of events
                 <ul>
                     <div className='event-grid'>
                     {events.map(ev => (
@@ -144,27 +150,33 @@ export default function Events() {
                 </ul>
             </section>  
 
-
-            //Form to create a new event (Change to a modal)
-            <section className="events-form">
-                <h2>Create Event</h2>
-                <form onSubmit={handleSubmit}>
-                    <label>
+        {showModal && (
+            <section className="events-form" onClick={(e) => e.stopPropagation()}>
+                
+                <form className="modal-content" onSubmit={handleSubmit}>
+                    <button 
+                            className="modal-close" 
+                            onClick={() => setShowModal(false)}
+                            aria-label="Close modal" >
+                    ×
+                    </button>
+                    <h2>Create Event</h2>
+                    <div>
                         Title
                         <input name="title" value={form.title} onChange={handleChange} />
-                    </label>
+                    </div>
 
-                    <label>
+                    <div>
                         Description
                         <textarea name="description" value={form.description} onChange={handleChange} />
-                    </label>
+                    </div>
 
-                    <label>
+                    <div>
                         Location
                         <input name="location" value={form.location} onChange={handleChange} />
-                    </label>
+                    </div>
 
-                    <label>
+                    <div>
                         Date & Time
                         <input
                             name="event_date"
@@ -172,19 +184,21 @@ export default function Events() {
                             value={form.event_date}
                             onChange={handleChange}
                         />
-                    </label>
+                    </div>
 
-                    <label>
+                    <div>
                         Type
                         <input name="event_type" value={form.event_type} onChange={handleChange} placeholder="e.g. Study, Social" />
-                    </label>
+                    </div>
 
                     <div className="form-actions">
                         <button type="submit">Create</button>
                         <button type="button" onClick={() => setForm({ title: '', description: '', location: '', event_date: '', event_type: '' })}>Reset</button>
                     </div>
                 </form>
-            </section>
+            </section>)}
+
+
         </div>
     );
 }
