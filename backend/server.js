@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-
 // load environment variables
 dotenv.config();
 
@@ -32,8 +31,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
-
-
 
 // 404 handler - no route is found
 app.use((req, res) => {
