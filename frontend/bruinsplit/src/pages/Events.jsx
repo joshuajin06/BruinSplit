@@ -1,5 +1,6 @@
 import './pages.css';
 import { useEffect, useState } from 'react';
+import EventCard from "../components/eventCard.jsx"
 
 export default function Events() {
     const [events, setEvents] = useState([]);
@@ -96,7 +97,6 @@ export default function Events() {
                 throw new Error(`Expected JSON response but got ${contentType}: ${text.slice(0,300)}`);
             }
 
-            // Optimistic UI: append created event to list
             setEvents(prev => {
                 const next = [...prev, created];
                 // sort by event_date ascending
