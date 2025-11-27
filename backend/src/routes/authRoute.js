@@ -11,7 +11,7 @@ router.post('/login', login);
 router.get('/me', authenticateUser, async (req, res) => {
   try {
     res.json(req.user);
-  } catch {
+  } catch(error) {
     res.status(400).json({error: error.message});
   }
 })
@@ -39,7 +39,7 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     }
 
     const {data: user} = await supabase
-      .from('users')
+      .from('profiles')
       .select('password_hash')
       .eq('id', user.id)
       .single()
@@ -53,7 +53,7 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     const newPasswordHash = hashPassword(newPassword);
 
     const { error } = await supabase
-      .from('users')
+      .from('profiles')
       .update({password_hash : newPasswordHash})
       .eq('id', user.id)
 
