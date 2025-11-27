@@ -83,8 +83,9 @@ export default function Events() {
         try {
             const res = await fetch('/api/events', {
                 method: 'POST',
+                //Add the current users uid so that the event is tied to them
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(   payload)
             });
 
             if (!res.ok) {
@@ -123,16 +124,18 @@ export default function Events() {
 
     return (
         <div className="events-page">
-            <button className='add-event' onClick={() => setShowModal(!showModal)}>TEST</button>
-            <h1>Events</h1>
+           
+            <section className='title-section'>
+                 <h1>Events</h1>
+                <button className='add-event' onClick={() => setShowModal(!showModal)}><a>+</a></button>
+            </section>
         
             <section className="events-list">               
                 {loading && <p>Loading events…</p>}
                 {error && <p className="error">{error}</p>}
                 {!loading && events.length === 0 && <p>No events found.</p>}
 
-                <ul>
-                    <div className='event-grid'>
+                <ul className='event-grid'>
                     {events.map(ev => (
                         <li key={ev.id} className="event-item">
                             <EventCard 
@@ -147,7 +150,6 @@ export default function Events() {
                                 type={ev.event_type}/>
                         </li>
                     ))}
-                    </div>
                 </ul>
             </section>  
 

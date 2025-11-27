@@ -1,4 +1,5 @@
 import { supabase } from "../supabase.js"; 
+import { authenticateUser } from '../middleware/authenticateUser.js';
 
 console.log("Supabase client URL from controller:", supabase.restUrl);
 
@@ -63,6 +64,9 @@ export const getEventById = async (req, res) => {
 
 export const deleteEvent = async (req, res) => {
   const id = Number(req.params.id);//req.params;
+  if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Authentication required' });
+  }
   const { data, error } = await supabase
   .from("events")
   .delete()
