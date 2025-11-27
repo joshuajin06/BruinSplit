@@ -64,15 +64,35 @@ export const getEventById = async (req, res) => {
 
 export const deleteEvent = async (req, res) => {
   const id = Number(req.params.id);//req.params;
-  if (!req.user || !req.user.id) {
-      return res.status(401).json({ error: 'Authentication required' });
+
+  if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid ID format' });
   }
+
+  //TEMP TEMP TEMP
+  const currentUserId = req.user?.id || "123e4567-e89b-12d3-a456-426614174000";
+
+  // fetch event first
+  const { data: event, error: fetchErr } = await supabase
+    .from('events')
+    .select('id, created_by')
+    .eq('id', id)
+    .single();
+
+  if (fetchErr || !event) {
+    return res.status(404).json({ error: 'Event not found' });
+  }
+
+  if (event.created_by !== currentUserId) {
+    return res.status(403).json({ error: 'Not authorized to delete this event' });
+  }
+
   const { data, error } = await supabase
   .from("events")
   .delete()
   .eq("id", id);
 
-  if (error) return req.status(400).json({ error })
+  if (error) return res.status(400).json({ error })
   res.json({ message: "Event Deleted" });
 }
 
