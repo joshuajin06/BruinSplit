@@ -13,6 +13,10 @@ export default function Events() {
         setShowModal(true);
     }
 
+    const handleRemoveEvent = (deletedId) => {
+    setEvents(prevEvents => prevEvents.filter(ev => ev.id !== deletedId));
+    };
+
     const [form, setForm] = useState({
         title: '',
         description: '',
@@ -148,7 +152,9 @@ export default function Events() {
                                                                                                             day: 'numeric', 
                                                                                                             hour: '2-digit', 
                                                                                                             minute: '2-digit'}) : ''}
-                                type={ev.event_type}/>
+                                type={ev.event_type}
+                                eventId={ev.id} 
+                                onDelete={handleRemoveEvent}/>
                         </li>
                     ))}
                     </div>
