@@ -1,8 +1,62 @@
 import { supabase } from '../supabase.js';
-import { enrichRide, getAvailableSeats } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats } from '../services/rideService.js';
 
 
+// POST /api/rides - create a rideShare group
+export async function postRide(req, res, next) {
+    try {
+        
+        // extract data from req
+        const { origin_text, destination_text, depart_at, platform, max_seats, notes } = req.body;
 
+        // get owner id from authenticated user 
+        const owner_id = req.user.id;
+
+
+        if ( !owner_id || !origin_text || !destination_text || !depart_at || !platform || !max_seats ) {
+            return res.status(400).json({ error: "Missing required fields." });
+        }
+
+        const departAt = new Date(depart_at);
+
+        if (isNaN(departAt.getTime())) {
+            return res.status(400).json({ error: "Invalid departure time." });
+        }
+
+        const maxSeats = parseInt(max_seats);
+        if (isNaN(maxSeats) || maxSeats < 2 || maxSeats > 6) {
+            return res.status(400).json({ error: "Number of available seats must be between 2 and 6 inclusive." });
+        }
+ 
+        const platformUpper =  platform?.toUpperCase();
+        if (!['UBER', 'WAYMO', 'LYFT', 'OTHER'].includes(platformUpper)) {
+            return res.status(400).json({ error: "Invalid platform. Please choose from UBER, WAYMO, LYFT, or OTHER (specify in notes if OTHER)." });
+        }
+
+        if (typeof origin_text !== 'string' || typeof destination_text !== 'string') {
+            return res.status(400).json({ error: "Please provide a valid destination and origin." });
+        }
+
+        const ride = await createRide({
+            owner_id, 
+            origin_text, 
+            destination_text, 
+            departAt, 
+            platformUpper, 
+            maxSeats, 
+            notes
+        });
+
+        return res.status(201).json({ 
+            message: "Ride created successfully.",
+            ride: ride
+        });
+
+    } catch (error) {
+        console.error("Post ride error: ", error);
+        next(error);
+    }
+}
 
 // GET /api/rides - get all rides with an optional filter
 export async function getRides(req, res) {
