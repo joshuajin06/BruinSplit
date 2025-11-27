@@ -135,7 +135,8 @@ export default function Events() {
                 {error && <p className="error">{error}</p>}
                 {!loading && events.length === 0 && <p>No events found.</p>}
 
-                <ul className='event-grid'>
+                <ul>
+                    <div className='event-grid'>
                     {events.map(ev => (
                         <li key={ev.id} className="event-item">
                             <EventCard 
@@ -150,6 +151,7 @@ export default function Events() {
                                 type={ev.event_type}/>
                         </li>
                     ))}
+                    </div>
                 </ul>
             </section>  
 
@@ -204,8 +206,6 @@ export default function Events() {
                     </div>
                 </form>
             </section>)}
-
-
         </div>
     );
 }
