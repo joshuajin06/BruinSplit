@@ -1,7 +1,9 @@
 .card-container {
-    width: 22rem;
-    margin: 1.5rem auto;
-    padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 1rem;
     border: none;
     border-radius: 1.25rem;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13), 0 1.5px 4px rgba(0,0,0,0.07);
@@ -12,6 +14,7 @@
     text-align: left;
     background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%);
     transition: box-shadow 0.2s, transform 0.2s;
+    align-self: stretch;
 }
 
 .card-container:hover {
