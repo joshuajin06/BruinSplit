@@ -1,4 +1,3 @@
-import { UNSAFE_ErrorResponseImpl } from 'react-router-dom';
 import { supabase } from '../supabase.js';
 
 
@@ -132,7 +131,7 @@ export async function deleteRideService(rideId, userId) {
 
     if(membersDeleteError) {
         membersDeleteError.statusCode = 400;
-        throw error;
+        throw membersDeleteError;
     }
 
     // delete the ride itself
