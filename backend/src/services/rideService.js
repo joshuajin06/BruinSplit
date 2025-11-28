@@ -1,6 +1,6 @@
 import { supabase } from '../supabase.js';
 
-// helper function to initialize a ride
+// helper function to create a ride
 export async function createRide(rideData) {
 
     const { owner_id, origin_text, destination_text, departAt, platformUpper, maxSeats, notes } = rideData;
@@ -25,6 +25,70 @@ export async function createRide(rideData) {
     }
 
     return ride;
+}
+
+// helper function to add a user to a ride
+// helper function to make a user join a ride
+export async function joinRide(rideId, userId) {
+
+    // query rides table to check if ride even exists
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, max_seats, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    // throw error if : error OR ride doesn't exist
+    if (rideError || !ride) {
+        const error = new error('Ride not found');
+        error.statusCode == 401;
+        throw error;
+    }
+
+    // use helper to count current ride members
+    const currentMembers = await getAvailableSeats(rideId);
+
+    const availableSeats = ride.max_seats - currentMembers;
+
+    // throw error if no seats are available
+    if (availableSeats <= 0) {
+        const error = new Error('Ride is full');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // query ride_members to see if the user is already in this ride 
+    const { data: existingMember } = await supabase
+        .from('ride_members')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    // throw error if user is already in this ride
+    if (existingMember) {
+        const error = new Error('User already joined ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // insert new member into ride_members table
+    const { data: member, error: insertError } = await supabase
+        .from('ride_members')
+        .insert([{
+            ride_id: rideId,
+            user_id: userId,
+            status: 'CONFIRMED JOINING'
+        }])
+        .select('*')
+        .single();
+
+    if (insertError) {
+        inserErrror.statusCode = 400;
+        throw insertError;
+    }
+
+    return member;
 }
 
 
