@@ -12,10 +12,8 @@
   padding: 0.5rem 1.5rem;
   gap: 2rem;
   box-shadow: 0 2xpx 5px rgba(0,0,0,0.3);
-
-  z-index: 1000;
 }
-;
+
 .siteTitle {
   font-size: 1.5rem;
   font-weight: bold;

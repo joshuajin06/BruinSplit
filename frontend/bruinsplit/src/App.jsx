@@ -9,6 +9,9 @@ import Events from './pages/Events.jsx'
 import Postings from './pages/Postings.jsx'
 import MyRides from './pages/MyRides.jsx'
 
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/protectedroute.jsx'
+
 
 function App() {
   
@@ -16,18 +19,20 @@ function App() {
     <>
       <div className='page-container'>
         <main className='content-wrap'>
-        <Router>
-          <Navbar />
-            <div className="content">
-             <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/postings" element={<Postings />} />
-                <Route path="/myrides" element={<MyRides />} />
-              </Routes>
-            </div>
-          </Router>
+        <AuthProvider>
+          <Router>
+            <Navbar />
+              <div className="content">
+              <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/postings" element={<ProtectedRoute><Postings /></ProtectedRoute>} />
+                  <Route path="/myrides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
+                </Routes>
+              </div>
+            </Router>
+          </AuthProvider>
         </main>      
         <Footer />
       </div>
