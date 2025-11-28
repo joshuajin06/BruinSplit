@@ -31,7 +31,7 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     }
 
     if(newPassword.length < 8) {
-      res.status(400).json({error: "Password length must be longer than 8"});
+      res.status(400).json({error: "Password length must be 8 or longer"});
     }
 
     if(currentPassword == newPassword) {
