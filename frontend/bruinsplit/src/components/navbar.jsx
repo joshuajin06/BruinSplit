@@ -1,22 +1,23 @@
 import { useState, useRef, useEffect } from "react"
 import { Link } from "react-router-dom";
+import { useAuth } from '../context/AuthContext'
 import "./navbar.css"; // Import the CSS file
 
 export default function Navbar() {
-  const [loginClicked, setLoginClicked] = useState(false);
+  // const [loginClicked, setLoginClicked] = useState(false);
   const menuRef = useRef(null);
+  const { logout, isAuthenticated } = useAuth();
 
-  //closes drop down if you click outside of it
-   useEffect(() => {
-    function handleClickOutside(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setLoginClicked(false);
-      }
-    }
+  //  useEffect(() => {
+  //   function handleClickOutside(e) {
+  //     if (menuRef.current && !menuRef.current.contains(e.target)) {
+  //       setLoginClicked(false);
+  //     }
+  //   }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
 
   return (
     <nav className="navbar">
@@ -32,15 +33,16 @@ export default function Navbar() {
         <li className="myrides"><Link to="/myrides">My Rides</Link></li>
 
         <li className="navButtonLogin" ref={menuRef}>
-          <a className="profileButton" onClick={() => setLoginClicked(!loginClicked)}>Profile</a>
-        
-          {loginClicked && (
-              <div className="submenu">
-                <Link to="/login" className="submenu-item">Sign In</Link>
-                <a className="submenu-item">Log out</a>
-
-              </div>
-            )}
+          <a className="profileButton">Profile</a>
+            <div className="submenu">
+              <Link to="/login" 
+                className="submenu-item" 
+                onClick={() => {
+                  if(isAuthenticated) logout();
+                }}>
+                {isAuthenticated ? "Logout" : "Sign In"}
+              </Link>
+            </div>
         </li>
       </ul>
     </nav>
