@@ -327,3 +327,77 @@ export async function getAvailableSeats(rideId) {
 
 }
 
+
+// helper to update a ride (owner only)
+export async function updateRideService(rideId, userId, updateData) {
+
+    // check if ride exists AND get owner_id
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single()
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // auth check - is the user the owner ?
+    if (ride.owner_id !== userId) {
+        const error = new Error('Unauthorized: You can only update your own rides');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // build update object with only provided fields
+    const updates = {};
+
+    // the following conditionals serve to only add fields that are provided and not undefined/null
+
+    if (updateData.origin_text !== undefined) {
+        updates.origin_text = updateData.origin_text;
+    }
+
+    if (updateData.destination_text !== undefined) {
+        updates.destination_text = updateData.destination_text
+    }
+
+    if (updateData.depart_at !== undefined) {
+        updates.depart_at = updateData.depart_at;
+    }
+
+    if (updateData.platform !== undefined) {
+        updates.platform = updateData.platform;
+    }
+    if (updateData.max_seats !== undefined) {
+        updates.max_seats = updateData.max_seats;
+    }
+    if (updateData.notes !== undefined) {
+        updates.notes = updateData.notes;
+    }
+
+    // check if there's anything to update
+    if (Object.keys(updates).length === 0) {
+        const error = new Error('No fields provided to update');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // update the ride
+    const { data: updateRide, error: updateError } = await supabase
+        .from('rides')
+        .update(updates)
+        .eq('id', rideId)
+        .select('*')
+        .single();
+    
+        if (updateError) {
+            updateError.statusCode = 400;
+            throw updateError;
+        }
+
+        return updatedRide;
+    
+}
