@@ -132,6 +132,8 @@ export default function Events() {
         }
     }
 
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+
     return (
         <div className="events-page">
            
@@ -160,6 +162,8 @@ export default function Events() {
                                                                                                             minute: '2-digit'}) : ''}
                                 type={ev.event_type}
                                 eventId={ev.id} 
+                                createdBy={ev.created_by}
+                                currentUserId={currentUser?.id}
                                 onDelete={handleRemoveEvent}/>
                         </li>
                     ))}
