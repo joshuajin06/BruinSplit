@@ -149,27 +149,6 @@ export async function leaveRideService(rideId, userId) {
 }
 
 
-
-
-// helper function to grab the number of available seats per rideShare group
-export async function getAvailableSeats(rideId) {
-    const { count, error } = await supabase
-        .from('ride_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('ride_id', rideId)
-        .eq('status', 'CONFIRMED JOINING');
-
-    if (error) throw error;
-    return count || 0;
-
-}
-
-
-
-
-
-
-
 // helper to enrich a ride with member count and owner info 
 export async function enrichRide(ride) {
     const memberCount = await getAvailableSeats(ride.id);
@@ -189,3 +168,112 @@ export async function enrichRide(ride) {
         owner: owner || null
     };
 }
+
+
+
+// helper function to get all of a user's rides (created + joined)
+export async function getMyRidesService(userId) {
+
+    // get rides where the user is the owner
+    const { data: ownedRides, error: ownedError } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (ownedError) {
+        ownedError.statusCode = 400;
+        throw ownedError;
+    }
+
+    // get rides where user is a member
+
+    // first, get all ride_ids where user is a member
+    const { data: memberRecords, error: memberError } = await supabase
+        .from('ride_members')
+        .select('ride_id')
+        .eq('user_id', userId)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (memberError) {
+        memberError.statusCode = 400;
+        throw memberError;
+    }
+
+    // then extract just the ride_ids from memberRecords
+    const joinedRideIds = (memberRecords || []).map(record => record.ride_id);
+
+    // then, get the actual ride data for joined rides
+    let joinedRides = [];
+    if (joinedRideIds.length > 0) {
+        const { data: joinedRidesData, error: joinedError } = await supabase
+        .from('rides')
+        .select('*')
+        .in('id', joinedRideIds) // 'id' IN array
+        .order('created_at', { ascending: false });
+
+        if (joinedError) {
+            joinedError.statusCode = 400;
+            throw joinedError;
+        }
+
+        joinedRides = joinedRidesData || [];
+    }
+
+    // combine both the owned array and joined array
+
+    // using a set to avoid a dupliate, the case where owner is both owner + member
+    const allRideIds = new Set();
+    const allRides = [];
+
+    // add all owned rides
+    (ownedRides || []).forEach(ride => {
+        if (!allRideIds.has(ride.id)) {
+            allRideIds.add(ride.id);
+            allRides.push({
+                ...ride,
+                user_role: 'owner' // mark as owner
+            });
+        }
+    });
+
+    // add joined rides (skip if already added as owner)
+    joinedRides.forEach(ride => {
+        if (!allRideIds.has(ride.id)) {
+            allRideIds.add(ride.id);
+            allRides.push({
+                ...ride,
+                user_role: 'member' // mark as member
+            });
+        } else {
+            // if already exists as owner, update to show that they're also a member
+            const existingRide = allRides.find(r => r.id === ride.id);
+            if (existingRide) {
+                existingRide.user_role = 'owner_and_member'; // edge case 
+            }
+        }
+    });
+
+    // enrich all rides with thier info
+    const enrichedRides = await Promise.all(
+        allRides.map(ride => enrichRide(ride))
+    );
+
+    return enrichedRides;
+}
+
+
+
+// helper function to grab the number of available seats per rideShare group
+export async function getAvailableSeats(rideId) {
+    const { count, error } = await supabase
+        .from('ride_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('ride_id', rideId)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (error) throw error;
+    return count || 0;
+
+}
+

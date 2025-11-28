@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, leaveRideService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, leaveRideService, getMyRidesService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -212,3 +212,23 @@ export async function getRideById(req, res) {
         res.status(500).json({ error: error.message || 'Failed to retreive ride' });
     }
 };
+
+
+// GET /api/rides/my-rides - get all rides that a user has joined
+export async function getMyRides(req, res, next) {
+    try {
+
+        const userId = req.user.id;
+
+        const rides = await getMyRidesService(userId);
+
+        return res.status(200).json({
+            message: 'My rides retrieved successfully',
+            rides: rides
+        });
+
+    } catch (error) {
+        console.error('Get my rides error: ', error);
+        next(error);
+    }
+}

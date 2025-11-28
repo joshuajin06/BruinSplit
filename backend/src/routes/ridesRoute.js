@@ -1,5 +1,5 @@
 import express from 'express';
-import { postRide, joinRide, leaveRide, getRides, getRideById } from '../controllers/ridesController.js';
+import { postRide, joinRide, leaveRide, getRides, getRideById, getMyRides } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -16,10 +16,10 @@ router.delete('/:id/leave', authenticateUser, leaveRide);
 // GET /api/rides - Get all rides (public, no auth needed)
 router.get('/', getRides);
 
+// GET /api/rides/my-rides - Get all rides a user has joined
+router.get('/my-rides', authenticateUser, getMyRides);
+
 // GET /api/rides/:id - Get specific ride by ID (public)
 router.get('/:id', getRideById);
-
-// GET /api/rides/rides/my-rides - Get all rides a user has joined
-// TODO
 
 export default router;
