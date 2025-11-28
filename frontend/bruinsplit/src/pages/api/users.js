@@ -24,4 +24,13 @@ export const createUser = async (userData) => {
     }
 };
 
-
+export const getUserId = async (username) => {
+    try {
+        const response = await axios.get(`${url}/users/username/${username}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+        throw error;
+    }
+    return null;
+};
