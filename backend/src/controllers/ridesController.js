@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -255,6 +255,88 @@ export async function getMyRides(req, res, next) {
 
     } catch (error) {
         console.error('Get my rides error: ', error);
+        next(error);
+    }
+}
+
+
+// PUT /api/rides/:id - update a ride (owner only)
+export async function updateRide(req, res, next) {
+    try {
+
+        const { id: rideId } = req.params;
+
+        const userId = req.user.id;
+
+        const { origin_text, destination_text, depart_at, platform, max_seats, notes } = req.body;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const updateData = {};
+
+        // validate origin_text if provided
+        if (origin_text !== undefined) {
+            if (typeof origin_text !== 'string' || origin_text.trim().length === 0) {
+                return res.status(400).json({ error: 'Invalid origin text' });
+            }
+            updateData.origin_text = origin_text;
+        }
+
+        // validate destination_text if provided
+        if(destination_text !== undefined) {
+            if (typeof destination_text !== 'string' || destination_text.trim().length === 0) {
+                return res.status(400).json({ error: 'Invalid destination text' });
+            }
+            updateData.destination_text = destination_text;
+        }
+
+        // validate depart_at if provided
+        if (depart_at !== undefined) {
+            const departAt = new Date(depart_at);
+            if (isNaN(departAt.getTime())) {
+                return res.status(400).json({ error: 'Invalid departure time' });
+            }
+            updateData.depart_at = departAt;
+        }
+
+        // validate platform if provided
+        if (platform !== undefined) {
+            const platformUpper = platform.toUpperCase();
+            if (!['UBER', 'WAYMO', 'LYFT', 'OTHER'].includes(platformUpper)) {
+                return res.status(400).json({ error: 'Invalid platform. Please choose from UBER, WAYMO, LYFT, or OTHER' });
+            }
+            updateData.platform = platformUpper;
+        }
+
+        // validate max_seats if provided
+        if (max_seats !== undefined) {
+            const maxSeats = parseInt(max_seats);
+            if (isNaN(maxSeats) || maxSeats < 2 || maxSeats > 6) {
+                return res.status(400).json({ error: 'Number of available seats must be between 2 and 6 inclusive' });
+            }
+            updateData.max_seats = maxSeats;
+        }
+        
+        // Validate notes if provided (optional, can be null or string)
+        if (notes !== undefined) {
+            if (notes !== null && typeof notes !== 'string') {
+                return res.status(400).json({ error: 'Notes must be a string or null' });
+            }
+            updateData.notes = notes;
+        }
+
+        // call service to update ride
+        const updatedRide = await updateRideService(rideId, userId, updateData);
+
+        return res.status(200).json({
+            message: 'Ride updated successfully',
+            ride: updatedRide
+        });
+
+    } catch (error) {
+        console.error('Update ride error: ', error);
         next(error);
     }
 }
