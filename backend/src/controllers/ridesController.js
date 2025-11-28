@@ -58,6 +58,16 @@ export async function postRide(req, res, next) {
     }
 }
 
+// POST /api/rides/:id/join - join a ride
+export async function joinRide(req, res, next) {
+
+    const member_id = req.user.id;
+
+    
+
+
+}
+
 // GET /api/rides - get all rides with an optional filter
 export async function getRides(req, res) {
     try {
