@@ -1,31 +1,26 @@
 import express from 'express';
-import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide } from '../controllers/ridesController.js';
+import { getRides, getRideById, joinRide, postRide, leaveRide, deleteRide } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
 
-// POST /api/rides - allows user to create a rides post
-router.post('/', authenticateUser, postRide); // in progress
-
-// POST /api/rides/:id/join - Add a user to the ride
-router.post('/:id/join', authenticateUser, joinRide);
-
-// DELETE /api/rides/:id - Delete a ride
-router.delete('/:id', authenticateUser, deleteRide);
-
-// DELETE /api/rides/:id/leave - Leave a ride 
-router.delete('/:id/leave', authenticateUser, leaveRide);
-
 // GET /api/rides - Get all rides (public, no auth needed)
 router.get('/', getRides);
-
-// GET /api/rides/my-rides - Get all rides a user has joined
-router.get('/my-rides', authenticateUser, getMyRides);
 
 // GET /api/rides/:id - Get specific ride by ID (public)
 router.get('/:id', getRideById);
 
-// PUT /api/rides/:id - Update a ride (owner only)
-router.put('/:id', authenticateUser, updateRide);
+// POST /api/rides/:id/join - join a ride (authenticated)
+router.post('/:id/join', authenticateUser, joinRide);
+
+// POST /api/rides - create ride (authenticated)
+router.post('/', authenticateUser, postRide);
+
+// DELETE /api/rides/:id/leave - leave ride (authenticated)
+router.delete('/:id/leave', authenticateUser, leaveRide);
+
+// DELETE /api/rides/:id - delete ride (authenticated, owner only)
+router.delete('/:id', authenticateUser, deleteRide);
+
 
 export default router;

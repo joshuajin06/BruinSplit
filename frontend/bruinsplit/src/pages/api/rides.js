@@ -26,9 +26,17 @@ export const createRide = async (rideData) => {
 
 export const joinRide = async (userId, rideId) => {
     try {
-        
+        // server determines user by token; second arg is rideId
+        const rideIdFinal = rideId || userId;
+        if (!rideIdFinal) throw new Error('rideId is required');
 
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const response = await axios.post(`${url}/rides/${rideIdFinal}/join`, {}, { headers });
+        return response.data;
     } catch (error) {
-
+        console.error('Error joining ride:', error.response?.data || error.message);
+        throw error;
     }
 };
