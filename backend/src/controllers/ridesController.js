@@ -61,10 +61,27 @@ export async function postRide(req, res, next) {
 // POST /api/rides/:id/join - join a ride
 export async function joinRide(req, res, next) {
 
-    const member_id = req.user.id;
+    try {
 
-    
+        const { id: rideId } = req.params;
 
+        const userId = req.user.id;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const member = await joinRideService(rideId, userId);
+
+        return res.status(201).json({
+            message: 'Successfully joined ride',
+            member: member
+        });
+
+    } catch (error) {
+        conole.error("Error in joining ride: ", error);
+        next(error);
+    }
 
 }
 
