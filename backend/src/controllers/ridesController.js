@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -56,6 +56,33 @@ export async function postRide(req, res, next) {
         console.error("Post ride error: ", error);
         next(error);
     }
+}
+
+// POST /api/rides/:id/join - join a ride
+export async function joinRide(req, res, next) {
+
+    try {
+
+        const { id: rideId } = req.params;
+
+        const userId = req.user.id;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const member = await joinRideService(rideId, userId);
+
+        return res.status(201).json({
+            message: 'Successfully joined ride',
+            member: member
+        });
+
+    } catch (error) {
+        console.error("Error in joining ride: ", error);
+        next(error);
+    }
+
 }
 
 // GET /api/rides - get all rides with an optional filter
