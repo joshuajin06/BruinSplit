@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRides, getRideById, postRide } from '../controllers/ridesController.js';
+import { getRides, getRideById, postRide, joinRide } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/', authenticateUser, postRide); // in progress
 
 // POST /api/rides/:id/join - Add a user to the ride
-// TODO
+router.post('/:id/join', authenticateUser, joinRide);
 
 // GET /api/rides - Get all rides (public, no auth needed)
 router.get('/', getRides);
