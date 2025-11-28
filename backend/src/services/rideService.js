@@ -83,7 +83,7 @@ export async function joinRideService(rideId, userId) {
         .single();
 
     if (insertError) {
-        insertErrror.statusCode = 400;
+        insertError.statusCode = 400;
         throw insertError;
     }
 
