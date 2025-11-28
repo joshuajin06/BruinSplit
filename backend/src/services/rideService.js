@@ -1,5 +1,8 @@
 import { supabase } from '../supabase.js';
 
+
+
+
 // helper function to create a ride
 export async function createRide(rideData) {
 
@@ -27,6 +30,10 @@ export async function createRide(rideData) {
     return ride;
 }
 
+
+
+
+
 // helper function to add a user to a ride
 export async function joinRideService(rideId, userId) {
 
@@ -40,7 +47,7 @@ export async function joinRideService(rideId, userId) {
     // throw error if : error OR ride doesn't exist
     if (rideError || !ride) {
         const error = new Error('Ride not found');
-        error.statusCode = 401;
+        error.statusCode = 404;
         throw error;
     }
 
@@ -91,6 +98,59 @@ export async function joinRideService(rideId, userId) {
 }
 
 
+
+// helper function to remove a user from a ride they've joined
+export async function leaveRideService(rideId, userId) {
+
+    // query rides table to check if ride even exists
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id')
+        .eq('id', rideId)
+        .single();
+
+    // throw error if : error OR ride doesn't exist
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    
+    // check if user is in that ride
+    const { data: existingMember } = await supabase
+        .from('ride_members')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    // if the user is NOT in the ride, throw error
+    if (!existingMember) {
+        const error = new Error('User is not a member of this ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // remove user from ride_members table
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('ride_id', rideId)
+        .eq('user_id', userId)
+
+    // throw error if deletion was not successful
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+    
+    return { message: 'Successfully left ride' };
+
+}
+
+
+
+
 // helper function to grab the number of available seats per rideShare group
 export async function getAvailableSeats(rideId) {
     const { count, error } = await supabase
@@ -103,6 +163,12 @@ export async function getAvailableSeats(rideId) {
     return count || 0;
 
 }
+
+
+
+
+
+
 
 // helper to enrich a ride with member count and owner info 
 export async function enrichRide(ride) {
