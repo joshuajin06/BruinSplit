@@ -212,3 +212,17 @@ export async function getRideById(req, res) {
         res.status(500).json({ error: error.message || 'Failed to retreive ride' });
     }
 };
+
+
+// GET /api/rides/my-rides - get all rides that a user has joined
+export async function getMyRides(req, res, next) {
+    try {
+
+        //temp
+
+        
+    } catch (error) {
+        console.error('Get all rides error: ', error);
+        res.status(500).json({ error: error.message || 'Failed to get all rides' });
+    }
+}
