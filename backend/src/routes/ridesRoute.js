@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRides, getRideById, postRide } from '../controllers/ridesController.js';
+import { getRides, getRideById, postRide, joinRide } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
