@@ -12,3 +12,4 @@ export const updateProfile = async (userId, profileData) => {
     }
     return null;
 };
+
