@@ -79,7 +79,7 @@ export async function joinRide(req, res, next) {
         });
 
     } catch (error) {
-        conole.error("Error in joining ride: ", error);
+        console.error("Error in joining ride: ", error);
         next(error);
     }
 
