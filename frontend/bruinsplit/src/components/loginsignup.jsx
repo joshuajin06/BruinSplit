@@ -2,9 +2,11 @@ import { useState } from 'react'
 import Person from '../assets/person.png';
 import './loginsignup.css';
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function LoginSignup() {
     const [loggedIn, setLoggedIn] = useState(true); // true for login, false for signup
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: '', //should be held as a hash -> leaving as it would be a security risk
@@ -16,10 +18,12 @@ export default function LoginSignup() {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
         
         try {
             if(loggedIn) {
@@ -39,9 +43,8 @@ export default function LoginSignup() {
                 if(!response.ok) {
                     throw new Error(data.error || 'Login failed');
                 }
-                
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+
+                login(data.user, data.token);
 
                 console.log('Logged in:', data.user);
 
@@ -67,8 +70,7 @@ export default function LoginSignup() {
                     throw new Error(data.error || 'Signup failed');
                 }
 
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+                login(data.user, data.token);
 
                 console.log('Signed up:', data.user);
 
@@ -76,12 +78,9 @@ export default function LoginSignup() {
             }
         } catch(error) {
             setError(error.message);
+        } finally {
+            setLoading(false);
         }
-    }
-
-    const toggleMode = () => {
-        setLoggedIn(!loggedIn);
-        setError('');
     }
 
     return (
@@ -118,7 +117,12 @@ export default function LoginSignup() {
                         {loggedIn ? false : true}
                     </span>
                 </div>
-                    <button className='login-signup-button' onClick={handleSubmit}>{loggedIn ? "Login" : "Sign Up"}</button>
+                    <button className='login-signup-button' onClick={handleSubmit} disabled={loading}>
+                        {loading ? 
+                            (loggedIn ? "Logging in..." : "Creating Account...") :
+                            (loggedIn ? "Login" : "Sign Up")
+                        }
+                    </button>
                 </div>
             </div>
         </div>
