@@ -1,5 +1,5 @@
 import express from 'express';
-import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides } from '../controllers/ridesController.js';
+import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -24,5 +24,8 @@ router.get('/my-rides', authenticateUser, getMyRides);
 
 // GET /api/rides/:id - Get specific ride by ID (public)
 router.get('/:id', getRideById);
+
+// PUT /api/rides/:id - Update a ride (owner only)
+router.put('/:id', authenticateUser, updateRide);
 
 export default router;

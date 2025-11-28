@@ -361,7 +361,7 @@ export async function updateRideService(rideId, userId, updateData) {
     }
 
     if (updateData.destination_text !== undefined) {
-        updates.destination_text = updateData.destination_text
+        updates.destination_text = updateData.destination_text;
     }
 
     if (updateData.depart_at !== undefined) {
@@ -386,7 +386,7 @@ export async function updateRideService(rideId, userId, updateData) {
     }
 
     // update the ride
-    const { data: updateRide, error: updateError } = await supabase
+    const { data: updatedRide, error: updateError } = await supabase
         .from('rides')
         .update(updates)
         .eq('id', rideId)
