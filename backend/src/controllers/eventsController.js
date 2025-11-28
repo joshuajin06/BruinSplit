@@ -1,22 +1,19 @@
 import { supabase } from "../supabase.js"; 
-import { authenticateUser } from '../middleware/authenticateUser.js';
+import { getAllEvents } from '../services/eventServices.js';
 
 console.log("Supabase client URL from controller:", supabase.restUrl);
 
 export const getEvents = async (req, res) => {
-    console.log("Controller hit for GET /api/events");
-    const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("event_date", { ascending: true});
-
-    if (error) return res.status(400).json({ error });
-    res.json(data);
+    try {
+        const events = await getAllEvents();
+        res.status(200).json(events);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 };  
 
 export const createEvent = async (req, res) => {
-  // Mock user for testing
-  const user = req.user; //{ id: "123e4567-e89b-12d3-a456-426614174000" };
+  const user = req.user; 
   if (!user || !user.id) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -72,8 +69,7 @@ export const deleteEvent = async (req, res) => {
       return res.status(400).json({ error: 'Invalid ID format' });
   }
 
-  //TEMP TEMP TEMP
-  const currentUserId = req.user?.id || "123e4567-e89b-12d3-a456-426614174000";
+  const currentUserId = req.user?.id; //|| "123e4567-e89b-12d3-a456-426614174000";
 
   // fetch event first
   const { data: event, error: fetchErr } = await supabase
