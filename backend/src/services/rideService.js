@@ -99,6 +99,56 @@ export async function joinRideService(rideId, userId) {
 
 
 
+// helper function to delete a ride
+export async function deleteRideService(rideId, userId) {
+    
+    // query rides table to check if the ride even exists
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    // if error OR ride does not exist, throw error
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // authorization check - is this user the owner of the ride ?
+    if (ride.owner_id !== userId) {
+        const error = new Error('Unauthorized: You can may only delete the ride if you are the owner');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // delete all ride members first - prevent orphaned records
+    const { error: membersDeleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('ride_id', rideId);
+
+    if(membersDeleteError) {
+        membersDeleteError.statusCode = 400;
+        throw membersDeleteError;
+    }
+
+    // delete the ride itself
+    const { error: deleteError } = await supabase
+        .from('rides')
+        .delete()
+        .eq('id', rideId);
+
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Ride has been deleted successfully' };
+}
+
+
 // helper function to remove a user from a ride they've joined
 export async function leaveRideService(rideId, userId) {
 

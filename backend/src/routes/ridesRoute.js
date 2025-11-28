@@ -1,5 +1,5 @@
 import express from 'express';
-import { postRide, joinRide, leaveRide, getRides, getRideById, getMyRides } from '../controllers/ridesController.js';
+import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -9,6 +9,9 @@ router.post('/', authenticateUser, postRide); // in progress
 
 // POST /api/rides/:id/join - Add a user to the ride
 router.post('/:id/join', authenticateUser, joinRide);
+
+// DELETE /api/rides/:id - Delete a ride
+router.delete('/:id', authenticateUser, deleteRide);
 
 // DELETE /api/rides/:id/leave - Leave a ride 
 router.delete('/:id/leave', authenticateUser, leaveRide);

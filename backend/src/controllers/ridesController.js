@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, leaveRideService, getMyRidesService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -84,6 +84,32 @@ export async function joinRide(req, res, next) {
     }
 
 }
+
+
+// DELETE /api/rides/:id - delete a ride
+export async function deleteRide(req, res, next) {
+    try {
+
+        const { id: rideId } = req.params;
+
+        const userId = req.user.id;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const result = await deleteRideService(rideId, userId);
+
+        return res.status(200).json({
+            message: 'Ride deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Delete ride error: ', error);
+        next(error);
+    }
+}
+
 
 
 // DELETE /api/rides/:id/leave - removes a user from a ride they've joined
