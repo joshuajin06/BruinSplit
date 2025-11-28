@@ -201,15 +201,15 @@ export async function getMyRidesService(userId) {
     }
 
     // then extract just the ride_ids from memberRecords
-    const joinedRideIds = (memberRecords || []);
+    const joinedRideIds = (memberRecords || []).map(record => record.ride_id);
 
     // then, get the actual ride data for joined rides
     let joinedRides = [];
-    if (joinedRideIds.length() > 0) {
+    if (joinedRideIds.length > 0) {
         const { data: joinedRidesData, error: joinedError } = await supabase
         .from('rides')
         .select('*')
-        .in('id', joinedRidesIds) // 'id' IN array
+        .in('id', joinedRideIds) // 'id' IN array
         .order('created_at', { ascending: false });
 
         if (joinedError) {
@@ -254,7 +254,7 @@ export async function getMyRidesService(userId) {
         }
     });
 
-    // enrich all rides
+    // enrich all rides with thier info
     const enrichedRides = await Promise.all(
         allRides.map(ride => enrichRide(ride))
     );
