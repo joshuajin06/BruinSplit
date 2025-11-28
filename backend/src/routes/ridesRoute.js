@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/', authenticateUser, postRide); // in progress
 
 // POST /api/rides/:id/join - Add a user to the ride
-// TODO
+router.post('/:id/join', authenticateUser, joinRide);
 
 // GET /api/rides - Get all rides (public, no auth needed)
 router.get('/', getRides);
