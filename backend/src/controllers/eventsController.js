@@ -16,7 +16,10 @@ export const getEvents = async (req, res) => {
 
 export const createEvent = async (req, res) => {
   // Mock user for testing
-  const user = { id: "123e4567-e89b-12d3-a456-426614174000" };
+  const user = req.user; //{ id: "123e4567-e89b-12d3-a456-426614174000" };
+  if (!user || !user.id) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
   // Prepare event object with correct columns
   const event = {

@@ -8,6 +8,9 @@ export default function Events() {
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('token');
+    const isAuthenticated = !!user && !!token;
 
     const handleNewEventClick = () => {
         setShowModal(true);
@@ -88,8 +91,11 @@ export default function Events() {
             const res = await fetch('/api/events', {
                 method: 'POST',
                 //Add the current users uid so that the event is tied to them
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(   payload)
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) {
@@ -131,7 +137,7 @@ export default function Events() {
            
             <section className='title-section'>
                  <h1>Events</h1>
-                <button className='add-event' onClick={() => setShowModal(!showModal)}><a>+</a></button>
+                {isAuthenticated && <button className='add-event' onClick={() => setShowModal(!showModal)}><a>+</a></button>}
             </section>
         
             <section className="events-list">               
@@ -161,7 +167,7 @@ export default function Events() {
                 </ul>
             </section>  
 
-        {showModal && (
+        {showModal && isAuthenticated && (
             <section className="events-form" onClick={() => setShowModal(false)}>
                 
                 <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
