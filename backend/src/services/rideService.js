@@ -28,8 +28,7 @@ export async function createRide(rideData) {
 }
 
 // helper function to add a user to a ride
-// helper function to make a user join a ride
-export async function joinRide(rideId, userId) {
+export async function joinRideService(rideId, userId) {
 
     // query rides table to check if ride even exists
     const { data: ride, error: rideError } = await supabase
