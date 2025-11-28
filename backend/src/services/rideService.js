@@ -39,8 +39,8 @@ export async function joinRideService(rideId, userId) {
 
     // throw error if : error OR ride doesn't exist
     if (rideError || !ride) {
-        const error = new error('Ride not found');
-        error.statusCode == 401;
+        const error = new Error('Ride not found');
+        error.statusCode = 401;
         throw error;
     }
 
@@ -83,7 +83,7 @@ export async function joinRideService(rideId, userId) {
         .single();
 
     if (insertError) {
-        inserErrror.statusCode = 400;
+        insertErrror.statusCode = 400;
         throw insertError;
     }
 
