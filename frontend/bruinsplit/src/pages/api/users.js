@@ -10,6 +10,18 @@ export const getUsers = async () => {
         console.error('Error fetching users:', error);
         throw error;
     }
-}
+    return null;
+};
+
+
+export const createUser = async (userData) => {
+    try {
+        const response = await axios.post(`${url}/auth/signup`, userData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating user:', error);
+        throw error;
+    }
+};
 
 
