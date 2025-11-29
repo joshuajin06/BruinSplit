@@ -1,5 +1,8 @@
 import { supabase } from '../supabase.js';
 
+
+
+
 // helper function to create a ride
 export async function createRide(rideData) {
 
@@ -27,6 +30,10 @@ export async function createRide(rideData) {
     return ride;
 }
 
+
+
+
+
 // helper function to add a user to a ride
 export async function joinRideService(rideId, userId) {
 
@@ -40,7 +47,7 @@ export async function joinRideService(rideId, userId) {
     // throw error if : error OR ride doesn't exist
     if (rideError || !ride) {
         const error = new Error('Ride not found');
-        error.statusCode = 401;
+        error.statusCode = 404;
         throw error;
     }
 
@@ -91,18 +98,106 @@ export async function joinRideService(rideId, userId) {
 }
 
 
-// helper function to grab the number of available seats per rideShare group
-export async function getAvailableSeats(rideId) {
-    const { count, error } = await supabase
-        .from('ride_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('ride_id', rideId)
-        .eq('status', 'CONFIRMED JOINING');
 
-    if (error) throw error;
-    return count || 0;
+// helper function to delete a ride
+export async function deleteRideService(rideId, userId) {
+    
+    // query rides table to check if the ride even exists
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    // if error OR ride does not exist, throw error
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // authorization check - is this user the owner of the ride ?
+    if (ride.owner_id !== userId) {
+        const error = new Error('Unauthorized: You can may only delete the ride if you are the owner');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // delete all ride members first - prevent orphaned records
+    const { error: membersDeleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('ride_id', rideId);
+
+    if(membersDeleteError) {
+        membersDeleteError.statusCode = 400;
+        throw membersDeleteError;
+    }
+
+    // delete the ride itself
+    const { error: deleteError } = await supabase
+        .from('rides')
+        .delete()
+        .eq('id', rideId);
+
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Ride has been deleted successfully' };
+}
+
+
+// helper function to remove a user from a ride they've joined
+export async function leaveRideService(rideId, userId) {
+
+    // query rides table to check if ride even exists
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id')
+        .eq('id', rideId)
+        .single();
+
+    // throw error if : error OR ride doesn't exist
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    
+    // check if user is in that ride
+    const { data: existingMember } = await supabase
+        .from('ride_members')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    // if the user is NOT in the ride, throw error
+    if (!existingMember) {
+        const error = new Error('User is not a member of this ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // remove user from ride_members table
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('ride_id', rideId)
+        .eq('user_id', userId)
+
+    // throw error if deletion was not successful
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+    
+    return { message: 'Successfully left ride' };
 
 }
+
 
 // helper to enrich a ride with member count and owner info 
 export async function enrichRide(ride) {
@@ -122,4 +217,187 @@ export async function enrichRide(ride) {
         current_members: memberCount,
         owner: owner || null
     };
+}
+
+
+
+// helper function to get all of a user's rides (created + joined)
+export async function getMyRidesService(userId) {
+
+    // get rides where the user is the owner
+    const { data: ownedRides, error: ownedError } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('owner_id', userId)
+        .order('created_at', { ascending: false });
+    
+    if (ownedError) {
+        ownedError.statusCode = 400;
+        throw ownedError;
+    }
+
+    // get rides where user is a member
+
+    // first, get all ride_ids where user is a member
+    const { data: memberRecords, error: memberError } = await supabase
+        .from('ride_members')
+        .select('ride_id')
+        .eq('user_id', userId)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (memberError) {
+        memberError.statusCode = 400;
+        throw memberError;
+    }
+
+    // then extract just the ride_ids from memberRecords
+    const joinedRideIds = (memberRecords || []).map(record => record.ride_id);
+
+    // then, get the actual ride data for joined rides
+    let joinedRides = [];
+    if (joinedRideIds.length > 0) {
+        const { data: joinedRidesData, error: joinedError } = await supabase
+        .from('rides')
+        .select('*')
+        .in('id', joinedRideIds) // 'id' IN array
+        .order('created_at', { ascending: false });
+
+        if (joinedError) {
+            joinedError.statusCode = 400;
+            throw joinedError;
+        }
+
+        joinedRides = joinedRidesData || [];
+    }
+
+    // combine both the owned array and joined array
+
+    // using a set to avoid a dupliate, the case where owner is both owner + member
+    const allRideIds = new Set();
+    const allRides = [];
+
+    // add all owned rides
+    (ownedRides || []).forEach(ride => {
+        if (!allRideIds.has(ride.id)) {
+            allRideIds.add(ride.id);
+            allRides.push({
+                ...ride,
+                user_role: 'owner' // mark as owner
+            });
+        }
+    });
+
+    // add joined rides (skip if already added as owner)
+    joinedRides.forEach(ride => {
+        if (!allRideIds.has(ride.id)) {
+            allRideIds.add(ride.id);
+            allRides.push({
+                ...ride,
+                user_role: 'member' // mark as member
+            });
+        } else {
+            // if already exists as owner, update to show that they're also a member
+            const existingRide = allRides.find(r => r.id === ride.id);
+            if (existingRide) {
+                existingRide.user_role = 'owner_and_member'; // edge case 
+            }
+        }
+    });
+
+    // enrich all rides with thier info
+    const enrichedRides = await Promise.all(
+        allRides.map(ride => enrichRide(ride))
+    );
+
+    return enrichedRides;
+}
+
+
+
+// helper function to grab the number of available seats per rideShare group
+export async function getAvailableSeats(rideId) {
+    const { count, error } = await supabase
+        .from('ride_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('ride_id', rideId)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (error) throw error;
+    return count || 0;
+
+}
+
+
+// helper to update a ride (owner only)
+export async function updateRideService(rideId, userId, updateData) {
+
+    // check if ride exists AND get owner_id
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single()
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // auth check - is the user the owner ?
+    if (ride.owner_id !== userId) {
+        const error = new Error('Unauthorized: You can only update your own rides');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // build update object with only provided fields
+    const updates = {};
+
+    // the following conditionals serve to only add fields that are provided and not undefined/null
+
+    if (updateData.origin_text !== undefined) {
+        updates.origin_text = updateData.origin_text;
+    }
+
+    if (updateData.destination_text !== undefined) {
+        updates.destination_text = updateData.destination_text;
+    }
+
+    if (updateData.depart_at !== undefined) {
+        updates.depart_at = updateData.depart_at;
+    }
+
+    if (updateData.platform !== undefined) {
+        updates.platform = updateData.platform;
+    }
+    if (updateData.max_seats !== undefined) {
+        updates.max_seats = updateData.max_seats;
+    }
+    if (updateData.notes !== undefined) {
+        updates.notes = updateData.notes;
+    }
+
+    // check if there's anything to update
+    if (Object.keys(updates).length === 0) {
+        const error = new Error('No fields provided to update');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // update the ride
+    const { data: updatedRide, error: updateError } = await supabase
+        .from('rides')
+        .update(updates)
+        .eq('id', rideId)
+        .select('*')
+        .single();
+    
+        if (updateError) {
+            updateError.statusCode = 400;
+            throw updateError;
+        }
+
+        return updatedRide;
+    
 }

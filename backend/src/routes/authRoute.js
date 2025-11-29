@@ -1,4 +1,5 @@
 import express from 'express';
+import { supabase } from '../supabase.js';
 import { signup, login } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 import { comparePassword, hashPassword } from '../utils/auth.js';
@@ -27,7 +28,7 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     const {currentPassword, newPassword} = req.body;
 
     if(!currentPassword || !newPassword) {
-      res.status(400).json({error: "Current and new password are both required"});
+      return res.status(400).json({error: "Current and new password are both required"});
     }
 
     if(newPassword.length < 8) {
@@ -35,33 +36,37 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     }
 
     if(currentPassword == newPassword) {
-      res.status(400).json({error: "New Password cannot be the same as the old password"});
+      return res.status(400).json({error: "New Password cannot be the same as the old password"});
     }
 
     const {data: user} = await supabase
       .from('profiles')
       .select('password_hash')
-      .eq('id', user.id)
+      .eq('id', req.user.id)
       .single()
 
-    const validPassword = comparePassword(currentPassword, user.password_hash);
+    const validPassword = await comparePassword(currentPassword, user.password_hash);
 
     if(!validPassword) {
-      res.status(400).json({error: "Current password is not valid"});
+      return res.status(400).json({error: "Current password is not valid"});
     }
 
-    const newPasswordHash = hashPassword(newPassword);
+    const newPasswordHash = await hashPassword(newPassword);
 
     const { error } = await supabase
       .from('profiles')
       .update({password_hash : newPasswordHash})
-      .eq('id', user.id)
+      .eq('id', req.user.id)
 
     if(error) throw error;
 
     res.json({ message: 'Password changed successfully' });
-  } catch {
-    res.status(400).json({ error: error.message });
+
+  } catch (error) {
+
+    console.error(error);
+    res.status(400).json({ error: error.message || 'Failed to change password' });
+    
   }
 })
 
