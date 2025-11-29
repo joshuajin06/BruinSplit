@@ -56,13 +56,17 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     const { error } = await supabase
       .from('profiles')
       .update({password_hash : newPasswordHash})
-      .eq('id', user.id)
+      .eq('id', req.user.id)
 
     if(error) throw error;
 
     res.json({ message: 'Password changed successfully' });
-  } catch {
-    res.status(400).json({ error: error.message });
+
+  } catch (error) {
+
+    console.error(error);
+    res.status(400).json({ error: error.message || 'Failed to change password' });
+    
   }
 })
 
