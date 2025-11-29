@@ -86,9 +86,9 @@ export async function updateProfileService(userId, updates) {
     
     if (error) {
         // if the user is not found in database
-        if (error.code == 'PGRST116') {
+        if (error.code === 'PGRST116') {
             const notFoundError = new Error('Profile not found');
-            notFoundError.statusCode = 400;
+            notFoundError.statusCode = 404;
             throw notFoundError;
         }
 

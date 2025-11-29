@@ -33,7 +33,7 @@ export async function updateProfile(req, res, next) {
         if (username !== undefined) updates.username = username;
 
         // validate that at least one field is being updates
-        if(Object.keys(udpates).length === 0) {
+        if(Object.keys(updates).length === 0) {
             return res.status(400).json({
                 error: 'At least one field (first_name, last_name, or username) is required'
             });
@@ -53,7 +53,7 @@ export async function updateProfile(req, res, next) {
             }
 
             // check for invalid characters (anything other than letters, numbers, and underscores)
-            if (!/^[a-zA-Z0-9]+$/.test(updates.username)) {
+            if (!/^[a-zA-Z0-9_]+$/.test(updates.username)) {
                 return res.status(400).json({
                     error: 'Username can only contain letters, numbers, and underscores'
                 });
