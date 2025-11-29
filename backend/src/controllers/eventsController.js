@@ -1,7 +1,9 @@
 import { supabase } from "../supabase.js"; 
-import { getAllEvents } from '../services/eventServices.js';
+import { getAllEvents, createEventService, fetchEventByIdService, deleteEventService, updateEventService} from '../services/eventServices.js';
 
 console.log("Supabase client URL from controller:", supabase.restUrl);
+
+
 
 export const getEvents = async (req, res) => {
     try {
@@ -12,99 +14,81 @@ export const getEvents = async (req, res) => {
     }
 };  
 
+
+
 export const createEvent = async (req, res) => {
   const user = req.user; 
   if (!user || !user.id) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Prepare event object with correct columns
-  const event = {
-    title: req.body.title,
-    description: req.body.description,
-    location: req.body.location,
-    event_date: req.body.event_date,
-    event_type: req.body.event_type || "General", // optional default
-    created_by: user.id,
-    created_at: new Date().toISOString() // automatically set timestamp
-  };
-
   try {
-    const { data, error } = await supabase
-      .from("events")
-      .insert(event)
-      .select();
-
-    if (error) {
-      console.log("Supabase error:", error);
-      return res.status(400).json({ error });
-    }
-
-    console.log("Inserted event:", data[0]);
-    res.status(201).json(data[0]);
+    const event = await createEventService(req.body, user.id);
+    res.status(201).json(event);
 
   } catch (err) {
-    console.error("Exception:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Create event error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
+
+
 
 //useful for event details
 export const getEventById = async (req, res) => {
-  const  id  =  Number(req.params.id); //req.params; 
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single(); //returns a single element
-
-  if (error) return res.status(404).json({ error: "Event not found" });
-  res.json(data);
-};
-
-export const deleteEvent = async (req, res) => {
-  const id = Number(req.params.id);//req.params;
+  const  id  =   Number(req.params.id); //req.params; 
 
   if (isNaN(id)) {
-      return res.status(400).json({ error: 'Invalid ID format' });
+    return res.status(400).json({ error: "Invalid ID provided" });
   }
 
-  const currentUserId = req.user?.id; //|| "123e4567-e89b-12d3-a456-426614174000";
-
-  // fetch event first
-  const { data: event, error: fetchErr } = await supabase
-    .from('events')
-    .select('id, created_by')
-    .eq('id', id)
-    .single();
-
-  if (fetchErr || !event) {
-    return res.status(404).json({ error: 'Event not found' });
+  try {
+    const event = await fetchEventByIdService(id);
+    res.json(event);
+  } catch (error) {
+    res.status(404).json({error: "Event not found"});
   }
+};
 
-  if (event.created_by !== currentUserId) {
-    return res.status(403).json({ error: 'Not authorized to delete this event' });
+
+
+export const deleteEvent = async (req, res) => {
+  const eventId = Number(req.params.id);
+  if (isNaN(eventId)) return res.status(400).json({ error: 'Invalid ID format' });
+  
+  const user = req.user; 
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+  try{
+    await deleteEventService(eventId, user.id);
+    res.json({ message: "Event Deleted" });
+    
+  } catch (error) {
+
+    if (error .message === "Unauthorized access") 
+      return res.status(403).json({ error: 'Not authorized to delete this event' });
+
+    res.status(404).json({ error: "Event not found or could not be deleted" });
   }
+};
 
-  const { data, error } = await supabase
-  .from("events")
-  .delete()
-  .eq("id", id);
 
-  if (error) return res.status(400).json({ error })
-  res.json({ message: "Event Deleted" });
-}
+
 
 export const updateEvent = async (req, res) => {
-  const id = Number(req.params.id);
-  const updates = req.body;
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID format' });
 
-  const { data, error } = await supabase
-  .from("events")
-  .update(updates)
-  .eq("id", id)
-  .select(); //selects all text from an html input field
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
 
-  if (error) return res.status(400).json({ error });
-  res.json(data[0]);
-}
+    try {
+        const updatedEvent = await updateEventService(id, req.body, user.id);
+        res.json(updatedEvent);
+    } catch (error) {
+        if (error.message === "Unauthorized access") {
+            return res.status(403).json({ error: "Not authorized to update this event" });
+        }
+        res.status(400).json({ error: error.message });
+    }
+};

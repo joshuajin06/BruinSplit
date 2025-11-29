@@ -1,8 +1,5 @@
 import { supabase } from '../supabase.js';
 
-
-
-
 // helper function to create a ride
 export async function createRide(rideData) {
 
