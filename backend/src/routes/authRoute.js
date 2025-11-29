@@ -28,30 +28,30 @@ router.post('/change-password', authenticateUser, async (req, res) => {
     const {currentPassword, newPassword} = req.body;
 
     if(!currentPassword || !newPassword) {
-      res.status(400).json({error: "Current and new password are both required"});
+      return res.status(400).json({error: "Current and new password are both required"});
     }
 
     if(newPassword.length < 8) {
-      res.status(400).json({error: "Password length must be longer than 8"});
+      return res.status(400).json({error: "Password length must be longer than 8"});
     }
 
     if(currentPassword == newPassword) {
-      res.status(400).json({error: "New Password cannot be the same as the old password"});
+      return res.status(400).json({error: "New Password cannot be the same as the old password"});
     }
 
     const {data: user} = await supabase
       .from('profiles')
       .select('password_hash')
-      .eq('id', user.id)
+      .eq('id', req.user.id)
       .single()
 
-    const validPassword = comparePassword(currentPassword, user.password_hash);
+    const validPassword = await comparePassword(currentPassword, user.password_hash);
 
     if(!validPassword) {
-      res.status(400).json({error: "Current password is not valid"});
+      return res.status(400).json({error: "Current password is not valid"});
     }
 
-    const newPasswordHash = hashPassword(newPassword);
+    const newPasswordHash = await hashPassword(newPassword);
 
     const { error } = await supabase
       .from('profiles')
