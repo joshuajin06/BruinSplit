@@ -1,4 +1,5 @@
 import express from 'express';
+import { supabase } from '../supabase.js';
 import { signup, login } from '../controllers/authController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 import { comparePassword, hashPassword } from '../utils/auth.js';
