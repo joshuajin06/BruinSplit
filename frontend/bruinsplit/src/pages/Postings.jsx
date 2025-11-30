@@ -21,8 +21,8 @@ export default function Postings() {
         origin_text: '',
         destination_text: '',
         depart_at: '',
-        platform: '',
-        max_seats: 4,
+        platform: 'LYFT',
+        max_seats: 2,
         notes: ''
     });
 
@@ -65,6 +65,23 @@ export default function Postings() {
                 let parsed = null;
                 try { parsed = JSON.parse(text); } catch (_) {}
                 throw new Error(parsed?.error || parsed?.message || text || `Create failed: ${res.status}`);
+            }
+
+            const data = await res.json();
+            const newRideId = data.ride?.id;
+
+            // Auto-join the ride the user just created
+            if (newRideId) {
+                const joinRes = await fetch(`/api/rides/${newRideId}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {})
+                    }
+                });
+                if (!joinRes.ok) {
+                    console.warn('Auto-join failed, but ride was created:', joinRes.status);
+                }
             }
 
             // success, refresh rides and close modal
