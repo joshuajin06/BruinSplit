@@ -89,9 +89,23 @@ export async function joinRide(req, res, next) {
 // POST /api/rides/:id/approve/:userId - approve a pending request to join a ride (owner only)
 export async function approveRequest(req, res, next) {
     try {
+        const { id: rideId, userId: requesterUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !requesterUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const approvedMember = await approveRideRequestService;
+
+        return res.status(200).json({
+            message: 'Request approved successfully',
+            member: approvedMember
+        });
 
     } catch (error) {
-
+        console.error('Approve request error:', error);
+        next(error);
     }
 }
 
