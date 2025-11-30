@@ -14,7 +14,7 @@ export const updateProfile = async (profileData) => {
     }
 };
 
-export const updatePassword = async (userId, passwordData) => {
+export const updatePassword = async (passwordData) => {
   try {
     const token = localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
