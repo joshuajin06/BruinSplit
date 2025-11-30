@@ -3,30 +3,168 @@ import "./card.css"
 
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
-export default function Card({ title, content, image, rideDetails }) {
+export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin }) {
     const [showModal, setShowModal] = useState(false);
+    const [joining, setJoining] = useState(false);
+    const [joinError, setJoinError] = useState(null);
+    // isMember can be: true (user is member), false (not member)
+    // If the parent doesn't provide `isMember` (undefined), treat as unknown and
+    // avoid overwriting local state after a local join/leave action.
+    const initialIsMember = typeof rideDetails?.isMember === 'boolean' ? rideDetails.isMember : null;
+    const [isMember, setIsMember] = useState(initialIsMember);
 
-    const handleJoinClick = () => {
-        setShowModal(true);
-    };
+    React.useEffect(() => {
+        if (typeof rideDetails?.isMember === 'boolean') {
+            setIsMember(rideDetails.isMember);
+        }
+        // if parent did not provide a boolean isMember, do not overwrite local state
+    }, [rideDetails?.isMember]);
 
-    const handleConfirmJoin = () => {
-        // Here you would call your API to join the ride
-        alert(`Successfully joined: ${title}`);
+    const handleCancel = () =>
+    {
         setShowModal(false);
+        setJoinError(null);
+    }
+
+    const handleConfirmJoin = async () => {
+        const displayTitle = origin && destination ? `${origin} to ${destination}` : title;
+        setJoining(true);
+        setJoinError(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) throw new Error('User not authenticated');
+
+            if (!rideId) throw new Error('Ride id is missing');
+
+            const res = await fetch(`/api/rides/${rideId}/join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error?.message || data?.error || data?.message || 'Failed to join ride');
+
+            // update local state and notify parent to refresh
+            setIsMember(true);
+            if (onJoin) await onJoin(rideId);
+
+            alert(`Joined: ${displayTitle}`);
+            setShowModal(false);
+        } catch (err) {
+            setJoinError(err.message || 'Error joining ride');
+        } finally {
+            setJoining(false);
+        }
     };
+
+    const handleConfirmLeave = async () => {
+        setJoining(true);
+        setJoinError(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) throw new Error('User not authenticated');
+            if (!rideId) throw new Error('Ride id is missing');
+
+            const res = await fetch(`/api/rides/${rideId}/leave`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || data?.message || 'Failed to leave ride');
+
+            // update local state and notify parent to refresh
+            setIsMember(false);
+            if (onJoin) await onJoin(rideId);
+
+            alert('Left ride');
+            setShowModal(false);
+        } catch (err) {
+            setJoinError(err.message || 'Error leaving ride');
+        } finally {
+            setJoining(false);
+        }
+    };
+
+    // Calculate available seats
+    const totalSeats = maxRiders || rideDetails?.seats || 3;
+    const takenSeats = rideDetails?.current_members || 0;
+    const availableSeats = totalSeats - takenSeats;
+
+    // Parse departureDatetime (ISO format: "2025-11-29T10:30:00")
+    const departureObj = departureDatetime ? new Date(departureDatetime) : null;
+    const formattedDatetime = departureObj ? departureObj.toLocaleString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).replace(/\//g, '/') : 'Not specified';
+    const departureDate = departureObj ? departureObj.toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+    }).replace(/\//g, '/') : 'Not specified';
+    const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
+
+    const handleJoinClick = async () => {
+        setShowModal(true);
+
+        // If server didn't include isMember, try to fetch membership for this user
+        if (rideDetails?.isMember === undefined && rideId) {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return; // can't check membership without token
+
+                const res = await fetch(`/api/rides/${rideId}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) return;
+                const data = await res.json().catch(() => ({}));
+                const members = data?.ride?.members || [];
+                const user = JSON.parse(localStorage.getItem('user') || 'null');
+                const isMem = !!(user && members.some(m => m.user_id === user.id));
+                setIsMember(isMem);
+            } catch (err) {
+                // ignore membership fetch errors — leave isMember as false
+                console.debug('Could not fetch membership status', err);
+            }
+        } else {
+            setIsMember(!!rideDetails?.isMember);
+        }
+    };
+
+    // Use origin/destination for title, fallback to title prop
+    const displayTitle = origin && destination ? `${origin} to ${destination}` : title;
 
     return (
         <>
             <div className="card-container">
-                <img  src={image || DEFAULT_RIDE_IMAGE}  alt={title} className="card-image" />
-                <h2 className="card-title">{title}</h2>
+                <img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />
+                <h2 className="card-title">{displayTitle}</h2>
+                <p className="card-datetime">Departing at: {formattedDatetime}</p>
+                <p className="card-seats">
+                    <span className="seats-badge">{availableSeats} of {totalSeats} seats available</span>
+                </p>
                 <p className="card-content">{content}</p>
                 <button 
                     className="card-button" 
                     onClick={handleJoinClick}
                     type="button">
-                    Join Ride
+                    {isMember ? 'Joined' : 'Join Ride'}
                 </button>
             </div>
 
@@ -41,47 +179,70 @@ export default function Card({ title, content, image, rideDetails }) {
                             ×
                         </button>
                         
-                        <h2 className="modal-title">{title}</h2>
+                        <h2 className="modal-title">{displayTitle}</h2>
                         
                         <div className="ride-details">
                             <div className="detail-row">
-                                <span className="detail-label">Driver:</span>
+                                <span className="detail-label">Created by:</span>
                                 <span className="detail-value">{rideDetails?.driver || 'John Doe'}</span>
                             </div>
                             <div className="detail-row">
-                                <span className="detail-label">Departure:</span>
-                                <span className="detail-value">{rideDetails?.departure || '8:00 AM'}</span>
+                                <span className="detail-label">Departure Date:</span>
+                                <span className="detail-value">{departureDate}</span>
+                            </div>
+                            <div className="detail-row">
+                                <span className="detail-label">Departure Time:</span>
+                                <span className="detail-value">{departureTime}</span>
                             </div>
                             <div className="detail-row">
                                 <span className="detail-label">From:</span>
-                                <span className="detail-value">{rideDetails?.from || 'Westwood'}</span>
+                                <span className="detail-value">{origin || rideDetails?.from || 'Westwood'}</span>
                             </div>
                             <div className="detail-row">
                                 <span className="detail-label">To:</span>
-                                <span className="detail-value">{rideDetails?.to || 'Downtown LA'}</span>
+                                <span className="detail-value">{destination || rideDetails?.to || 'Downtown LA'}</span>
                             </div>
                             <div className="detail-row">
-                                <span className="detail-label">Seats Available:</span>
-                                <span className="detail-value">{rideDetails?.seats || '3'}</span>
+                                <span className="detail-label">Platform:</span>
+                                <span className="detail-value">{platform || 'Not specified'}</span>
+                            </div>
+                            <div className="detail-row">
+                                <span className="detail-label">Max Riders:</span>
+                                <span className="detail-value">{maxRiders || rideDetails?.seats || '3'}</span>
                             </div>
                             <div className="detail-row">
                                 <span className="detail-label">Price:</span>
                                 <span className="detail-value">{rideDetails?.price || '$10'}</span>
                             </div>
+                            {notes && (
+                                <div className="detail-row">
+                                    <span className="detail-label">Notes:</span>
+                                    <span className="detail-value">{notes}</span>
+                                </div>
+                            )}
+                            {createdAt && (
+                                <div className="detail-row">
+                                    <span className="detail-label">Posted:</span>
+                                    <span className="detail-value">{new Date(createdAt).toLocaleString()}</span>
+                                </div>
+                            )}
                         </div>
 
                         <p className="modal-description">{content}</p>
 
+                        {joinError && <p className="error">{joinError}</p>}
+
                         <div className="modal-actions">
                             <button 
                                 className="btn-secondary" 
-                                onClick={() => setShowModal(false)}>
+                                onClick={handleCancel}
+                                >
                                 Cancel
                             </button>
                             <button 
                                 className="btn-primary" 
-                                onClick={handleConfirmJoin}>
-                                Confirm Join
+                                onClick={isMember ? handleConfirmLeave : handleConfirmJoin} disabled={joining}>
+                                {joining ? (isMember ? 'Leaving…' : 'Joining…') : (isMember ? 'Confirm Leave' : 'Confirm Join')}
                             </button>
                         </div>
                     </div>

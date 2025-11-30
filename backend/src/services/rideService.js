@@ -200,22 +200,36 @@ export async function leaveRideService(rideId, userId) {
 
 
 // helper to enrich a ride with member count and owner info 
-export async function enrichRide(ride) {
+export async function enrichRide(ride, userId = null) {
     const memberCount = await getAvailableSeats(ride.id);
     const availableSeats = ride.max_seats - memberCount;
 
-    //get owner profile
-    const { data : owner } = await supabase
+    // get owner profile
+    const { data: owner } = await supabase
         .from('profiles')
         .select('id, username, first_name, last_name')
         .eq('id', ride.owner_id)
         .single();
 
+    // determine if the provided userId is a confirmed member of this ride
+    let is_member = false;
+    if (userId) {
+        const { data: membership } = await supabase
+            .from('ride_members')
+            .select('id')
+            .eq('ride_id', ride.id)
+            .eq('user_id', userId)
+            .eq('status', 'CONFIRMED JOINING')
+            .maybeSingle();
+        is_member = !!membership;
+    }
+
     return {
-        ...ride, 
-        available_seats : availableSeats,
+        ...ride,
+        available_seats: availableSeats,
         current_members: memberCount,
-        owner: owner || null
+        owner: owner || null,
+        is_member
     };
 }
 
