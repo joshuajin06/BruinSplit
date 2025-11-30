@@ -9,8 +9,10 @@ export const updateProfile = async (profileData) => {
         const response = await axios.put(`${url}/profile/me`, profileData, { headers });  
         return response.data;
     } catch (error) {
-        console.error("Error updating profile:", error);
-        throw error;
+        const errorMessage = error.response?.data?.error || error.message;
+        console.error('Error updating password:', errorMessage);
+        const err = new Error(errorMessage);
+        throw err;
     }
 };
 
@@ -21,7 +23,9 @@ export const updatePassword = async (passwordData) => {
     const response = await axios.put(`${url}/auth/change-password`, passwordData, { headers });
     return response.data;
   } catch (err) {
-    console.error('Error updating password:', err.response?.data || err.message);
-    throw err;
+    const errorMessage = err.response?.data?.error || err.message;
+    console.error('Error updating password:', errorMessage);
+    const error = new Error(errorMessage);
+    throw error;
   }
 };

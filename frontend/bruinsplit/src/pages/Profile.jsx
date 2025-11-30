@@ -11,6 +11,8 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [error, setError] = useState('');
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -21,7 +23,8 @@ export default function Profile() {
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
-    newPassword: ''
+    newPassword: '',
+    confirmNewPassword: ''
   });
 
   const handleLogout = () => {
@@ -30,6 +33,7 @@ export default function Profile() {
   };
 
   const handleInputChange = (e) => {
+    setError('');
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -48,6 +52,7 @@ export default function Profile() {
   const handleSave = async (e) => {
     try {
       e.preventDefault();
+      setError('');
       // TODO: Send updated data to backend
       if(isEditing) {
         const updatedProfile = await updateProfile(formData);
@@ -55,13 +60,23 @@ export default function Profile() {
         setIsEditing(false);
       }
       else if(isChangingPassword) {
+        if(passwordData.newPassword !== passwordData.confirmNewPassword) {
+          setError("New passwords do not match");
+          return;
+        }
         const updatedPassword = await updatePassword(passwordData);
         console.log('Profile Updated Successfully:', updatedPassword);
         setIsChangingPassword(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: ''
+        })
       }
     }
     catch (error) {
       console.error("Failed to updated profile: ", error);
+      setError(error.message);
     } 
   };
 
@@ -73,10 +88,12 @@ export default function Profile() {
     });
     setPasswordData({
       currentPassword: '',
-      newPassword: ''
+      newPassword: '',
+      confirmNewPassword: ''
     })
     setIsEditing(false);
     setIsChangingPassword(false);
+    setError('');
   };
 
   if (!user) {
@@ -155,7 +172,7 @@ export default function Profile() {
                   <div className="profile-field">
                     <label>Old Password</label>
                       <input
-                        type="text"
+                        type="password"
                         name="currentPassword"
                         value={passwordData.currentPassword}
                         onChange={handlePasswordInputChange}
@@ -166,11 +183,21 @@ export default function Profile() {
                   <div className="profile-field">
                     <label>New Password</label>
                       <input
-                        type="text"
+                        type="password"
                         name="newPassword"
                         value={passwordData.newPassword}
                         onChange={handlePasswordInputChange}
                         placeholder="New Password"
+                      />
+                  </div>
+                  <div className="profile-field">
+                    <label>Confirm New Password</label>
+                      <input
+                        type="password"
+                        name="confirmNewPassword"
+                        value={passwordData.confirmNewPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="Confirm new Password"
                       />
                   </div>
                 </>
@@ -184,6 +211,7 @@ export default function Profile() {
               )}
             </div>
           </div>
+          <div className="error-message">{error}</div>
 
           <div className="profile-actions">
             {(isEditing || isChangingPassword) ? (
