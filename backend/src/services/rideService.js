@@ -220,6 +220,68 @@ export async function approveRideRequestService(rideId, requesterUserId, ownerId
     return approvedMember;
 }
 
+// function for owner rejecting a pending request
+export async function rejectRideRequestService(rideId, requesterUserId, ownerId) {
+
+     // verify ride exists and that user is owner
+     const { data: ride, error: rideError } = await supabase
+     .from('rides')
+     .select('id, owner_id')
+     .eq('id', rideId)
+     .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can reject requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // Check if request exists and is PENDING
+    const { data: pendingRequest, error: requestError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', requesterUserId)
+        .eq('status', 'PENDING')
+        .maybeSingle();
+
+    if (requestError) {
+        requestError.statusCode = 400;
+        throw requestError;
+    }
+
+    if (!pendingRequest) {
+        const error = new Error('Pending request not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // delete the pending request
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('id', pendingRequest.id);
+    
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Request rejected successfully' };
+}
+
+
+// function for owner kicking out a confirmed member from the ride
+export async function kickMemberService(rideId, memberUserId, ownerId) {
+    //temp 
+}
+
 
 // helper function to delete a ride
 export async function deleteRideService(rideId, userId) {
