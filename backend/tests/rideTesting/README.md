@@ -19,3 +19,9 @@ You can override the backend URL with `API_URL` environment variable:
 ```bash
 API_URL=http://localhost:8080 ./tests/rideTesting/testJoinLeave.sh
 ```
+
+for rideCrud.test.js
+
+npm install --save-dev supertest jest
+npx jest tests/rideTesting/rideCrud.test.js
+npm run test:ride

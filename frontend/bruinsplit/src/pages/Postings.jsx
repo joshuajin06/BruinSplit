@@ -54,7 +54,10 @@ export default function Postings() {
     return (
     <>
         <div className="page-container">
-            <h1>Posts</h1>
+            <section className='posts-title-section'>
+                <h1>Posts</h1>
+                {isAuthenticated && <button className='add-post' onClick={() => setShowModal(!showModal)}><a>+</a></button>}
+            </section>
             {loading && <p>Loading rides...</p>}
             {error && <p className="error-message">{error}</p>}
             {!loading && rides.length === 0 && <p>No rides available.</p>}
