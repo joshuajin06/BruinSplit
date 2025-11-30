@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -86,6 +86,50 @@ export async function joinRide(req, res, next) {
 }
 
 
+// POST /api/rides/:id/approve/:userId - approve a pending request to join a ride (owner only)
+export async function approveRequest(req, res, next) {
+    try {
+        const { id: rideId, userId: requesterUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !requesterUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const approvedMember = await approveRideRequestService(rideId, requesterUserId, ownerId);
+
+        return res.status(200).json({
+            message: 'Request approved successfully',
+            member: approvedMember
+        });
+
+    } catch (error) {
+        console.error('Approve request error:', error);
+        next(error);
+    }
+}
+
+// POST /api/rides/:id/reject/:userId - reject a pending request to join a ride (owner only)
+export async function rejectRequest(req, res, next) {
+    try {
+        const { id: rideId, userId: requesterUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !requesterUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const result = await rejectRideRequestService(rideId, requesterUserId, ownerId);
+
+        return res.status(200).json(result);
+
+    } catch (error) {
+        console.error('Reject request error:', error);
+        next(error);
+    }
+}
+
+
 // DELETE /api/rides/:id - delete a ride
 export async function deleteRide(req, res, next) {
     try {
@@ -139,6 +183,30 @@ export async function leaveRide(req, res, next) {
         next(error);
     }
 }
+
+
+// DELETE /api/rides/:id/kick/:userId - kick a confirmed member of the ride (owner only)
+export async function kickMember(req, res, next) {
+    try {
+        const { id: rideId, userId: memberUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !memberUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const result = await kickMemberService(rideId, memberUserId, ownerId);
+
+        return res.status(200).json(result);
+
+    } catch (error) {
+        console.error('Kick member error:', error);
+        next(error);
+    }
+}
+
+
+
 
 // GET /api/rides - get all rides with an optional filter
 export async function getRides(req, res) {
@@ -238,6 +306,34 @@ export async function getRideById(req, res) {
         res.status(500).json({ error: error.message || 'Failed to retreive ride' });
     }
 };
+
+
+
+// GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
+export async function getPendingRequests(req, res, next) {
+    try {
+        const { id: rideId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const pendingRequests = await getPendingRequestsService(rideId, ownerId);
+
+        return res.status(200).json({
+            message: 'Pending requests retrieved successfully',
+            pending_requests: pendingRequests
+        });
+
+    } catch (error) {
+        console.error('Get pending requests error:', error);
+        next(error);
+    }
+}
+
+
+
 
 
 // GET /api/rides/my-rides - get all rides that a user has joined
