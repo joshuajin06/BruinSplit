@@ -1,4 +1,6 @@
 import { signupUser, loginUser } from '../services/userService.js';
+import { supabase } from '../supabase.js';
+import { comparePassword, hashPassword } from '../utils/auth.js';
 
 
 // SIGNUP - create a new user account
@@ -78,14 +80,18 @@ export async function logout(req, res, next) {
 
 export async function changePassword(req, res, next) {
   try {
-      const {currentPassword, newPassword} = req.body;
+      const {currentPassword, newPassword, confirmNewPassword} = req.body;
   
       if(!currentPassword || !newPassword) {
         return res.status(400).json({error: "Current and new password are both required"});
       }
   
       if(newPassword.length < 8) {
-        return res.status(400).json({error: "Password length must be longer than 8"});
+        return res.status(400).json({error: "New password length must be longer than 8"});
+      }
+
+      if(newPassword != confirmNewPassword) {
+        return res.status(400).json({error: "New passwords do not match"});
       }
   
       if(currentPassword == newPassword) {
