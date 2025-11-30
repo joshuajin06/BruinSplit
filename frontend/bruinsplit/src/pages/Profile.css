@@ -47,6 +47,11 @@ img {
   padding-bottom: 10px;
 }
 
+.error-message {
+  color: red;
+  margin: 10px;
+}
+
 .profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
