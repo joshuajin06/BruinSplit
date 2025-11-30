@@ -2,19 +2,27 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
-import { updateProfile } from './api/profile.js'
+import { updateProfile, updatePassword } from './api/profile.js'
 import './Profile.css';
+import { is } from 'zod/locales';
 
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
     username: user?.username || ''
   });
-  const navigate = useNavigate();
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: ''
+  });
 
   const handleLogout = () => {
     logout();
@@ -29,13 +37,28 @@ export default function Profile() {
     }));
   };
 
+    const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSave = async (e) => {
     try {
       e.preventDefault();
       // TODO: Send updated data to backend
-      const updatedProfile = await updateProfile(formData);
-      console.log('Profile Updated Successfully:', updatedProfile);
-      setIsEditing(false);
+      if(isEditing) {
+        const updatedProfile = await updateProfile(formData);
+        console.log('Profile Updated Successfully:', updatedProfile);
+        setIsEditing(false);
+      }
+      else if(isChangingPassword) {
+        const updatedPassword = await updatePassword(passwordData);
+        console.log('Profile Updated Successfully:', updatedPassword);
+        setIsChangingPassword(false);
+      }
     }
     catch (error) {
       console.error("Failed to updated profile: ", error);
@@ -48,7 +71,12 @@ export default function Profile() {
       last_name: user?.last_name || '',
       username: user?.username || ''
     });
+    setPasswordData({
+      currentPassword: '',
+      newPassword: ''
+    })
     setIsEditing(false);
+    setIsChangingPassword(false);
   };
 
   if (!user) {
@@ -122,6 +150,32 @@ export default function Profile() {
                 <p>{user.email}</p>
               </div>
 
+              {isChangingPassword && (
+                <>
+                  <div className="profile-field">
+                    <label>Old Password</label>
+                      <input
+                        type="text"
+                        name="currentPassword"
+                        value={passwordData.currentPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="Old Password"
+                      />
+                  </div>
+
+                  <div className="profile-field">
+                    <label>New Password</label>
+                      <input
+                        type="text"
+                        name="newPassword"
+                        value={passwordData.newPassword}
+                        onChange={handlePasswordInputChange}
+                        placeholder="New Password"
+                      />
+                  </div>
+                </>
+              )}
+
               {user.created_at && (
                 <div className="profile-field">
                   <label>Member Since</label>
@@ -132,7 +186,7 @@ export default function Profile() {
           </div>
 
           <div className="profile-actions">
-            {isEditing ? (
+            {(isEditing || isChangingPassword) ? (
               <>
                 <button className="btn-save" onClick={handleSave}>
                   Save Changes
@@ -146,12 +200,17 @@ export default function Profile() {
                 <button className="btn-edit" onClick={() => setIsEditing(true)}>
                   Edit Profile
                 </button>
-                <button className="btn-logout" onClick={handleLogout}>
-                  Logout
+                <button className="btn-change-password" onClick={() => {
+                  setIsChangingPassword(true);
+                }}>
+                  Change Password
                 </button>
               </>
             )}
           </div>
+          <button className="btn-logout" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </div>
     </div>

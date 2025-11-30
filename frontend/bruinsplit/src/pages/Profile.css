@@ -92,7 +92,7 @@ img {
 .profile-actions {
   display: flex;
   gap: 15px;
-  margin-top: 30px;
+  margin-top: 0px;
   padding-top: 30px;
   border-top: 1px solid #eee;
 }
@@ -120,9 +120,10 @@ img {
   transform: translateY(0);
 }
 
-.btn-edit {
+.btn-edit, .btn-change-password {
   flex: 1;
   padding: 12px 20px;
+  margin-bottom: 10px;
   background: #667eea;
   color: white;
   border: none;
@@ -133,19 +134,20 @@ img {
   transition: all 0.3s ease;
 }
 
-.btn-edit:hover {
+.btn-edit:hover, .btn-change-password:hover {
   background: #5568d3;
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
-.btn-edit:active {
+.btn-edit:active, .btn-change-password:active {
   transform: translateY(0);
 }
 
 .btn-save {
   flex: 1;
   padding: 12px 20px;
+  margin-bottom: 10px;
   background: #28a745;
   color: white;
   border: none;
@@ -169,6 +171,7 @@ img {
 .btn-cancel {
   flex: 1;
   padding: 12px 20px;
+  margin-bottom: 10px;
   background: #6c757d;
   color: white;
   border: none;

@@ -1,4 +1,6 @@
 import { signupUser, loginUser } from '../services/userService.js';
+import { supabase } from '../supabase.js';
+import { comparePassword, hashPassword } from '../utils/auth.js';
 
 
 // SIGNUP - create a new user account
