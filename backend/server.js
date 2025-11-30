@@ -15,7 +15,7 @@ import authRoutes from './src/routes/authRoute.js';
 import ridesRoutes from './src/routes/ridesRoute.js';
 import eventsRoutes from './src/routes/eventsRoute.js';
 import messagesRoutes from './src/routes/messagesRoute.js';
-
+import profileRoutes from './src/routes/profileRoute.js';
 
 // import middleware
 import { logger } from './src/middleware/logger.js';
@@ -35,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/profile', profileRoutes);
 
 
 
