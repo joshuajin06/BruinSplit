@@ -63,17 +63,21 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
-    // query ride_members to see if the user is already in this ride 
+    // query ride_members to see if the user is already in this ride (PENDING or CONFIRMED)
     const { data: existingMember } = await supabase
         .from('ride_members')
-        .select('id')
+        .select('id, status')
         .eq('ride_id', rideId)
         .eq('user_id', userId)
+        .in('status', ['PENDING', 'CONFIRMED JOINING'])
         .maybeSingle();
 
-    // throw error if user is already in this ride
+    // throw error if user already has a request or is confirmed
     if (existingMember) {
-        const error = new Error('User already joined ride');
+        const statusMsg = existingMember.status === 'PENDING'
+            ? 'You already have a pending request to join this ride'
+            : 'User already joined ride';
+        const error = new Error(statusMsg);
         error.statusCode = 400;
         throw error;
     }
@@ -84,7 +88,7 @@ export async function joinRideService(rideId, userId) {
         .insert([{
             ride_id: rideId,
             user_id: userId,
-            status: 'CONFIRMED JOINING'
+            status: 'PENDING'
         }])
         .select('*')
         .single();
