@@ -35,6 +35,12 @@ export default function Navbar() {
         <li className="navButtonLogin" ref={menuRef}>
           <a className="profileButton">Profile</a>
             <div className="submenu">
+              {isAuthenticated && 
+                <Link to="/profile" 
+                className="submenu-item">
+                  View Profile
+                </Link>
+              }
               <Link to="/login" 
                 className="submenu-item" 
                 onClick={() => {
