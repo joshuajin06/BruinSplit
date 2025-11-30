@@ -279,7 +279,65 @@ export async function rejectRideRequestService(rideId, requesterUserId, ownerId)
 
 // function for owner kicking out a confirmed member from the ride
 export async function kickMemberService(rideId, memberUserId, ownerId) {
-    //temp 
+
+    // verify ride exists and user is owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can kick members');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // prevent the owner from kicking themselves 
+    if (memberUserId === ownerId) {
+        const error = new Error('Cannot kick yourself from your own ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // check if the member exists and is CONFIRMED (actaully in the ride)
+    const { data: member, error: memberError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', memberUserId)
+        .eq('status', 'CONFIRMED JOINING')
+        .maybeSingle();
+
+    if (memberError) {
+        memberError.statusCode = 400;
+        throw memberError;
+    }
+
+    if (!member) {
+        const error = new Error('Member not found or not confirmed');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // delete the member from the ride
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('id', member.id);
+
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Member kicked successfully' };
 }
 
 
