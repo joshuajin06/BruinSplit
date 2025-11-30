@@ -96,7 +96,7 @@ export async function approveRequest(req, res, next) {
             return res.status(400).json({ error: 'Ride ID and User ID are required' });
         }
 
-        const approvedMember = await approveRideRequestService;
+        const approvedMember = await approveRideRequestService(rideId, requesterUserId, ownerId);
 
         return res.status(200).json({
             message: 'Request approved successfully',
@@ -323,7 +323,7 @@ export async function getPendingRequests(req, res, next) {
 
         return res.status(200).json({
             message: 'Pending requests retrieved successfully',
-            pending_reqeusts: pendingRequests
+            pending_requests: pendingRequests
         });
 
     } catch (error) {

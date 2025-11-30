@@ -23,7 +23,7 @@ router.delete('/:id', authenticateUser, deleteRide);
 router.delete('/:id/leave', authenticateUser, leaveRide);
 
 // DELETE /api/rides/:id/kick/:userId - kick a confirmed member of ride (owner only)
-router.delete('/api/rides/:id/kick/:userId', authenticateUser, kickMember);
+router.delete('/:id/kick/:userId', authenticateUser, kickMember);
 
 // GET /api/rides - get all rides (public, no auth needed)
 router.get('/', getRides);
