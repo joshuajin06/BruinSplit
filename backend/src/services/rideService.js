@@ -151,7 +151,74 @@ export async function getPendingRequestsService(rideId, ownerId) {
 
 }
 
+// function for owner approving a pending request
+export async function approveRideRequestService(rideId, requesterUserId, ownerId) {
 
+    // verify ride exists and that user is the owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id, max_seats')
+        .eq('id', rideId)
+        .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can approve requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // check if the request exists and is PENDING
+    const { data: pendingRequest, error: requestError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', requesterUserId)
+        .eq('status', PENDING)
+        .maybeSingle();
+
+    if (requestError) {
+        requestError.statusCode = 400;
+        throw requestError;
+    }
+
+    if (!pendingRequest) {
+        const error = new Error('Pending request not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // check if ride has available seats
+    const currentMembers = await getAvailableSeats(rideId);
+    const availableSeats = ride.max_seats - currentMembers;
+
+    if (availableSeats <= 0) {
+        const error = new Error('Ride is full');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // update status from PENDING to CONFIRMED JOINING
+    const { data: approvedMember, error: updateError } = await supabase
+        .from('ride_members')
+        .update({ status: 'CONFIRMED JOINING' })
+        .eq('id', pendingRequest.id)
+        .select('*')
+        .single();
+    
+    
+    if (updateError) {
+        updateError.statusCode = 400;
+        throw updateError;
+    }
+
+    return approvedMember;
+}
 
 
 // helper function to delete a ride
