@@ -188,9 +188,20 @@ export async function leaveRide(req, res, next) {
 // DELETE /api/rides/:id/kick/:userId - kick a confirmed member of the ride (owner only)
 export async function kickMember(req, res, next) {
     try {
+        const { id: rideId, userId: memberUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !memberUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const result = await kickMemberService(rideId, memberUserId, ownerId);
+
+        return res.status(200).json(result);
 
     } catch (error) {
-
+        console.error('Kick member error:', error);
+        next(error);
     }
 }
 
