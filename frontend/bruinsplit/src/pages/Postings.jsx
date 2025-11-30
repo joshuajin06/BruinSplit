@@ -17,6 +17,66 @@ export default function Postings() {
         fetchRides();
     }, []);
 
+    const [form, setForm] = useState({
+        origin_text: '',
+        destination_text: '',
+        depart_at: '',
+        platform: '',
+        max_seats: 4,
+        notes: ''
+    });
+
+    function handleChange(e) {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+    }
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        setModalError(null);
+
+        // basic validation
+        if (!form.origin_text || !form.destination_text || !form.depart_at) {
+            setModalError('Please provide origin, destination and departure time');
+            return;
+        }
+
+        const payload = {
+            origin_text: form.origin_text,
+            destination_text: form.destination_text,
+            depart_at: new Date(form.depart_at).toISOString(),
+            platform: form.platform,
+            max_seats: parseInt(form.max_seats, 10),
+            notes: form.notes
+        };
+
+        try {
+            const res = await fetch('/api/rides', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                let parsed = null;
+                try { parsed = JSON.parse(text); } catch (_) {}
+                throw new Error(parsed?.error || parsed?.message || text || `Create failed: ${res.status}`);
+            }
+
+            // success, refresh rides and close modal
+            await fetchRides();
+            setForm({ origin_text: '', destination_text: '', depart_at: '', platform: 'LYFT', max_seats: 2, notes: '' });
+            setShowModal(false);
+        } catch (err) {
+            console.error('create ride error:', err);
+            setModalError(err.message || 'Failed to create ride');
+        }
+    }
+
     async function fetchRides() {
         setLoading(true);
         setError(null);
@@ -88,6 +148,61 @@ export default function Postings() {
                 ))}
           </div>
         </div>
+            {showModal && isAuthenticated && (
+                <section className="ride-form" onClick={() => setShowModal(false)}>
+                    <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+                        <button 
+                            className="modal-close" 
+                            onClick={() => setShowModal(false)}
+                            aria-label="Close modal" 
+                            type="button">
+                        ×
+                        </button>
+                        <h2>Create Ride</h2>
+                        {modalError && <p className="error">{modalError}</p>}
+
+                        <label>
+                            Origin
+                            <input name="origin_text" value={form.origin_text} onChange={handleChange} />
+                        </label>
+
+                        <label>
+                            Destination
+                            <input name="destination_text" value={form.destination_text} onChange={handleChange} />
+                        </label>
+
+                        <label>
+                            Departure
+                            <input name="depart_at" type="datetime-local" value={form.depart_at} onChange={handleChange} />
+                        </label>
+
+                        <label>
+                            Platform
+                            <select name="platform" value={form.platform} onChange={handleChange}>
+                                <option>LYFT</option>
+                                <option>UBER</option>
+                                <option>WAYMO</option>
+                                <option>OTHER</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Max Seats
+                            <input name="max_seats" type="number" min="2" max="6" value={form.max_seats} onChange={handleChange} />
+                        </label>
+
+                        <label>
+                            Notes
+                            <textarea name="notes" value={form.notes} onChange={handleChange} />
+                        </label>
+
+                        <div className="form-actions">
+                            <button type="submit">Create</button>
+                            <button type="button" onClick={() => setForm({ origin_text: '', destination_text: '', depart_at: '', platform: 'LYFT', max_seats: 2, notes: '' })}>Reset</button>
+                        </div>
+                    </form>
+                </section>
+            )}
     </>
     );
 }
