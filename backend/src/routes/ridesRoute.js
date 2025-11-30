@@ -1,6 +1,6 @@
 import express from 'express';
 import { postRide, joinRide, leaveRide, getRides, getRideById } from '../controllers/ridesController.js';
-import { authenticateUser } from '../middleware/authenticateUser.js';
+import { authenticateUser, maybeAuthenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
 
@@ -13,8 +13,9 @@ router.post('/:id/join', authenticateUser, joinRide);
 // DELETE /api/rides/:id/leave - Leave a ride 
 router.delete('/:id/leave', authenticateUser, leaveRide);
 
-// GET /api/rides - Get all rides (public, no auth needed)
-router.get('/', getRides);
+// GET /api/rides - Get all rides (public). Use maybeAuthenticateUser so callers
+// that send a valid Authorization header receive per-ride `is_member` flags.
+router.get('/', maybeAuthenticateUser, getRides);
 
 // GET /api/rides/:id - Get specific ride by ID (public)
 router.get('/:id', getRideById);
