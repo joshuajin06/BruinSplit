@@ -1,6 +1,7 @@
-import { getProfileService, updateProfileService } from '../services/profileService.js';
+import { getProfileService, getProfileByIdService, updateProfileService } from '../services/profileService.js';
 
 
+// GET /api/profile/me
 export async function getProfile(req, res, next) {
     try {
 
@@ -19,6 +20,17 @@ export async function getProfile(req, res, next) {
 }
 
 
+// GET /api/profile/:userId - get any user's public profile
+export async function getProfileById(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// PUT /api/profile/me
 export async function updateProfile(req, res, next) {
     try {
 

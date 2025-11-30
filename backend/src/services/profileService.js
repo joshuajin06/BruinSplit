@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 
 
-// helper
+// function to get profile info
 export async function getProfileService(userId) {
 
     const { data: profile, error } = await supabase
@@ -31,8 +31,13 @@ export async function getProfileService(userId) {
     return profile;
 }
 
+// function to get profile information by ID
+export async function getProfileByIdService(userId) {
+    // temp
+}
 
-// temp
+
+// function to update a user's profile
 export async function updateProfileService(userId, updates) {
 
     // will not allow updates to id, email, passwrod_hash, created_at
