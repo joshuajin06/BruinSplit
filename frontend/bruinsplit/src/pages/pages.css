@@ -71,7 +71,7 @@
   color: white;
 }
 
-.events-form{
+.events-form, .ride-form{
   position: fixed;
   top: 0;
   left: 0;
@@ -129,28 +129,28 @@ p{
   color: #334155;
 }
 
-.modal-content input, 
-.modal-content textarea {
-  background-color: #f1f5f9;
-  color: #1e293b;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 0.625rem;
-  padding: 0.6rem 0.9rem;
-  font-size: 0.95rem;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
-  font-family: inherit;
-}
-
-.modal-content input:focus, 
-.modal-content textarea:focus {
-  outline: none;
-  border-color: #6366f1;
-  background-color: #fff;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
+ .modal-content input, 
+ .modal-content textarea, 
+ .modal-content select {
+   background-color: #f1f5f9;
+   color: #1e293b;
+   border: 1.5px solid #e2e8f0;
+   border-radius: 0.625rem;
+   padding: 0.6rem 0.9rem;
+   font-size: 0.95rem;
+   width: 100%;
+   box-sizing: border-box;
+   transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+   font-family: inherit;
+ }
+ .modal-content input:focus, 
+ .modal-content textarea:focus, 
+ .modal-content select:focus {
+   outline: none;
+   border-color: #6366f1;
+   background-color: #fff;
+   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+ }
 .modal-content textarea {
   min-height: 90px;
   resize: vertical;
@@ -254,9 +254,22 @@ p{
   font-size: 28px;
   line-height: 1;
   border: none;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #555555 0%, #333333 100%);  
   color: #fff;
   box-shadow: 0 8px 26px rgba(79,70,229,0.20), 0 2px 6px rgba(0,0,0,0.12);
   padding: 0;
   z-index: 900;
+}
+
+.add-post a{
+  padding-bottom: 6px;
+}
+
+.add-post:hover{
+  transform: scale(1.06);
+  box-shadow: 0 14px 38px rgba(79,70,229,0.26), 0 4px 10px rgba(0,0,0,0.14);
+}
+
+.add-post a:hover{
+  color: white;
 }
