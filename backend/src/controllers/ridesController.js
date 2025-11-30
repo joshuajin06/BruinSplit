@@ -112,9 +112,20 @@ export async function approveRequest(req, res, next) {
 // POST /api/rides/:id/reject/:userId - reject a pending request to join a ride (owner only)
 export async function rejectRequest(req, res, next) {
     try {
+        const { id: rideId, userId: requesterUserId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId || !requesterUserId) {
+            return res.status(400).json({ error: 'Ride ID and User ID are required' });
+        }
+
+        const result = await rejectRideRequestService(rideId, requesterUserId, ownerId);
+
+        return res.status(200).json(result);
 
     } catch (error) {
-
+        console.error('Reject request error:', error);
+        next(error);
     }
 }
 
