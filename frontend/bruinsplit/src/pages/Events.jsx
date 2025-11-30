@@ -12,10 +12,6 @@ export default function Events() {
     const token = localStorage.getItem('token');
     const isAuthenticated = !!user && !!token;
 
-    const handleNewEventClick = () => {
-        setShowModal(true);
-    }
-
     const handleRemoveEvent = (deletedId) => {
     setEvents(prevEvents => prevEvents.filter(ev => ev.id !== deletedId));
     };
@@ -218,7 +214,13 @@ export default function Events() {
 
                     <div className="form-actions">
                         <button type="submit">Create</button>
-                        <button type="button" onClick={() => setForm({ title: '', description: '', location: '', event_date: '', event_type: '' })}>Reset</button>
+                        <button type="button" onClick={() => setForm({ title: '', 
+                            description: '', 
+                            location: '', 
+                            event_date: '', 
+                            event_type: '' })}>
+                                Reset
+                            </button>
                     </div>
                 </form>
             </section>)}

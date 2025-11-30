@@ -143,7 +143,8 @@ export async function getRides(req, res) {
             if (error) throw error;
 
             // enrich each ride with available seats and owner info using helper function defined above
-            const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride)));
+            // pass req.user?.id so the enrichment can include whether the current user is a member
+            const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride, req.user?.id)));
 
             // filter by min_seats if provided (after calculating the available seats)
             const filteredRides = min_seats
@@ -177,15 +178,34 @@ export async function getRideById(req, res) {
             return res.status(404).json({ error: 'Ride not found' });
         }
 
-        // get ride members
+        // get ride members (fetch members first, then fetch profiles separately)
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
-            .select('id, user_id, status, joined_at, profile:profile!ride_members_user_id_fkey(id, username, first_name, last_name)')
+            .select('id, user_id, status, joined_at')
             .eq('ride_id', id)
             .eq('status', 'CONFIRMED JOINING')
             .order('joined_at', { ascending: true });
-        
+
         if (membersError) throw membersError;
+
+        // fetch profiles for member user_ids (avoid join projection ambiguity)
+        const userIds = (members || []).map(m => m.user_id).filter(Boolean);
+        let profilesById = {};
+        if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, username, first_name, last_name')
+                .in('id', userIds);
+            profilesById = (profiles || []).reduce((acc, p) => {
+                acc[p.id] = p; return acc;
+            }, {});
+        }
+
+        // attach profile info to each member
+        const membersWithProfiles = (members || []).map(m => ({
+            ...m,
+            profile: profilesById[m.user_id] || null
+        }));
 
         // get owner profile
         const { data: owner } = await supabase
