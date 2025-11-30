@@ -179,7 +179,7 @@ export async function approveRideRequestService(rideId, requesterUserId, ownerId
         .select('id, status')
         .eq('ride_id', rideId)
         .eq('user_id', requesterUserId)
-        .eq('status', PENDING)
+        .eq('status', 'PENDING')
         .maybeSingle();
 
     if (requestError) {
