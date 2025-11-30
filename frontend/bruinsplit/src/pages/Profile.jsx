@@ -29,10 +29,17 @@ export default function Profile() {
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Send updated data to backend
-    console.log('Saving:', formData);
-    setIsEditing(false);
+  const handleSave = async (e) => {
+    try {
+      e.preventDefault();
+      // TODO: Send updated data to backend
+      const updatedProfile = await updateProfile(formData);
+      console.log('Profile Updated Successfully:', updatedProfile);
+      setIsEditing(false);
+    }
+    catch (error) {
+      console.error("Failed to updated profile: ", error);
+    } 
   };
 
   const handleCancel = () => {
