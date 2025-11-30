@@ -101,6 +101,57 @@ export async function joinRideService(rideId, userId) {
     return member;
 }
 
+// get all pending requests for a ride (owner only)
+export async function getPendingRequestsService(rideId, ownerId) {
+    // verify the ride exists and that the user is the owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single()
+    
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can view pending requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // get all pending requests with user profiles
+    const { data: pendingRequests, error } = await supabase
+        .from('ride_members')
+        .select(`
+            id,
+            user_id,
+            status,
+            joined_at,
+            profile:profiles!ride_members_user_id_fkey(
+                id,
+                username,
+                first_name,
+                last_name,
+                email
+            )
+        `)
+        .eq('ride_id', rideId)
+        .eq('status', 'PENDING')
+        .order('joined_at', { ascending: true });
+
+    if (error) {
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return pendingRequests || [];
+
+}
+
+
 
 
 // helper function to delete a ride
