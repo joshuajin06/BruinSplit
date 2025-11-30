@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -86,6 +86,25 @@ export async function joinRide(req, res, next) {
 }
 
 
+// POST /api/rides/:id/approve/:userId - approve a pending request to join a ride (owner only)
+export async function approveRequest(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+// POST /api/rides/:id/reject/:userId - reject a pending request to join a ride (owner only)
+export async function rejectRequest(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
 // DELETE /api/rides/:id - delete a ride
 export async function deleteRide(req, res, next) {
     try {
@@ -139,6 +158,19 @@ export async function leaveRide(req, res, next) {
         next(error);
     }
 }
+
+
+// DELETE /api/rides/:id/kick/:userId - kick a confirmed member of the ride (owner only)
+export async function kickMember(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+
 
 // GET /api/rides - get all rides with an optional filter
 export async function getRides(req, res) {
@@ -238,6 +270,20 @@ export async function getRideById(req, res) {
         res.status(500).json({ error: error.message || 'Failed to retreive ride' });
     }
 };
+
+
+
+// GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
+export async function getPendingRequests(req, res, next) {
+    try {
+
+    } catch (error) {
+        
+    }
+}
+
+
+
 
 
 // GET /api/rides/my-rides - get all rides that a user has joined
