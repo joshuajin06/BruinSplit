@@ -276,9 +276,23 @@ export async function getRideById(req, res) {
 // GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
 export async function getPendingRequests(req, res, next) {
     try {
+        const { id: rideId } = req.params;
+        const ownerId = req.user.id;
+
+        if (!rideId) {
+            return res.status(400).json({ error: 'Ride ID is required' });
+        }
+
+        const pendingRequests = await getPendingRequestsService(rideId, ownerId);
+
+        return res.status(200).json({
+            message: 'Pending requests retrieved successfully',
+            pending_reqeusts: pendingRequests
+        });
 
     } catch (error) {
-        
+        console.error('Get pending requests error:', error);
+        next(error);
     }
 }
 
