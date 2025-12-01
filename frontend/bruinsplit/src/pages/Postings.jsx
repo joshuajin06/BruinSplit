@@ -155,7 +155,8 @@ export default function Postings() {
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
                             current_members: ride.current_members,  // number currently joined
-                            isMember: ride.is_member
+                            owner_id: ride.owner_id,                // needed for riders tab to show owner badge
+                            membership_status: ride.membership_status  // null, 'PENDING', or 'CONFIRMED JOINING'
                         }}
                         onJoin={async (joinedRideId) => {
                         // re-fetch all rides
