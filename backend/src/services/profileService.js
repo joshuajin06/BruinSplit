@@ -35,7 +35,7 @@ export async function getProfileService(userId) {
 export async function getProfileByIdService(userId) {
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name, created_at')
+        .select('id, email, username, first_name, last_name, created_at')
         .eq('id', userId)
         .single();
 
