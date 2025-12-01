@@ -2,6 +2,19 @@ import axios from "axios";
 
 const url = "http://localhost:8080/api";
 
+// GET /api/profile/:userId - get a user's public profile
+export const getProfileById = async (userId) => {
+  try {
+    const response = await axios.get(`${url}/profile/${userId}`);
+    return response.data;
+  } catch (err) {
+    const errorMessage = err.response?.data?.error || err.message;
+    console.error('Error fetching profile:', errorMessage);
+    const error = new Error(errorMessage);
+    throw error;
+  }
+};
+
 export const updateProfile = async (profileData) => {
     try {
         const token = localStorage.getItem('token');
