@@ -29,10 +29,9 @@ export default function Card({ title, origin, destination, content, image, rideD
     );
 
     // Tabs for modal
-    const [activeTab, setActiveTab] = useState('details'); // 'details' | 'riders'
+    const [activeTab, setActiveTab] = useState('details'); 
    
     // Consts for riders tab
-    //const [riders, setRiders] = useState([]);
     const [allMembers, setAllMembers] = useState([]);
     const [loadingRiders, setLoadingRiders] = useState(false);
     const [ridersError, setRidersError] = useState(null);
@@ -67,7 +66,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                 headers: {
                     'content-type': 'application/json',
                     'Authorization': `Bearer ${token}`
-                }
+                }   
             });
         
 
