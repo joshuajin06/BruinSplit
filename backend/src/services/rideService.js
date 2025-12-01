@@ -450,7 +450,7 @@ export async function enrichRide(ride) {
     //get owner profile
     const { data : owner } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name, phone_number')
+        .select('id, username, first_name, last_name, email, phone_number')
         .eq('id', ride.owner_id)
         .single();
 
