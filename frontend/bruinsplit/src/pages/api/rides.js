@@ -4,7 +4,7 @@ const url = "http://localhost:8080/api";
 export const getRides = async () => {
     try {
         const response = await axios.get(`${url}/rides`);
-        return response;
+        return response.data;
     } catch (error) {
         console.error("Error fetching rides:", error);
         throw error;
