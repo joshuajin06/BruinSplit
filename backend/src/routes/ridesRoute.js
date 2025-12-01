@@ -35,17 +35,14 @@ router.get('/', maybeAuthenticateUser, getRides);
 // GET /api/rides/my-rides - get all rides a user has joined
 router.get('/my-rides', authenticateUser, getMyRides);
 
+// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
+router.get('/my-pending', authenticateUser, getMyPendingRides);
+
 // GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
 router.get('/:id/pending', authenticateUser, getPendingRequests);
 
 // GET /api/rides/:id - get specific ride by ID (public, we know if the user is the owner)
 router.get('/:id', maybeAuthenticateUser, getRideById); 
-
-// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
-router.get('/my-pending', authenticateUser, getMyPendingRides);
-
-// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
-router.get('/my-pending', authenticateUser, getMyPendingRides);
 
 // PUT /api/rides/:id - update a ride (owner only)
 router.put('/:id', authenticateUser, updateRide);
