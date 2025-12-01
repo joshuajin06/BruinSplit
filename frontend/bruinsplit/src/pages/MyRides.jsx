@@ -55,7 +55,18 @@ export default function MyRides() {
         if (!window.confirm('Are you sure you want to delete this ride?')) {
             return; // user cancelled ride deletion
         }
+
+        try {
+            await deleteRide(rideId);
+            setOwnedRides(prev => prev.filter(ride => ride.id !== rideId));
+            setJoinedRides(prev => prev.filer(ride => ride.id !== rideId));
+        } catch (err) {
+            console.error('Error deleting ride:', err);
+            alert(err.response?.data?.error || 'Failed to delete ride');
+        }
      }
+
+     
 
 
 }
