@@ -84,7 +84,7 @@ export default function LoginSignup() {
     }
 
     return (
-        <div className="body">
+        <div className="auth-card">
             <div className="login-page-container"> 
                 <div className='header'>
                     <div className='text'><h1>{loggedIn ? "Welcome Back" : "Create Account"}</h1></div>

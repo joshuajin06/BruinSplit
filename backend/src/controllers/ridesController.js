@@ -237,7 +237,8 @@ export async function getRides(req, res) {
             if (error) throw error;
 
             // enrich each ride with available seats and owner info using helper function defined above
-            const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride)));
+            // pass req.user?.id so the enrichment can include whether the current user is a member
+            const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride, req.user?.id)));
 
             // filter by min_seats if provided (after calculating the available seats)
             const filteredRides = min_seats
@@ -259,6 +260,8 @@ export async function getRideById(req, res) {
     try {
         const { id } = req.params;
 
+        const currentUserId = req.user?.id;
+
         const { data: ride, error } = await supabase
             .from('rides')
             .select('*')
@@ -271,15 +274,40 @@ export async function getRideById(req, res) {
             return res.status(404).json({ error: 'Ride not found' });
         }
 
-        // get ride members
+        // Determine visibility (owner sees requests, guest only sees confirmed members)
+        const isOwner = currentUserId === ride.owner_id;
+        const statusesToFetch = isOwner 
+            ? ['CONFIRMED JOINING', 'PENDING'] 
+            : ['CONFIRMED JOINING'];
+
+        // get ride members (fetch members first, then fetch profiles separately)
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
-            .select('id, user_id, status, joined_at, profile:profile!ride_members_user_id_fkey(id, username, first_name, last_name, email, phone_number)')
+            .select('id, user_id, status, joined_at, profile:profiles!ride_members_user_id_fkey(id, username, first_name, last_name, email, phone_number)')
             .eq('ride_id', id)
-            .eq('status', 'CONFIRMED JOINING')
+            .in('status', statusesToFetch) //fetch based on viewer role
             .order('joined_at', { ascending: true });
-        
+
         if (membersError) throw membersError;
+
+        // fetch profiles for member user_ids (avoid join projection ambiguity)
+        const userIds = (members || []).map(m => m.user_id).filter(Boolean);
+        let profilesById = {};
+        if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, username, first_name, last_name')
+                .in('id', userIds);
+            profilesById = (profiles || []).reduce((acc, p) => {
+                acc[p.id] = p; return acc;
+            }, {});
+        }
+
+        // attach profile info to each member
+        const membersWithProfiles = (members || []).map(m => ({
+            ...m,
+            profile: profilesById[m.user_id] || null
+        }));
 
         // get owner profile
         const { data: owner } = await supabase
@@ -288,17 +316,18 @@ export async function getRideById(req, res) {
             .eq('id', ride.owner_id)
             .single();
         
-        const memberCount = members?.length || 0;
-        const availableSeats = ride.max_seats - memberCount;
+        // Calculate seats based only on confirmed members (Pending don't take seats yet)
+        const confirmedCount = members?.filter(m => m.status === 'CONFIRMED JOINING').length || 0;
+        const availableSeats = ride.max_seats - confirmedCount;
 
         res.json({
             message : 'Ride retrieved successfully',
             ride: {
                 ...ride,
                 available_seats: availableSeats,
-                current_members: memberCount,
+                current_members: confirmedCount,
                 owner: owner || null,
-                members: members || []
+                members: membersWithProfiles || []
             }
         });
     } catch (error) {

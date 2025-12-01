@@ -40,3 +40,31 @@ export async function authenticateUser(req, res, next) {
     }
   }
 
+
+  // Optional authentication middleware: attach req.user if a valid Bearer token is present,
+  // otherwise continue without error. Useful for public endpoints that can optionally
+  // include user-specific fields (e.g. is_member).
+  export async function maybeAuthenticateUser(req, res, next) {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) return next();
+
+      const token = authHeader.replace('Bearer ', '');
+      const decoded = verifyToken(token);
+      if (!decoded) return next();
+
+      const { data: user, error } = await supabase
+        .from('profiles')
+        .select('id, email, username, first_name, last_name')
+        .eq('id', decoded.userId)
+        .single();
+
+      if (error || !user) return next();
+
+      req.user = user;
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
+

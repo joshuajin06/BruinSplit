@@ -14,13 +14,37 @@
 }
 
 .card-title, 
-.card-description {
+.card-description,
+.card-datetime,
+.card-content {
     margin: 0.5rem 1rem;
 }
 
 .card-title {
     font-size: 1.25rem;
     font-weight: 600;
+}
+
+.card-datetime {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0.25rem 1rem;
+}
+
+.card-seats {
+    margin: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.seats-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
 .card-description {
@@ -174,4 +198,242 @@
 
 .btn-secondary:hover {
     background-color: #d0d0d0;
+}
+
+/* Modal Tabs */
+.modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 1.5rem;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-size: 1rem;
+    color: #666;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.tab-button:hover {
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.tab-button.active {
+    border-bottom-color: #333;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Riders List */
+.riders-list {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.riders-loading,
+.riders-error,
+.riders-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+}
+
+.riders-error {
+    color: #e53e3e;
+}
+
+/* Rider Card */
+.rider-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e0e0e0;
+    transition: box-shadow 0.2s;
+}
+
+.rider-card:last-child {
+    margin-bottom: 0;
+}
+
+.rider-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Rider Avatar */
+.rider-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Rider Info */
+.rider-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rider-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.owner-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rider-username {
+    font-size: 0.875rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+}
+
+.rider-joined {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* Error message */
+.error {
+    background-color: #fee;
+    color: #c00;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #fcc;
+}
+
+/* Scrollbar styling for riders list */
+.riders-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.riders-list::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 4px;
+}
+
+.riders-list::-webkit-scrollbar-thumb {
+    background: #999;
+    border-radius: 4px;
+}
+
+.riders-list::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+.requests-list {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.request-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e0e0e0;
+    transition: box-shadow 0.2s;
+}
+
+.request-card:last-child {
+    margin-bottom: 0;
+}
+
+.request-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.request-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Approve button */
+.btn-approve {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+.btn-approve:hover {
+    opacity: 0.9;
+}
+
+/* Reject button */
+.btn-reject {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+.btn-reject:hover {
+    opacity: 0.9;
+}
+
+/* Notification dot for Requests tab */
+.notification-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    margin-left: 6px;
 }

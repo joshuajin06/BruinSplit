@@ -1,6 +1,6 @@
 import express from 'express';
 import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember, getMyPendingRides } from '../controllers/ridesController.js';
-import { authenticateUser } from '../middleware/authenticateUser.js';
+import { authenticateUser, maybeAuthenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
 
@@ -22,11 +22,15 @@ router.delete('/:id', authenticateUser, deleteRide);
 // DELETE /api/rides/:id/leave - leave a ride 
 router.delete('/:id/leave', authenticateUser, leaveRide);
 
+// GET /api/rides - Get all rides (public). Use maybeAuthenticateUser so callers
+// that send a valid Authorization header receive per-ride `is_member` flags.
+//router.get('/', maybeAuthenticateUser, getRides);
+
 // DELETE /api/rides/:id/kick/:userId - kick a confirmed member of ride (owner only)
 router.delete('/:id/kick/:userId', authenticateUser, kickMember);
 
-// GET /api/rides - get all rides (public, no auth needed)
-router.get('/', getRides);
+// GET /api/rides - get all rides (public, but optionally authenticated to include is_member)
+router.get('/', maybeAuthenticateUser, getRides);
 
 // GET /api/rides/my-rides - get all rides a user has joined
 router.get('/my-rides', authenticateUser, getMyRides);
@@ -34,8 +38,11 @@ router.get('/my-rides', authenticateUser, getMyRides);
 // GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
 router.get('/:id/pending', authenticateUser, getPendingRequests);
 
-// GET /api/rides/:id - get specific ride by ID (public)
-router.get('/:id', getRideById);
+// GET /api/rides/:id - get specific ride by ID (public, we know if the user is the owner)
+router.get('/:id', maybeAuthenticateUser, getRideById); 
+
+// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
+router.get('/my-pending', authenticateUser, getMyPendingRides);
 
 // GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
 router.get('/my-pending', authenticateUser, getMyPendingRides);
