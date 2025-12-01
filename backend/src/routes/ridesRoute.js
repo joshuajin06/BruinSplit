@@ -1,7 +1,6 @@
 import express from 'express';
 import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember, getMyPendingRides } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
-import { getMyPendingRidesService } from '../services/rideService.js';
 
 const router = express.Router();
 
