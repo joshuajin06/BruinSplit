@@ -644,3 +644,44 @@ export async function updateRideService(rideId, userId, updateData) {
         return updatedRide;
     
 }
+
+
+// function to get all rides where a user has a 'PENDING' request
+export async function getMyPendingRidesService(userId) {
+    // get all ride_ids where the user has 'PENDING' status
+    const { data: pendingRecords, error: pendingError } = await supabase
+        .from('ride_members')
+        .select('ride_id')
+        .eq('user_id', userId)
+        .eq('status', 'PENDING');
+
+    if (pendingError) {
+        pendingError.statusCode = 400;
+        throw pendingError;
+    }
+
+    const pendingRideIds = (pendingRecords || []).map(record => record.ride_id);
+
+    if (pendingRideIds.length === 0) {
+        return [];
+    }
+    
+    // get ride data
+    const { data: pendingRides, error: ridesError } = await supabase
+        .from('rides')
+        .select('*')
+        .in('id', pendingRideIds)
+        .order('created_at', { ascending: false });
+    
+    if (ridesError) {
+        ridesError.statusCode = 400;
+        throw ridesError;
+    }
+
+    // enrich rides
+    const enrichedRides = await Promise.all(
+        (pendingRides || []).map(ride => enrichRide(ride))
+    );
+
+    return enrichedRides;
+}

@@ -1,5 +1,5 @@
 import express from 'express';
-import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember } from '../controllers/ridesController.js';
+import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember, getMyPendingRides } from '../controllers/ridesController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -36,6 +36,9 @@ router.get('/:id/pending', authenticateUser, getPendingRequests);
 
 // GET /api/rides/:id - get specific ride by ID (public)
 router.get('/:id', getRideById);
+
+// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
+router.get('/my-pending', authenticateUser, getMyPendingRides);
 
 // PUT /api/rides/:id - update a ride (owner only)
 router.put('/:id', authenticateUser, updateRide);
