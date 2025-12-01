@@ -66,7 +66,20 @@ export default function MyRides() {
         }
      }
 
-     
+     async function handleLeaveRide(rideId) {
+        if(!window.confirm('Are you sure you want to leave this ride?')) {
+            return;
+        }
+
+        try {
+            await leaveRide(rideId);
+            // remove from joined rides
+            setJoinedRides(prev => prev.filter(ride => ride.id !== rideId));
+        } catch (err) {
+            console.error('Error leaving ride:', err);
+            alert(err.response?.data?.error || 'Failed to leave ride');
+        }
+     }
 
 
 }
