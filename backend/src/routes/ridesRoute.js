@@ -44,6 +44,9 @@ router.get('/:id', maybeAuthenticateUser, getRideById);
 // GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
 router.get('/my-pending', authenticateUser, getMyPendingRides);
 
+// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
+router.get('/my-pending', authenticateUser, getMyPendingRides);
+
 // PUT /api/rides/:id - update a ride (owner only)
 router.put('/:id', authenticateUser, updateRide);
 
