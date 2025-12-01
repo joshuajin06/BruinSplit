@@ -24,8 +24,19 @@ export async function getProfile(req, res, next) {
 export async function getProfileById(req, res, next) {
     try {
 
-    } catch (error) {
+        const { userId } = req.params;
 
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const profile = await getProfileByIdService(userId);
+
+        return res.status(200).json({ profile });
+
+    } catch (error) {
+        console.error('Get profile by ID error:', error);
+        next(error);
     }
 }
 
