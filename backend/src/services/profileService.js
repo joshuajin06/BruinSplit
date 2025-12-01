@@ -6,7 +6,7 @@ export async function getProfileService(userId) {
 
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name, created_at')
+        .select('id, email, username, first_name, last_name, created_at, phone_number')
         .eq('id', userId)
         .single();
 
@@ -35,7 +35,7 @@ export async function getProfileService(userId) {
 export async function getProfileByIdService(userId) {
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name, created_at')
+        .select('id, email, username, first_name, last_name, created_at, phone_number')
         .eq('id', userId)
         .single();
 
@@ -51,7 +51,7 @@ export async function getProfileByIdService(userId) {
 
     if (!profile) {
         const notFoundError = new Error('Profile not found');
-        notFoundError.stausCode = 404;
+        notFoundError.statusCode = 404;
         throw notFoundError;
     }
 
@@ -64,7 +64,7 @@ export async function getProfileByIdService(userId) {
 export async function updateProfileService(userId, updates) {
 
     // will not allow updates to id, email, passwrod_hash, created_at
-    const allowedFields = ['first_name', 'last_name', 'username'];
+    const allowedFields = ['first_name', 'last_name', 'username', 'phone_number'];
     
     // filter the updates object passed into the function to only allow the fields defined above
     // .reduce() builds a new object with only the allowed fields
@@ -104,15 +104,45 @@ export async function updateProfileService(userId, updates) {
         }
     }
 
+    // if phone_number is being updated, check if it's already taken by another user
+    if (filteredUpdates.phone_number !== undefined && filteredUpdates.phone_number !== null) {
+        const { data: existingUser, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('phone_number', filteredUpdates.phone_number)
+            .neq('id', userId)
+            .maybeSingle();
+
+        if (checkError) {
+            checkError.statusCode = 500;
+            throw checkError;
+        }
+
+        // reject request if another user already has this phone number
+        if (existingUser) {
+            const error = new Error('Phone number is already taken');
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
     // perform the update to the profile data
     const { data: updatedProfile, error } = await supabase
         .from('profiles')
         .update(filteredUpdates)
         .eq('id', userId)
-        .select('id, email, username, first_name, last_name, created_at')
+        .select('id, email, username, first_name, last_name, created_at, phone_number')
         .single()
     
     if (error) {
+
+        // check if it's a unique constraint violation (phone_number already exists)
+        if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
+            const uniqueError = new Error('Phone number already in use by another account');
+            uniqueError.statusCode = 400;
+            throw uniqueError;
+        }
+
         // if the user is not found in database
         if (error.code === 'PGRST116') {
             const notFoundError = new Error('Profile not found');

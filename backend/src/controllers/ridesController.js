@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -283,7 +283,11 @@ export async function getRideById(req, res) {
         // get ride members (fetch members first, then fetch profiles separately)
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
+<<<<<<< HEAD
             .select('id, user_id, status, joined_at')
+=======
+            .select('id, user_id, status, joined_at, profile:profile!ride_members_user_id_fkey(id, username, first_name, last_name, email, phone_number)')
+>>>>>>> f2585a34b91cbd8007fb341121d3cacd5640caad
             .eq('ride_id', id)
             .in('status', statusesToFetch) //fetch based on viewer role
             .order('joined_at', { ascending: true });
@@ -312,7 +316,7 @@ export async function getRideById(req, res) {
         // get owner profile
         const { data: owner } = await supabase
             .from('profiles')
-            .select('id, username, first_name, last_name')
+            .select('id, username, first_name, last_name, email, phone_number')
             .eq('id', ride.owner_id)
             .single();
         
@@ -380,6 +384,23 @@ export async function getMyRides(req, res, next) {
 
     } catch (error) {
         console.error('Get my rides error: ', error);
+        next(error);
+    }
+}
+
+
+// GET /api/rides/my-pending - get all rides of which a user has request 'PENDING'
+export async function getMyPendingRides(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const rides = await getMyPendingRidesService(userId);
+
+        return res.status(200).json({
+            message: 'Pending ride requests retrieved successfully',
+            rides: rides
+        });
+    } catch (error) {
+        console.error('Get my pending rides error:', error);
         next(error);
     }
 }
