@@ -51,6 +51,8 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
+    const isOwner = ride.owner_id === userId;
+
     // use helper to count current ride members
     const currentMembers = await getAvailableSeats(rideId);
 
@@ -82,13 +84,15 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
+    const status = isOwner ? 'CONFIRMED JOINING' : 'PENDING';
+
     // insert new member into ride_members table
     const { data: member, error: insertError } = await supabase
         .from('ride_members')
         .insert([{
             ride_id: rideId,
             user_id: userId,
-            status: 'PENDING'
+            status: status //dynamic status based on ownership
         }])
         .select('*')
         .single();
@@ -443,22 +447,35 @@ export async function leaveRideService(rideId, userId) {
 
 
 // helper to enrich a ride with member count and owner info 
-export async function enrichRide(ride) {
+export async function enrichRide(ride, userId = null) {
     const memberCount = await getAvailableSeats(ride.id);
     const availableSeats = ride.max_seats - memberCount;
 
-    //get owner profile
-    const { data : owner } = await supabase
+    // get owner profile
+    const { data: owner } = await supabase
         .from('profiles')
         .select('id, username, first_name, last_name, email, phone_number')
         .eq('id', ride.owner_id)
         .single();
 
+    // determine the provided userId's membership status: null, 'PENDING', or 'CONFIRMED JOINING'
+    let membership_status = null;
+    if (userId) {
+        const { data: membership } = await supabase
+            .from('ride_members')
+            .select('status')
+            .eq('ride_id', ride.id)
+            .eq('user_id', userId)
+            .maybeSingle();
+        membership_status = membership?.status || null;
+    }
+
     return {
-        ...ride, 
-        available_seats : availableSeats,
+        ...ride,
+        available_seats: availableSeats,
         current_members: memberCount,
-        owner: owner || null
+        owner: owner || null,
+        membership_status
     };
 }
 

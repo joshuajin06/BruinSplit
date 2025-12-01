@@ -1,4 +1,4 @@
-.body{  
+.auth-card{  
     width: 500px;
     height: auto;
     padding-bottom: 50px;
@@ -6,7 +6,8 @@
     flex-direction: column;
     align-items: center; 
     background-color: #2774AE;
-    border: 2px solid #353333;
+    background: linear-gradient(135deg, #2774AE 0%, #174d7c 100%);
+    /*border: 2px solid #353333;*/
     border-radius: 10px;
     justify-content: center;
     align-items: center;
@@ -16,6 +17,7 @@
     margin-bottom: 10px;
     box-shadow: #333;
     border-radius: 1rem;
+    box-shadow: 0 8px 26px rgba(79,70,229,0.20), 0 2px 6px rgba(0,0,0,0.12);
 }
 
 .toggle-action{
@@ -45,7 +47,7 @@
     justify-content: center;
 }
 
-
+    
 .header {
     display: flex;
     flex-direction: column;

@@ -33,7 +33,7 @@ export default function Profile() {
   };
 
   const handleInputChange = (e) => {
-    setError('');
+    setError(null);
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -52,7 +52,7 @@ export default function Profile() {
   const handleSave = async (e) => {
     try {
       e.preventDefault();
-      setError('');
+      setError(null);
       // TODO: Send updated data to backend
       if(isEditing) {
         const updatedProfile = await updateProfile(formData);
@@ -93,7 +93,7 @@ export default function Profile() {
     })
     setIsEditing(false);
     setIsChangingPassword(false);
-    setError('');
+    setError(null);
   };
 
   if (!user) {
