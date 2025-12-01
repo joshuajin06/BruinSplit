@@ -63,17 +63,21 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
-    // query ride_members to see if the user is already in this ride 
+    // query ride_members to see if the user is already in this ride (PENDING or CONFIRMED)
     const { data: existingMember } = await supabase
         .from('ride_members')
-        .select('id')
+        .select('id, status')
         .eq('ride_id', rideId)
         .eq('user_id', userId)
+        .in('status', ['PENDING', 'CONFIRMED JOINING'])
         .maybeSingle();
 
-    // throw error if user is already in this ride
+    // throw error if user already has a request or is confirmed
     if (existingMember) {
-        const error = new Error('User already joined ride');
+        const statusMsg = existingMember.status === 'PENDING'
+            ? 'You already have a pending request to join this ride'
+            : 'User already joined ride';
+        const error = new Error(statusMsg);
         error.statusCode = 400;
         throw error;
     }
@@ -84,7 +88,7 @@ export async function joinRideService(rideId, userId) {
         .insert([{
             ride_id: rideId,
             user_id: userId,
-            status: 'CONFIRMED JOINING'
+            status: 'PENDING'
         }])
         .select('*')
         .single();
@@ -97,6 +101,244 @@ export async function joinRideService(rideId, userId) {
     return member;
 }
 
+// get all pending requests for a ride (owner only)
+export async function getPendingRequestsService(rideId, ownerId) {
+    // verify the ride exists and that the user is the owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single()
+    
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can view pending requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // get all pending requests with user profiles
+    const { data: pendingRequests, error } = await supabase
+        .from('ride_members')
+        .select(`
+            id,
+            user_id,
+            status,
+            joined_at,
+            profile:profiles!ride_members_user_id_fkey(
+                id,
+                username,
+                first_name,
+                last_name,
+                email
+            )
+        `)
+        .eq('ride_id', rideId)
+        .eq('status', 'PENDING')
+        .order('joined_at', { ascending: true });
+
+    if (error) {
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return pendingRequests || [];
+
+}
+
+// function for owner approving a pending request
+export async function approveRideRequestService(rideId, requesterUserId, ownerId) {
+
+    // verify ride exists and that user is the owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id, max_seats')
+        .eq('id', rideId)
+        .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can approve requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // check if the request exists and is PENDING
+    const { data: pendingRequest, error: requestError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', requesterUserId)
+        .eq('status', 'PENDING')
+        .maybeSingle();
+
+    if (requestError) {
+        requestError.statusCode = 400;
+        throw requestError;
+    }
+
+    if (!pendingRequest) {
+        const error = new Error('Pending request not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // check if ride has available seats
+    const currentMembers = await getAvailableSeats(rideId);
+    const availableSeats = ride.max_seats - currentMembers;
+
+    if (availableSeats <= 0) {
+        const error = new Error('Ride is full');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // update status from PENDING to CONFIRMED JOINING
+    const { data: approvedMember, error: updateError } = await supabase
+        .from('ride_members')
+        .update({ status: 'CONFIRMED JOINING' })
+        .eq('id', pendingRequest.id)
+        .select('*')
+        .single();
+    
+    
+    if (updateError) {
+        updateError.statusCode = 400;
+        throw updateError;
+    }
+
+    return approvedMember;
+}
+
+// function for owner rejecting a pending request
+export async function rejectRideRequestService(rideId, requesterUserId, ownerId) {
+
+     // verify ride exists and that user is owner
+     const { data: ride, error: rideError } = await supabase
+     .from('rides')
+     .select('id, owner_id')
+     .eq('id', rideId)
+     .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can reject requests');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // Check if request exists and is PENDING
+    const { data: pendingRequest, error: requestError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', requesterUserId)
+        .eq('status', 'PENDING')
+        .maybeSingle();
+
+    if (requestError) {
+        requestError.statusCode = 400;
+        throw requestError;
+    }
+
+    if (!pendingRequest) {
+        const error = new Error('Pending request not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // delete the pending request
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('id', pendingRequest.id);
+    
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Request rejected successfully' };
+}
+
+
+// function for owner kicking out a confirmed member from the ride
+export async function kickMemberService(rideId, memberUserId, ownerId) {
+
+    // verify ride exists and user is owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (ride.owner_id !== ownerId) {
+        const error = new Error('Unauthorized: Only the ride owner can kick members');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // prevent the owner from kicking themselves 
+    if (memberUserId === ownerId) {
+        const error = new Error('Cannot kick yourself from your own ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // check if the member exists and is CONFIRMED (actaully in the ride)
+    const { data: member, error: memberError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', memberUserId)
+        .eq('status', 'CONFIRMED JOINING')
+        .maybeSingle();
+
+    if (memberError) {
+        memberError.statusCode = 400;
+        throw memberError;
+    }
+
+    if (!member) {
+        const error = new Error('Member not found or not confirmed');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // delete the member from the ride
+    const { error: deleteError } = await supabase
+        .from('ride_members')
+        .delete()
+        .eq('id', member.id);
+
+    if (deleteError) {
+        deleteError.statusCode = 400;
+        throw deleteError;
+    }
+
+    return { message: 'Member kicked successfully' };
+}
 
 
 // helper function to delete a ride
