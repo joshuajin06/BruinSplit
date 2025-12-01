@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -351,6 +351,23 @@ export async function getMyRides(req, res, next) {
 
     } catch (error) {
         console.error('Get my rides error: ', error);
+        next(error);
+    }
+}
+
+
+// GET /api/rides/my-pending - get all rides of which a user has request 'PENDING'
+export async function getMyPendingRides(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const rides = await getMyPendingRidesService(userId);
+
+        return res.status(200).json({
+            message: 'Pending ride requests retrieved successfully',
+            rides: rides
+        });
+    } catch (error) {
+        console.error('Get my pending rides error:', error);
         next(error);
     }
 }
