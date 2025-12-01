@@ -260,6 +260,8 @@ export async function getRideById(req, res) {
     try {
         const { id } = req.params;
 
+        const currentUserId = req.user?.id;
+
         const { data: ride, error } = await supabase
             .from('rides')
             .select('*')
@@ -272,12 +274,18 @@ export async function getRideById(req, res) {
             return res.status(404).json({ error: 'Ride not found' });
         }
 
+        // Determine visibility (owner sees requests, guest only sees confirmed members)
+        const isOwner = currentUserId === ride.owner_id;
+        const statusesToFetch = isOwner 
+            ? ['CONFIRMED JOINING', 'PENDING'] 
+            : ['CONFIRMED JOINING'];
+
         // get ride members (fetch members first, then fetch profiles separately)
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
             .select('id, user_id, status, joined_at')
             .eq('ride_id', id)
-            .eq('status', 'CONFIRMED JOINING')
+            .in('status', statusesToFetch) //fetch based on viewer role
             .order('joined_at', { ascending: true });
 
         if (membersError) throw membersError;
@@ -308,15 +316,16 @@ export async function getRideById(req, res) {
             .eq('id', ride.owner_id)
             .single();
         
-        const memberCount = members?.length || 0;
-        const availableSeats = ride.max_seats - memberCount;
+        // Calculate seats based only on confirmed members (Pending don't take seats yet)
+        const confirmedCount = members?.filter(m => m.status === 'CONFIRMED JOINING').length || 0;
+        const availableSeats = ride.max_seats - confirmedCount;
 
         res.json({
             message : 'Ride retrieved successfully',
             ride: {
                 ...ride,
                 available_seats: availableSeats,
-                current_members: memberCount,
+                current_members: confirmedCount,
                 owner: owner || null,
                 members: membersWithProfiles || []
             }

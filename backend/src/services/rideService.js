@@ -51,6 +51,8 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
+    const isOwner = ride.owner_id === userId;
+
     // use helper to count current ride members
     const currentMembers = await getAvailableSeats(rideId);
 
@@ -82,13 +84,15 @@ export async function joinRideService(rideId, userId) {
         throw error;
     }
 
+    const status = isOwner ? 'CONFIRMED JOINING' : 'PENDING';
+
     // insert new member into ride_members table
     const { data: member, error: insertError } = await supabase
         .from('ride_members')
         .insert([{
             ride_id: rideId,
             user_id: userId,
-            status: 'PENDING'
+            status: status //dynamic status based on ownership
         }])
         .select('*')
         .single();
@@ -453,17 +457,16 @@ export async function enrichRide(ride, userId = null) {
         .eq('id', ride.owner_id)
         .single();
 
-    // determine if the provided userId is a confirmed member of this ride
-    let is_member = false;
+    // determine the provided userId's membership status: null, 'PENDING', or 'CONFIRMED JOINING'
+    let membership_status = null;
     if (userId) {
         const { data: membership } = await supabase
             .from('ride_members')
-            .select('id')
+            .select('status')
             .eq('ride_id', ride.id)
             .eq('user_id', userId)
-            .eq('status', 'CONFIRMED JOINING')
             .maybeSingle();
-        is_member = !!membership;
+        membership_status = membership?.status || null;
     }
 
     return {
@@ -471,7 +474,7 @@ export async function enrichRide(ride, userId = null) {
         available_seats: availableSeats,
         current_members: memberCount,
         owner: owner || null,
-        is_member
+        membership_status
     };
 }
 
