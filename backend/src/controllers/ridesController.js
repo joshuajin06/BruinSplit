@@ -318,7 +318,7 @@ export async function getRideById(req, res) {
                 available_seats: availableSeats,
                 current_members: memberCount,
                 owner: owner || null,
-                members: members || []
+                members: membersWithProfiles || []
             }
         });
     } catch (error) {
