@@ -95,6 +95,20 @@ export const getRideById = async (rideId) => {
   }
 };
 
+// GET /api/rides/my-pending - get all rides where user has pending requests
+export const getMyPendingRides = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.get(`${url}/rides/my-pending`, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error fetching pending rides:', err.response?.data || err.message);
+    throw err;
+  }
+};
+
+
 // PUT /api/rides/:id
 export const updateRide = async (rideId, updateData) => {
   try {
