@@ -135,7 +135,8 @@ export async function getPendingRequestsService(rideId, ownerId) {
                 username,
                 first_name,
                 last_name,
-                email
+                email,
+                phone_number
             )
         `)
         .eq('ride_id', rideId)
@@ -449,7 +450,7 @@ export async function enrichRide(ride) {
     //get owner profile
     const { data : owner } = await supabase
         .from('profiles')
-        .select('id, username, first_name, last_name')
+        .select('id, username, first_name, last_name, email, phone_number')
         .eq('id', ride.owner_id)
         .single();
 

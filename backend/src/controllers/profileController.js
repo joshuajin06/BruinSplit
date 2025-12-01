@@ -47,18 +47,19 @@ export async function updateProfile(req, res, next) {
 
         const userId = req.user.id;
 
-        const { first_name, last_name, username } = req.body;
+        const { first_name, last_name, username, phone_number } = req.body;
 
         const updates = {};
 
         if (first_name !== undefined) updates.first_name = first_name;
         if (last_name !== undefined) updates.last_name = last_name;
         if (username !== undefined) updates.username = username;
+        if (phone_number !== undefined) updates.phone_number = phone_number;
 
         // validate that at least one field is being updates
         if(Object.keys(updates).length === 0) {
             return res.status(400).json({
-                error: 'At least one field (first_name, last_name, or username) is required'
+                error: 'At least one field (first_name, last_name, username, or phone_number) is required'
             });
         }
 
@@ -100,6 +101,28 @@ export async function updateProfile(req, res, next) {
                 return res.status(400).json({
                     error: 'Last name cannot be empty'
                 });
+            }
+        }
+
+        // phone number validation
+        if (updates.phone_number !== undefined) {
+
+            // trim whitespace
+            updates.phone_number = updates.phone_number.trim();
+
+            // allow empty string to clear/remove phone number (set to null)
+            if (updates.phone_number.length === 0) {
+                updates.phone_number = null;
+            } else {
+                // remove common formatting characters for validation (e.g. spaces, dashes, parentheses, dots, etc.)
+                const digitsOnly = updates.phone_number.replace(/[\s\-\(\)\.]/g, '');
+
+                // validate that the number must be 10-15 digits
+                if (!/^\d{10,15}$/.test(digitsOnly)) {
+                    return res.status(400).json({
+                        error: 'Phone number must be 10-15 digits'
+                    });
+                }
             }
         }
 
