@@ -33,7 +33,30 @@ export async function getProfileService(userId) {
 
 // function to get profile information by ID
 export async function getProfileByIdService(userId) {
-    // temp
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name, created_at')
+        .eq('id', userId)
+        .single();
+
+    if (error) {
+        if (error.code === 'PGRST116') {
+            const notFoundError = new Error('Profile not found');
+            notFoundError.statusCode = 404;
+            throw notFoundError;
+        }
+        error.statusCode = 500;
+        throw error;
+    }
+
+    if (!profile) {
+        const notFoundError = new Error('Profile not found');
+        notFoundError.stausCode = 404;
+        throw notFoundError;
+    }
+
+    return profile;
+
 }
 
 
