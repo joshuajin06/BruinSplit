@@ -14,7 +14,9 @@ export const getRides = async () => {
 
 export const createRide = async (rideData) => {
     try {
-        const response = await axios.post(`${url}/rides`, rideData);
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: 'Bearer ${token}' } : {};
+        const response = await axios.post(`${url}/rides`, rideData, { headers });
         return response.data;
     } catch (error) {
         console.error("Error creating ride:", error);

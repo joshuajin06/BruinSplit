@@ -1,6 +1,7 @@
-import { getProfileService, updateProfileService } from '../services/profileService.js';
+import { getProfileService, getProfileByIdService, updateProfileService } from '../services/profileService.js';
 
 
+// GET /api/profile/me
 export async function getProfile(req, res, next) {
     try {
 
@@ -19,6 +20,28 @@ export async function getProfile(req, res, next) {
 }
 
 
+// GET /api/profile/:userId - get any user's public profile
+export async function getProfileById(req, res, next) {
+    try {
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const profile = await getProfileByIdService(userId);
+
+        return res.status(200).json({ profile });
+
+    } catch (error) {
+        console.error('Get profile by ID error:', error);
+        next(error);
+    }
+}
+
+
+// PUT /api/profile/me
 export async function updateProfile(req, res, next) {
     try {
 
