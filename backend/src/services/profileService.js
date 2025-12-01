@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 
 
-// helper
+// function to get profile info
 export async function getProfileService(userId) {
 
     const { data: profile, error } = await supabase
@@ -31,8 +31,36 @@ export async function getProfileService(userId) {
     return profile;
 }
 
+// function to get profile information by ID
+export async function getProfileByIdService(userId) {
+    const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, email, username, first_name, last_name, created_at')
+        .eq('id', userId)
+        .single();
 
-// temp
+    if (error) {
+        if (error.code === 'PGRST116') {
+            const notFoundError = new Error('Profile not found');
+            notFoundError.statusCode = 404;
+            throw notFoundError;
+        }
+        error.statusCode = 500;
+        throw error;
+    }
+
+    if (!profile) {
+        const notFoundError = new Error('Profile not found');
+        notFoundError.stausCode = 404;
+        throw notFoundError;
+    }
+
+    return profile;
+
+}
+
+
+// function to update a user's profile
 export async function updateProfileService(userId, updates) {
 
     // will not allow updates to id, email, passwrod_hash, created_at
