@@ -31,6 +31,7 @@ function App() {
                   <Route path="/postings" element={<ProtectedRoute><Postings /></ProtectedRoute>} />
                   <Route path="/myrides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 </Routes>
               </div>
             </Router>

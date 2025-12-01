@@ -1,19 +1,20 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
-import { updateProfile, updatePassword } from './api/profile.js'
+import { updateProfile, updatePassword, getProfileById } from './api/profile.js';
 import './Profile.css';
-import { is } from 'zod/locales';
-
 
 export default function Profile() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { userId } = useParams();
+  const [viewingUser, setViewingUser] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState('');
-
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
@@ -26,6 +27,42 @@ export default function Profile() {
     newPassword: '',
     confirmNewPassword: ''
   });
+
+  // Update formData when user changes
+  useEffect(() => {
+    if (user && !userId) {
+      setFormData({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        username: user.username || ''
+      });
+    }
+  }, [user, userId]);
+
+  // Load other user's profile if userId is provided
+  useEffect(() => {
+    if (userId && userId !== user?.id) {
+      loadUserProfile(userId);
+    }
+  }, [userId, user]);
+
+  async function loadUserProfile(id) {
+    setLoadingProfile(true);
+    setError('');
+    try {
+      const profileData = await getProfileById(id);
+      setViewingUser(profileData);
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setError(err.message || 'Failed to load profile');
+    } finally {
+      setLoadingProfile(false);
+    }
+  }
+
+  // Determine which user to display
+  const displayUser = userId && userId !== user?.id ? viewingUser : user;
+  const isOwnProfile = !userId || userId === user?.id;
 
   const handleLogout = () => {
     logout();
@@ -41,7 +78,7 @@ export default function Profile() {
     }));
   };
 
-    const handlePasswordInputChange = (e) => {
+  const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
       ...prev,
@@ -53,7 +90,12 @@ export default function Profile() {
     try {
       e.preventDefault();
       setError('');
-      // TODO: Send updated data to backend
+      
+      if (!isOwnProfile) {
+        setError('You can only edit your own profile');
+        return;
+      }
+      
       if(isEditing) {
         const updatedProfile = await updateProfile(formData);
         console.log('Profile Updated Successfully:', updatedProfile);
@@ -65,7 +107,7 @@ export default function Profile() {
           return;
         }
         const updatedPassword = await updatePassword(passwordData);
-        console.log('Profile Updated Successfully:', updatedPassword);
+        console.log('Password Updated Successfully:', updatedPassword);
         setIsChangingPassword(false);
         setPasswordData({
           currentPassword: '',
@@ -75,7 +117,7 @@ export default function Profile() {
       }
     }
     catch (error) {
-      console.error("Failed to updated profile: ", error);
+      console.error("Failed to update profile: ", error);
       setError(error.message);
     } 
   };
@@ -96,7 +138,8 @@ export default function Profile() {
     setError('');
   };
 
-  if (!user) {
+  // Show loading state when fetching another user's profile
+  if (loadingProfile) {
     return (
       <div className="profile-container">
         <div className="profile-card">
@@ -106,11 +149,21 @@ export default function Profile() {
     );
   }
 
+  if (!displayUser) {
+    return (
+      <div className="profile-container">
+        <div className="profile-card">
+          <p>Profile not found</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="profile-container">
       <div className="profile-card">
         <div className="profile-header">
-          <h1>My Profile</h1>
+          <h1>{isOwnProfile ? 'My Profile' : `${displayUser.username || displayUser.first_name || 'User'}'s Profile`}</h1>
         </div>
 
         <div className="profile-content">
@@ -119,7 +172,7 @@ export default function Profile() {
             <div className="profile-grid">
               <div className="profile-field">
                 <label>First Name</label>
-                {isEditing ? (
+                {isOwnProfile && isEditing ? (
                   <input
                     type="text"
                     name="first_name"
@@ -128,13 +181,13 @@ export default function Profile() {
                     placeholder="First Name"
                   />
                 ) : (
-                  <p>{formData.first_name || 'Not provided'}</p>
+                  <p>{displayUser.first_name || 'Not provided'}</p>
                 )}
               </div>
 
               <div className="profile-field">
                 <label>Last Name</label>
-                {isEditing ? (
+                {isOwnProfile && isEditing ? (
                   <input
                     type="text"
                     name="last_name"
@@ -143,13 +196,13 @@ export default function Profile() {
                     placeholder="Last Name"
                   />
                 ) : (
-                  <p>{formData.last_name || 'Not provided'}</p>
+                  <p>{displayUser.last_name || 'Not provided'}</p>
                 )}
               </div>
 
               <div className="profile-field">
                 <label>Username</label>
-                {isEditing ? (
+                {isOwnProfile && isEditing ? (
                   <input
                     type="text"
                     name="username"
@@ -158,87 +211,101 @@ export default function Profile() {
                     placeholder="Username"
                   />
                 ) : (
-                  <p>{formData.username || 'Not provided'}</p>
+                  <p>{displayUser.username || 'Not provided'}</p>
                 )}
               </div>
 
               <div className="profile-field">
                 <label>Email</label>
-                <p>{user.email}</p>
+                <p>{displayUser.email}</p>
               </div>
 
-              {isChangingPassword && (
+              {displayUser.phone_number && (
+                <div className="profile-field">
+                  <label>Phone Number</label>
+                  <p>{displayUser.phone_number}</p>
+                </div>
+              )}
+
+              {/* Only show password change for own profile */}
+              {isOwnProfile && isChangingPassword && (
                 <>
                   <div className="profile-field">
                     <label>Old Password</label>
-                      <input
-                        type="password"
-                        name="currentPassword"
-                        value={passwordData.currentPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="Old Password"
-                      />
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordInputChange}
+                      placeholder="Old Password"
+                    />
                   </div>
 
                   <div className="profile-field">
                     <label>New Password</label>
-                      <input
-                        type="password"
-                        name="newPassword"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="New Password"
-                      />
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordInputChange}
+                      placeholder="New Password"
+                    />
                   </div>
                   <div className="profile-field">
                     <label>Confirm New Password</label>
-                      <input
-                        type="password"
-                        name="confirmNewPassword"
-                        value={passwordData.confirmNewPassword}
-                        onChange={handlePasswordInputChange}
-                        placeholder="Confirm new Password"
-                      />
+                    <input
+                      type="password"
+                      name="confirmNewPassword"
+                      value={passwordData.confirmNewPassword}
+                      onChange={handlePasswordInputChange}
+                      placeholder="Confirm new Password"
+                    />
                   </div>
                 </>
               )}
 
-              {user.created_at && (
+              {displayUser.created_at && (
                 <div className="profile-field">
                   <label>Member Since</label>
-                  <p>{new Date(user.created_at).toLocaleDateString()}</p>
+                  <p>{new Date(displayUser.created_at).toLocaleDateString()}</p>
                 </div>
               )}
             </div>
           </div>
           <div className="error-message">{error}</div>
 
-          <div className="profile-actions">
-            {(isEditing || isChangingPassword) ? (
-              <>
-                <button className="btn-save" onClick={handleSave}>
-                  Save Changes
-                </button>
-                <button className="btn-cancel" onClick={handleCancel}>
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button className="btn-edit" onClick={() => setIsEditing(true)}>
-                  Edit Profile
-                </button>
-                <button className="btn-change-password" onClick={() => {
-                  setIsChangingPassword(true);
-                }}>
-                  Change Password
-                </button>
-              </>
-            )}
-          </div>
-          <button className="btn-logout" onClick={handleLogout}>
-            Logout
-          </button>
+          {/* Only show edit buttons for own profile */}
+          {isOwnProfile && (
+            <div className="profile-actions">
+              {(isEditing || isChangingPassword) ? (
+                <>
+                  <button className="btn-save" onClick={handleSave}>
+                    Save Changes
+                  </button>
+                  <button className="btn-cancel" onClick={handleCancel}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-edit" onClick={() => setIsEditing(true)}>
+                    Edit Profile
+                  </button>
+                  <button className="btn-change-password" onClick={() => {
+                    setIsChangingPassword(true);
+                  }}>
+                    Change Password
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          
+          {isOwnProfile && (
+            <button className="btn-logout" onClick={handleLogout}>
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </div>
