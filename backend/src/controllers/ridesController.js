@@ -283,7 +283,7 @@ export async function getRideById(req, res) {
         // get ride members (fetch members first, then fetch profiles separately)
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
-            .select('id, user_id, status, joined_at, profile:profiles!ride_members_user_id_fkey(id, username, first_name, last_name, email, phone_number)')
+            .select('id, user_id, status, joined_at')
             .eq('ride_id', id)
             .in('status', statusesToFetch) //fetch based on viewer role
             .order('joined_at', { ascending: true });
