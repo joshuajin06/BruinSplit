@@ -274,7 +274,7 @@ export async function getRideById(req, res) {
         // get ride members
         const { data: members, error: membersError } = await supabase
             .from('ride_members')
-            .select('id, user_id, status, joined_at, profile:profile!ride_members_user_id_fkey(id, username, first_name, last_name, phone_number)')
+            .select('id, user_id, status, joined_at, profile:profile!ride_members_user_id_fkey(id, username, first_name, last_name, email, phone_number)')
             .eq('ride_id', id)
             .eq('status', 'CONFIRMED JOINING')
             .order('joined_at', { ascending: true });
@@ -284,7 +284,7 @@ export async function getRideById(req, res) {
         // get owner profile
         const { data: owner } = await supabase
             .from('profiles')
-            .select('id, username, first_name, last_name, phone_number')
+            .select('id, username, first_name, last_name, email, phone_number')
             .eq('id', ride.owner_id)
             .single();
         
