@@ -4,14 +4,69 @@ import "./card.css"
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
 export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin }) {
+    //initial modal states
     const [showModal, setShowModal] = useState(false);
     const [joining, setJoining] = useState(false);
     const [joinError, setJoinError] = useState(null);
+
     // isMember can be: true (user is member), false (not member)
     // If the parent doesn't provide `isMember` (undefined), treat as unknown and
     // avoid overwriting local state after a local join/leave action.
     const initialIsMember = typeof rideDetails?.isMember === 'boolean' ? rideDetails.isMember : null;
     const [isMember, setIsMember] = useState(initialIsMember);
+
+    //tab and rider state
+    const [activeTab, setActiveTab] = useState('details'); // 'details' | 'riders'
+    const [riders, setRiders] = useState([]);
+    const [loadingRiders, setLoadingRiders] = useState(false);
+    const [ridersError, setRidersError] = useState(null);
+
+// Fetch riders function
+    const fetchRiders = async () => {
+        if (!rideId) return;
+        
+        setLoadingRiders(true);
+        setRidersError(null);
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setRidersError('Authentication required');
+                return;
+            }
+
+            const res = await fetch(`/api/rides/${rideId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error('Failed to load riders');
+            
+            const data = await res.json();
+            
+            // Debug: Log the response to see what we're getting
+            console.log('Ride data:', data);
+            console.log('Members:', data?.ride?.members);
+            
+            // Handle the response structure
+            const members = data?.ride?.members || [];
+            
+            // If members don't have profile info, we need to handle it differently
+            // Check if first member has profile property
+            if (members.length > 0 && !members[0].profile) {
+                console.warn('Members missing profile data - backend needs to return membersWithProfiles');
+            }
+            
+            setRiders(members);
+        } catch (err) {
+            console.error('Fetch riders error:', err);
+            setRidersError(err.message || 'Failed to load riders');
+        } finally {
+            setLoadingRiders(false);
+        }
+    };
 
     React.useEffect(() => {
         if (typeof rideDetails?.isMember === 'boolean') {
@@ -24,6 +79,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     {
         setShowModal(false);
         setJoinError(null);
+        setActiveTab('details');
     }
 
     const handleConfirmJoin = async () => {
@@ -119,6 +175,8 @@ export default function Card({ title, origin, destination, content, image, rideD
     const handleJoinClick = async () => {
         setShowModal(true);
 
+        fetchRiders(); // gets riders who have joined
+
         // If server didn't include isMember, try to fetch membership for this user
         if (rideDetails?.isMember === undefined && rideId) {
             try {
@@ -181,52 +239,111 @@ export default function Card({ title, origin, destination, content, image, rideD
                         
                         <h2 className="modal-title">{displayTitle}</h2>
                         
-                        <div className="ride-details">
-                            <div className="detail-row">
-                                <span className="detail-label">Created by:</span>
-                                <span className="detail-value">{rideDetails?.driver || 'John Doe'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Departure Date:</span>
-                                <span className="detail-value">{departureDate}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Departure Time:</span>
-                                <span className="detail-value">{departureTime}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">From:</span>
-                                <span className="detail-value">{origin || rideDetails?.from || 'Westwood'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">To:</span>
-                                <span className="detail-value">{destination || rideDetails?.to || 'Downtown LA'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Platform:</span>
-                                <span className="detail-value">{platform || 'Not specified'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Max Riders:</span>
-                                <span className="detail-value">{maxRiders || rideDetails?.seats || '3'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Price:</span>
-                                <span className="detail-value">{rideDetails?.price || '$10'}</span>
-                            </div>
-                            {notes && (
-                                <div className="detail-row">
-                                    <span className="detail-label">Notes:</span>
-                                    <span className="detail-value">{notes}</span>
-                                </div>
-                            )}
-                            {createdAt && (
-                                <div className="detail-row">
-                                    <span className="detail-label">Posted:</span>
-                                    <span className="detail-value">{new Date(createdAt).toLocaleString()}</span>
-                                </div>
-                            )}
+                        {/* Tab Navigation */}
+                        <div className="modal-tabs">
+                            <button 
+                                className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('details')}
+                                type="button"
+                            >
+                                Ride Details
+                            </button>
+                            <button 
+                                className={`tab-button ${activeTab === 'riders' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('riders')}
+                                type="button"
+                            >
+                                Current Riders ({riders.length})
+                            </button>
                         </div>
+
+                        {/* Tab Content */}
+                        {activeTab === 'details' ? (
+                            <div className="ride-details">
+                                <div className="detail-row">
+                                    <span className="detail-label">Created by:</span>
+                                    <span className="detail-value">{rideDetails?.driver || 'John Doe'}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Departure Date:</span>
+                                    <span className="detail-value">{departureDate}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Departure Time:</span>
+                                    <span className="detail-value">{departureTime}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">From:</span>
+                                    <span className="detail-value">{origin || rideDetails?.from || 'Westwood'}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">To:</span>
+                                    <span className="detail-value">{destination || rideDetails?.to || 'Downtown LA'}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Platform:</span>
+                                    <span className="detail-value">{platform || 'Not specified'}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Max Riders:</span>
+                                    <span className="detail-value">{maxRiders || rideDetails?.seats || '3'}</span>
+                                </div>
+                                <div className="detail-row">
+                                    <span className="detail-label">Price:</span>
+                                    <span className="detail-value">{rideDetails?.price || '$10'}</span>
+                                </div>
+                                {notes && (
+                                    <div className="detail-row">
+                                        <span className="detail-label">Notes:</span>
+                                        <span className="detail-value">{notes}</span>
+                                    </div>
+                                )}
+                                {createdAt && (
+                                    <div className="detail-row">
+                                        <span className="detail-label">Posted:</span>
+                                        <span className="detail-value">{new Date(createdAt).toLocaleString()}</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="riders-list">
+                                {loadingRiders ? (
+                                    <div className="riders-loading">Loading riders...</div>
+                                ) : ridersError ? (
+                                    <div className="riders-error">{ridersError}</div>
+                                ) : riders.length === 0 ? (
+                                    <div className="riders-empty">No confirmed riders yet</div>
+                                ) : (
+                                    riders.map((rider) => {
+                                        const profile = rider.profile || {};
+                                        const fullName = profile.first_name && profile.last_name 
+                                            ? `${profile.first_name} ${profile.last_name}` 
+                                            : profile.username || 'Unknown User';
+                                        const isOwner = rider.user_id === rideDetails?.owner_id;
+                                        const joinedDate = new Date(rider.joined_at);
+                                        const timeAgo = getTimeAgo(joinedDate);
+                                        
+                                        return (
+                                            <div key={rider.id} className="rider-card">
+                                                <div className="rider-avatar">
+                                                    {fullName.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="rider-info">
+                                                    <div className="rider-name">
+                                                        {fullName}
+                                                        {isOwner && <span className="owner-badge">Owner</span>}
+                                                    </div>
+                                                    {profile.username && (
+                                                        <div className="rider-username">@{profile.username}</div>
+                                                    )}
+                                                    <div className="rider-joined">Joined {timeAgo}</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
 
                         <p className="modal-description">{content}</p>
 
@@ -236,12 +353,16 @@ export default function Card({ title, origin, destination, content, image, rideD
                             <button 
                                 className="btn-secondary" 
                                 onClick={handleCancel}
-                                >
+                                type="button"
+                            >
                                 Cancel
                             </button>
                             <button 
                                 className="btn-primary" 
-                                onClick={isMember ? handleConfirmLeave : handleConfirmJoin} disabled={joining}>
+                                onClick={isMember ? handleConfirmLeave : handleConfirmJoin} 
+                                disabled={joining}
+                                type="button"
+                            >
                                 {joining ? (isMember ? 'Leaving…' : 'Joining…') : (isMember ? 'Confirm Leave' : 'Confirm Join')}
                             </button>
                         </div>
@@ -250,4 +371,27 @@ export default function Card({ title, origin, destination, content, image, rideD
             )}
         </>
     );
+}
+
+// Helper function to calculate time ago
+function getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    const intervals = {
+        year: 31536000,
+        month: 2592000,
+        week: 604800,
+        day: 86400,
+        hour: 3600,
+        minute: 60
+    };
+    
+    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+        const interval = Math.floor(seconds / secondsInUnit);
+        if (interval >= 1) {
+            return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+        }
+    }
+    
+    return 'just now';
 }
