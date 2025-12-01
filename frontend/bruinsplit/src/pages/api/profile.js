@@ -16,6 +16,20 @@ export const updateProfile = async (profileData) => {
     }
 };
 
+export const getProfileById = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await axios.get(`${url}/profile/${userId}`, { headers });
+    return response.data.profile;
+  } catch (error) {
+    const errorMessage = error.response?.data?.error || error.message;
+    console.error('Error fetching profile:', errorMessage);
+    const err = new Error(errorMessage);
+    throw err;
+  }
+};
+
 export const updatePassword = async (passwordData) => {
   try {
     const token = localStorage.getItem('token');
