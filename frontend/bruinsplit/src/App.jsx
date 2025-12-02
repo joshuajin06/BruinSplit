@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/navbar.jsx'
 import Footer from './components/footer.jsx'
+import MessagesIcon from './components/MessagesIcon.jsx'
 import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
@@ -31,9 +32,11 @@ function App() {
                   <Route path="/postings" element={<ProtectedRoute><Postings /></ProtectedRoute>} />
                   <Route path="/myrides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 </Routes>
               </div>
             </Router>
+            <MessagesIcon/>
           </AuthProvider>
         </main>      
         <Footer />
