@@ -763,5 +763,42 @@ export async function transferOwnershipService(rideId, newOwnerUserId, currentOw
         throw updateError;
     }
 
-    
+    // ensure old owner remains a member of the ride after transferring ownership
+    const { data: oldOwnerMember } = await supabase
+        .from('ride_members')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('user_id', currentOwnerId)
+        .maybeSingle();
+
+    if (!oldOwnerMember) {
+        // add old onwer as a confirmed member
+        const { error: insertError } = await supabase
+            .from('ride_members')
+            .insert([{
+                ride_id: rideId,
+                user_id: currentOwnerId,
+                status: 'CONFIRMED JOINING'
+            }]);
+
+        if (insertError) {
+            insertError.statusCode = 400;
+            throw insertError;
+        }
+
+    } else {
+        // ensure old owner's status is 'CONFIRMED JOINING'
+        const { error: updateMemberError } = await supabase
+            .from('ride_members')
+            .update({ status: 'CONFIRMED JOINING '})
+            .eq('id', oldOwnerMember.id);
+        
+        if (updateMemberError) {
+            updateMemberError.statusCode = 400;
+            throw updateMemberError;
+        }
+            
+    }
+
+    return { message: 'Ownership transferred sucessfully' };
 }
