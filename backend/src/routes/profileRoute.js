@@ -20,5 +20,11 @@ router.get('/:userId', getProfileById);
 // PUT /api/profile/me
 router.put('/me', authenticateUser, updateProfile);
 
+// POST /api/profile/me/photo - upload profile photo
+router.post('/me/photo', authenticateUser, upload.single('photo'), uploadProfilePhoto);
+
+// DELETE /api/profile/me/photo - delete profile photo
+router.delete('/me/photo', authenticateUser, deleteProfilePhoto);
+
 export default router;
 
