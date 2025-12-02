@@ -87,3 +87,36 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
     return urlData.publicUrl;
 
 }
+
+/**
+ * delete a profile photo from Supabase Storage
+ * @param {string} photoUrl - public URL of the photo to delete
+ */
+export async function deleteProfilePhotoService(photoUrl) {
+    if (!photoUrl) return; // nothing to delete
+
+    try {
+        //extract file path from URL
+        // URL format: https://BruinSplit.supabase.co/storage/v1/object/public/profile-photos/userId-timestamp.jpg
+        const urlParts = photoUrl.split('/profile-photos/');
+        if (urlParts.length !== 2) {
+            // invalid URL format, skip deletion
+            return;
+        }
+
+        const fileName = urlParts[1];
+        const filePath = `profile-photos/${fileName}`;
+
+        // delete from storage bucket
+        const { error } = await supabase.storage
+            .from('profile-photos')
+            .remove([filePath]);
+        
+        if (error) {
+            console.error('Error deleting profile photo:', error);
+        }
+
+    } catch (error) {
+        console.error('Error parsing photo URL for deletion:', err);
+    }
+}
