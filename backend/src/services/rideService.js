@@ -816,7 +816,7 @@ export async function transferOwnershipService(rideId, newOwnerUserId, currentOw
         // ensure old owner's status is 'CONFIRMED JOINING'
         const { error: updateMemberError } = await supabase
             .from('ride_members')
-            .update({ status: 'CONFIRMED JOINING '})
+            .update({ status: 'CONFIRMED JOINING'})
             .eq('id', oldOwnerMember.id);
         
         if (updateMemberError) {
@@ -826,5 +826,5 @@ export async function transferOwnershipService(rideId, newOwnerUserId, currentOw
             
     }
 
-    return { message: 'Ownership transferred sucessfully' };
+    return { message: 'Ownership transferred successfully' };
 }
