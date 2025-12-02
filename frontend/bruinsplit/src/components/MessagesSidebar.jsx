@@ -127,7 +127,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     const conversation = conversations.find(c => c.id === selectedConversation);
     if (!conversation) return null;
 
-    const groupName = conversation.members?.map(m => m.first_name).join(', ') || 'Group Chat';
+    // Handle both 'members' (new) and 'other_users' (old) for backward compatibility
+    const members = conversation.members || conversation.other_users || [];
+    const groupName = members?.map(m => m.first_name).join(', ') || 'Group Chat';
 
     return (
       <>
@@ -156,7 +158,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             {!loading && !error && (
               conversation.messages && conversation.messages.length > 0 ? (
                 conversation.messages.map((msg) => {
-                  const sender = conversation.members?.find(m => m.id === msg.user_id);
+                  const sender = members?.find(m => m.id === msg.user_id);
                   const senderName = sender?.first_name || 'Unknown User';
                   const isSent = msg.user_id === conversation.owner_id;
                   return (
