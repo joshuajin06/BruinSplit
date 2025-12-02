@@ -3,6 +3,8 @@ import { getMessages, getConversations } from '../pages/api/messages';
 
 import './MessagesSidebar.css';
 
+const POLL_INTERVAL = 500; // Poll every 1 second
+
 export default function MessagesSidebar({ isOpen, onClose }) {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
@@ -12,11 +14,35 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
   // Fetch conversations on component mount
   useEffect(() => {
-    fetchConversations();
+    fetchConversations(true);
   }, []);
 
-  const fetchConversations = async () => {
-    setInitialLoading(true);
+  // Auto-poll conversations list
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(fetchConversations, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Auto-poll messages when conversation is selected
+  useEffect(() => {
+    if (!selectedConversation || !isOpen) return;
+
+    const interval = setInterval(() => {
+      const conversation = conversations.find(c => c.id === selectedConversation);
+      if (conversation) {
+        fetchMessagesForConversation(conversation.ride_id);
+      }
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [selectedConversation, conversations, isOpen]);
+
+  const fetchConversations = async (isInitial = false) => {
+    if (isInitial) {
+      setInitialLoading(true);
+    }
     setError(null);
     try {
       const response = await getConversations();
@@ -26,7 +52,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
       console.error('Error fetching conversations:', err);
       setError('Failed to load conversations');
     } finally {
-      setInitialLoading(false);
+      if (isInitial) {
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -35,13 +63,15 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     if (selectedConversation && conversations.length > 0) {
       const conversation = conversations.find(c => c.id === selectedConversation);
       if (conversation && !conversation.messages) {
-        fetchMessagesForConversation(conversation.ride_id);
+        fetchMessagesForConversation(conversation.ride_id, true);
       }
     }
   }, [selectedConversation, conversations]);
 
-  const fetchMessagesForConversation = async (rideId) => {
-    setLoading(true);
+  const fetchMessagesForConversation = async (rideId, isInitial = false) => {
+    if (isInitial) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const response = await getMessages(rideId);
@@ -57,7 +87,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
       console.error('Error fetching messages:', err);
       setError('Failed to load messages');
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      }
     }
   };
 
@@ -122,22 +154,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
       <div className={`messages-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Messages</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={fetchConversations}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '18px',
-                padding: '4px 8px'
-              }}
-              title="Refresh"
-            >
-              🔄
-            </button>
-            <button className="close-btn" onClick={onClose}>✕</button>
-          </div>
+          <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
         <div className="sidebar-content">
