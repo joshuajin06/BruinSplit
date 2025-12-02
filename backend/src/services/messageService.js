@@ -105,19 +105,10 @@ export async function getConversationsForUser(userId) {
         throw ridesError;
     }
 
-    // for each ride, get the last message and the other users
+    // for each ride, get the last message and all members
     const conversations = await Promise.all(
         (rides || []).map(async (ride) => {
-            // get the last message
-            const { data: lastMessage } = await supabase
-                .from('messages')
-                .select('id, content, user_id, sent_at')
-                .eq('ride_id', ride.id)
-                .order('sent_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-            // get other members in the ride
+            // get all confirmed members in the ride (including current user)
             const { data: members } = await supabase
                 .from('ride_members')
                 .select(`
@@ -130,10 +121,24 @@ export async function getConversationsForUser(userId) {
                     )
                 `)
                 .eq('ride_id', ride.id)
-                .eq('status', 'CONFIRMED JOINING')
-                .neq('user_id', userId);
+                .eq('status', 'CONFIRMED JOINING');
 
-            const otherUsers = (members || []).map(m => m.profile);
+            const allMembers = (members || []).map(m => m.profile);
+            const memberCount = allMembers.length;
+
+            // Only include rides with 2+ confirmed members (group chats)
+            if (memberCount < 2) {
+                return null;
+            }
+
+            // get the last message
+            const { data: lastMessage } = await supabase
+                .from('messages')
+                .select('id, content, user_id, sent_at')
+                .eq('ride_id', ride.id)
+                .order('sent_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
 
             return {
                 id: ride.id,
@@ -142,7 +147,8 @@ export async function getConversationsForUser(userId) {
                 destination: ride.destination_text,
                 depart_at: ride.depart_at,
                 owner_id: ride.owner_id,
-                other_users: otherUsers,
+                members: allMembers,
+                member_count: memberCount,
                 preview: lastMessage?.content || 'No messages yet',
                 last_message_sent_at: lastMessage?.sent_at,
                 created_at: ride.created_at
@@ -150,5 +156,6 @@ export async function getConversationsForUser(userId) {
         })
     );
 
-    return conversations;
+    // Filter out null values (rides with only 1 member)
+    return conversations.filter(conv => conv !== null);
 }
