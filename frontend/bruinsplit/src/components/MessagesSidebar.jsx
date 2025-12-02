@@ -32,9 +32,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
   // Fetch messages when conversation is selected
   useEffect(() => {
-    if (selectedConversation) {
+    if (selectedConversation && conversations.length > 0) {
       const conversation = conversations.find(c => c.id === selectedConversation);
-      if (conversation) {
+      if (conversation && !conversation.messages) {
         fetchMessagesForConversation(conversation.ride_id);
       }
     }
@@ -83,7 +83,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             <button className="close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="conversation-title">
-            <h2>{primaryUser?.first_name || 'User'}</h2>
+            <h2>{primaryUser?.first_name || (conversation.other_users?.length === 0 ? 'Solo Ride' : 'User')}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
               {conversation.origin} → {conversation.destination}
             </p>
@@ -122,7 +122,22 @@ export default function MessagesSidebar({ isOpen, onClose }) {
       <div className={`messages-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Messages</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={fetchConversations}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '18px',
+                padding: '4px 8px'
+              }}
+              title="Refresh"
+            >
+              🔄
+            </button>
+            <button className="close-btn" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         <div className="sidebar-content">
@@ -135,13 +150,14 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             <div className="messages-list">
               {conversations.map((conv) => {
                 const primaryUser = conv.other_users?.[0];
+                const displayName = primaryUser?.first_name || (conv.other_users?.length === 0 ? 'Solo Ride' : 'User');
                 return (
                   <div
                     key={conv.id}
                     className="message-item"
                     onClick={() => setSelectedConversation(conv.id)}
                   >
-                    <p className="message-sender">{primaryUser?.first_name || 'User'}</p>
+                    <p className="message-sender">{displayName}</p>
                     <p className="message-preview">{conv.preview}</p>
                     <p className="message-time">{conv.last_message_sent_at ? new Date(conv.last_message_sent_at).toLocaleString() : 'No messages'}</p>
                   </div>
