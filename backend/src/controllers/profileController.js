@@ -1,4 +1,15 @@
 import { getProfileService, getProfileByIdService, updateProfileService } from '../services/profileService.js';
+import multer from 'multer';
+import { uploadProfilePhotoService, deleteProfilePhotoService } from '../services/uploadService.js';
+
+
+// configure multer for file uploads (memory storage)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5 MB limit
+    }
+});
 
 
 // GET /api/profile/me
