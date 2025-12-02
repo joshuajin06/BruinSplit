@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getMessages, getConversations } from '../pages/api/messages';
 
 import './MessagesSidebar.css';
@@ -11,6 +11,12 @@ export default function MessagesSidebar({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const conversationsRef = useRef(conversations);
+
+  // Update ref whenever conversations change
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   // Fetch conversations on component mount
   useEffect(() => {
@@ -25,20 +31,6 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  // Auto-poll messages when conversation is selected
-  useEffect(() => {
-    if (!selectedConversation || !isOpen) return;
-
-    const interval = setInterval(() => {
-      const conversation = conversations.find(c => c.id === selectedConversation);
-      if (conversation) {
-        fetchMessagesForConversation(conversation.ride_id);
-      }
-    }, POLL_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, [selectedConversation, conversations, isOpen]);
-
   const fetchConversations = async (isInitial = false) => {
     if (isInitial) {
       setInitialLoading(true);
@@ -47,7 +39,19 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     try {
       const response = await getConversations();
       const conversationsList = response.conversations || [];
-      setConversations(conversationsList);
+
+      setConversations(prev => {
+        // Merge new conversations with existing ones, preserving messages
+        const merged = conversationsList.map(newConv => {
+          const existingConv = prev.find(c => c.id === newConv.id);
+          // Keep existing messages if they exist
+          return {
+            ...newConv,
+            messages: existingConv?.messages
+          };
+        });
+        return merged;
+      });
     } catch (err) {
       console.error('Error fetching conversations:', err);
       setError('Failed to load conversations');
@@ -58,40 +62,62 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     }
   };
 
-  // Fetch messages when conversation is selected
-  useEffect(() => {
-    if (selectedConversation && conversations.length > 0) {
-      const conversation = conversations.find(c => c.id === selectedConversation);
-      if (conversation && !conversation.messages) {
-        fetchMessagesForConversation(conversation.ride_id, true);
-      }
-    }
-  }, [selectedConversation, conversations]);
-
   const fetchMessagesForConversation = async (rideId, isInitial = false) => {
     if (isInitial) {
       setLoading(true);
+      setError(null);
     }
-    setError(null);
     try {
       const response = await getMessages(rideId);
       const messages = response.messages || [];
 
       // Update the conversation with fetched messages
-      setConversations(prev => prev.map(conv =>
-        conv.ride_id === rideId
-          ? { ...conv, messages }
-          : conv
-      ));
+      setConversations(prev => {
+        const updated = prev.map(conv => {
+          if (conv.ride_id === rideId) {
+            return { ...conv, messages };
+          }
+          return conv;
+        });
+        return updated;
+      });
     } catch (err) {
       console.error('Error fetching messages:', err);
-      setError('Failed to load messages');
+      // Only show error on initial load, not during polling
+      if (isInitial) {
+        setError('Failed to load messages');
+      }
     } finally {
       if (isInitial) {
         setLoading(false);
       }
     }
   };
+
+  // Consolidated: Auto-poll messages when conversation is selected
+  useEffect(() => {
+    if (!selectedConversation || !isOpen) return;
+
+    // Get the ride_id from the selected conversation using ref to avoid dependency
+    const conv = conversationsRef.current.find(c => c.id === selectedConversation);
+    if (!conv?.ride_id) return;
+
+    const rideId = conv.ride_id;
+    let hasInitialFetched = false;
+
+    const fetchAndPoll = async () => {
+      await fetchMessagesForConversation(rideId, !hasInitialFetched);
+      hasInitialFetched = true;
+    };
+
+    // Fetch immediately on first selection
+    fetchAndPoll();
+
+    // Then poll every POLL_INTERVAL
+    const interval = setInterval(fetchAndPoll, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [selectedConversation, isOpen]);
 
   const handleBack = () => {
     setSelectedConversation(null);
@@ -127,21 +153,23 @@ export default function MessagesSidebar({ isOpen, onClose }) {
           <div className="conversation-view">
             {loading && <p style={{ textAlign: 'center', color: '#999' }}>Loading messages...</p>}
             {error && <p style={{ textAlign: 'center', color: '#f44336' }}>{error}</p>}
-            {!loading && !error && conversation.messages && conversation.messages.length > 0 ? (
-              conversation.messages.map((msg) => {
-                const sender = conversation.members?.find(m => m.id === msg.user_id);
-                const senderName = sender?.first_name || 'Unknown User';
-                const isSent = msg.user_id === conversation.owner_id;
-                return (
-                  <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
-                    <p className="chat-sender">{senderName}</p>
-                    <p className="chat-text">{msg.content}</p>
-                    <p className="chat-time">{new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                );
-              })
-            ) : (
-              !loading && <p style={{ textAlign: 'center', color: '#999' }}>No messages yet</p>
+            {!loading && !error && (
+              conversation.messages && conversation.messages.length > 0 ? (
+                conversation.messages.map((msg) => {
+                  const sender = conversation.members?.find(m => m.id === msg.user_id);
+                  const senderName = sender?.first_name || 'Unknown User';
+                  const isSent = msg.user_id === conversation.owner_id;
+                  return (
+                    <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
+                      <p className="chat-sender">{senderName}</p>
+                      <p className="chat-text">{msg.content}</p>
+                      <p className="chat-time">{new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                  );
+                })
+              ) : (
+                <p style={{ textAlign: 'center', color: '#999' }}>No messages yet</p>
+              )
             )}
           </div>
         </div>
