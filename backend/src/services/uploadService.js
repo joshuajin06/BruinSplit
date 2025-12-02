@@ -60,7 +60,18 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
     const fileName = `${userId}-${timestamp}.jpg`;
     const filePath = `profile-photos/${fileName}`;
 
-    
+    // upload to supabase storage
+    const { data, error } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, processedBuffer, {
+            contentType: finalMimeType, // always JPEG
+            upsert: false // don't overwrite existing files
+        });
+
+    if (error) {
+        error.statusCode = 500;
+        throw error;
+    }
 
 
 }
