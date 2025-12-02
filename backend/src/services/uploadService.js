@@ -30,7 +30,7 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
 
     try {
         // convert any image to JPEG
-        processedBuffer = await WaveShaperNode(fileBuffer)
+        processedBuffer = await sharp(fileBuffer)
             .jpeg({
                 quality: 85, // balance quality and file size
                 mozjpeg: true // beter compression
@@ -116,7 +116,7 @@ export async function deleteProfilePhotoService(photoUrl) {
             console.error('Error deleting profile photo:', error);
         }
 
-    } catch (error) {
+    } catch (err) {
         console.error('Error parsing photo URL for deletion:', err);
     }
 }

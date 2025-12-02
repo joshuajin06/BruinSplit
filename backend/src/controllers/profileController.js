@@ -204,7 +204,7 @@ export async function deleteProfilePhoto(req, res, next) {
         const currentProfile = await getProfileService(userId);
         const photoUrl = currentProfile.profile_photo_url;
 
-        if (!profileUrl) {
+        if (!photoUrl) {
             return res.status(400).json({ error: 'No profile photo to delete' });
         }
 
@@ -212,7 +212,7 @@ export async function deleteProfilePhoto(req, res, next) {
         await deleteProfilePhotoService(photoUrl);
 
         // update profile to remove photo URL
-        const updatedProfile = await updateProfilePhotoService(userId, {
+        const updatedProfile = await updateProfileService(userId, {
             profile_photo_url: null
         });
 
