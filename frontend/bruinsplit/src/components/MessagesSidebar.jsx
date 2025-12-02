@@ -1,63 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getMessages, getConversations } from '../pages/api/messages';
+
 import './MessagesSidebar.css';
 
 export default function MessagesSidebar({ isOpen, onClose }) {
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // User data
-  const users = {
-    'user-1': { id: 'user-1', name: 'John Doe', username: 'johndoe' },
-    'user-2': { id: 'user-2', name: 'Jane Smith', username: 'janesmith' },
-    'user-3': { id: 'user-3', name: 'Mike Johnson', username: 'mikejohnson' },
-    'current-user': { id: 'current-user', name: 'You', username: 'currentuser' }
-  };
+  // Fetch conversations on component mount
+  useEffect(() => {
+    fetchConversations();
+  }, []);
 
-  // Ride data
-  const rides = {
-    'ride-1': { id: 'ride-1', origin: 'UCLA', destination: 'Downtown LA', date: '2024-01-15' },
-    'ride-2': { id: 'ride-2', origin: 'Westwood', destination: 'Santa Monica', date: '2024-01-16' },
-    'ride-3': { id: 'ride-3', origin: 'Bel Air', destination: 'Downtown LA', date: '2024-01-17' }
-  };
-
-  // Static conversations data with proper message structure
-  const conversations = [
-    {
-      id: 1,
-      ride_id: 'ride-1',
-      other_user_id: 'user-1',
-      preview: 'Hey, are you still interested in the ride?',
-      time: '2 min ago',
-      messages: [
-        { id: 1, ride_id: 'ride-1', user_id: 'user-1', content: 'Hey, are you still interested in the ride?', sent_at: '2024-01-15T14:58:00Z' },
-        { id: 2, ride_id: 'ride-1', user_id: 'current-user', content: 'Yeah, what time are you picking me up?', sent_at: '2024-01-15T14:59:00Z' },
-        { id: 3, ride_id: 'ride-1', user_id: 'user-1', content: 'Around 3 PM at the parking lot', sent_at: '2024-01-15T15:00:00Z' }
-      ]
-    },
-    {
-      id: 2,
-      ride_id: 'ride-2',
-      other_user_id: 'user-2',
-      preview: 'Thanks for the event invite! I\'ll be there',
-      time: '1 hour ago',
-      messages: [
-        { id: 1, ride_id: 'ride-2', user_id: 'user-2', content: 'Thanks for the event invite!', sent_at: '2024-01-15T13:00:00Z' },
-        { id: 2, ride_id: 'ride-2', user_id: 'current-user', content: 'You\'re welcome! See you there', sent_at: '2024-01-15T13:02:00Z' },
-        { id: 3, ride_id: 'ride-2', user_id: 'user-2', content: 'I\'ll be there', sent_at: '2024-01-15T13:30:00Z' }
-      ]
-    },
-    {
-      id: 3,
-      ride_id: 'ride-3',
-      other_user_id: 'user-3',
-      preview: 'Can you confirm the meeting time?',
-      time: '3 hours ago',
-      messages: [
-        { id: 1, ride_id: 'ride-3', user_id: 'user-3', content: 'Can you confirm the meeting time?', sent_at: '2024-01-15T12:00:00Z' },
-        { id: 2, ride_id: 'ride-3', user_id: 'current-user', content: 'Yes, 4 PM works', sent_at: '2024-01-15T12:58:00Z' },
-        { id: 3, ride_id: 'ride-3', user_id: 'user-3', content: 'Great, see you then', sent_at: '2024-01-15T13:00:00Z' }
-      ]
+  const fetchConversations = async () => {
+    setInitialLoading(true);
+    setError(null);
+    try {
+      const response = await getConversations();
+      const conversationsList = response.conversations || [];
+      setConversations(conversationsList);
+    } catch (err) {
+      console.error('Error fetching conversations:', err);
+      setError('Failed to load conversations');
+    } finally {
+      setInitialLoading(false);
     }
-  ];
+  };
+
+  // Fetch messages when conversation is selected
+  useEffect(() => {
+    if (selectedConversation) {
+      const conversation = conversations.find(c => c.id === selectedConversation);
+      if (conversation) {
+        fetchMessagesForConversation(conversation.ride_id);
+      }
+    }
+  }, [selectedConversation, conversations]);
+
+  const fetchMessagesForConversation = async (rideId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getMessages(rideId);
+      const messages = response.messages || [];
+
+      // Update the conversation with fetched messages
+      setConversations(prev => prev.map(conv =>
+        conv.ride_id === rideId
+          ? { ...conv, messages }
+          : conv
+      ));
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setError('Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBack = () => {
     setSelectedConversation(null);
@@ -65,6 +67,10 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
   if (selectedConversation) {
     const conversation = conversations.find(c => c.id === selectedConversation);
+    if (!conversation) return null;
+
+    const primaryUser = conversation.other_users?.[0];
+
     return (
       <>
         {isOpen && (
@@ -77,24 +83,30 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             <button className="close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="conversation-title">
-            <h2>{users[conversation.other_user_id].name}</h2>
+            <h2>{primaryUser?.first_name || 'User'}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
-              {rides[conversation.ride_id].origin} → {rides[conversation.ride_id].destination}
+              {conversation.origin} → {conversation.destination}
             </p>
           </div>
 
           <div className="conversation-view">
-            {conversation.messages.map((msg) => {
-              const sender = users[msg.user_id];
-              const isSent = msg.user_id === 'current-user';
-              return (
-                <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
-                  <p className="chat-sender">{sender.name}</p>
-                  <p className="chat-text">{msg.content}</p>
-                  <p className="chat-time">{new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              );
-            })}
+            {loading && <p style={{ textAlign: 'center', color: '#999' }}>Loading messages...</p>}
+            {error && <p style={{ textAlign: 'center', color: '#f44336' }}>{error}</p>}
+            {!loading && !error && conversation.messages && conversation.messages.length > 0 ? (
+              conversation.messages.map((msg) => {
+                const isSent = msg.user_id === conversation.owner_id;
+                const senderName = isSent ? 'You' : primaryUser?.first_name || 'User';
+                return (
+                  <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
+                    <p className="chat-sender">{senderName}</p>
+                    <p className="chat-text">{msg.content}</p>
+                    <p className="chat-time">{new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                );
+              })
+            ) : (
+              !loading && <p style={{ textAlign: 'center', color: '#999' }}>No messages yet</p>
+            )}
           </div>
         </div>
       </>
@@ -114,21 +126,27 @@ export default function MessagesSidebar({ isOpen, onClose }) {
         </div>
 
         <div className="sidebar-content">
-          {conversations.length === 0 ? (
-            <p className="no-messages">No messages</p>
-          ) : (
+          {initialLoading && <p className="no-messages">Loading conversations...</p>}
+          {error && <p className="no-messages" style={{ color: '#f44336' }}>{error}</p>}
+          {!initialLoading && conversations.length === 0 && !error && (
+            <p className="no-messages">No conversations yet</p>
+          )}
+          {!initialLoading && conversations.length > 0 && (
             <div className="messages-list">
-              {conversations.map((message) => (
-                <div
-                  key={message.id}
-                  className="message-item"
-                  onClick={() => setSelectedConversation(message.id)}
-                >
-                  <p className="message-sender">{users[message.other_user_id].name}</p>
-                  <p className="message-preview">{message.preview}</p>
-                  <p className="message-time">{message.time}</p>
-                </div>
-              ))}
+              {conversations.map((conv) => {
+                const primaryUser = conv.other_users?.[0];
+                return (
+                  <div
+                    key={conv.id}
+                    className="message-item"
+                    onClick={() => setSelectedConversation(conv.id)}
+                  >
+                    <p className="message-sender">{primaryUser?.first_name || 'User'}</p>
+                    <p className="message-preview">{conv.preview}</p>
+                    <p className="message-time">{conv.last_message_sent_at ? new Date(conv.last_message_sent_at).toLocaleString() : 'No messages'}</p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
