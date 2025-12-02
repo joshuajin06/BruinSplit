@@ -59,8 +59,10 @@ export async function getMessages(req, res, next) {
 export async function getConversations(req, res, next) {
     try {
         const userId = req.user.id;
+        console.log('Fetching conversations for userId:', userId);
 
         const conversations = await getConversationsForUser(userId);
+        console.log('Conversations found:', conversations.length);
 
         return res.status(200).json({
             conversations

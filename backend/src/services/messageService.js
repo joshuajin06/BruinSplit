@@ -74,6 +74,7 @@ export async function getMessagesForRide(rideId, userId) {
 
 // get all conversations for a user (rides they're a member of)
 export async function getConversationsForUser(userId) {
+
     // get all rides where user is a member (CONFIRMED JOINING)
     const { data: memberRecords, error: memberError } = await supabase
         .from('ride_members')
@@ -92,23 +93,10 @@ export async function getConversationsForUser(userId) {
         return [];
     }
 
-    // fetch ride details with owner and member info
+    // fetch ride details
     const { data: rides, error: ridesError } = await supabase
         .from('rides')
-        .select(`
-            id,
-            origin_text,
-            destination_text,
-            depart_at,
-            owner_id,
-            created_at,
-            owner:profiles!rides_owner_id_fkey(
-                id,
-                username,
-                first_name,
-                last_name
-            )
-        `)
+        .select('id, origin_text, destination_text, depart_at, owner_id, created_at')
         .in('id', rideIds)
         .order('created_at', { ascending: false });
 
@@ -134,7 +122,7 @@ export async function getConversationsForUser(userId) {
                 .from('ride_members')
                 .select(`
                     user_id,
-                    profile:profiles!ride_members_user_id_fkey(
+                    profile:profiles(
                         id,
                         username,
                         first_name,
@@ -154,7 +142,6 @@ export async function getConversationsForUser(userId) {
                 destination: ride.destination_text,
                 depart_at: ride.depart_at,
                 owner_id: ride.owner_id,
-                owner: ride.owner,
                 other_users: otherUsers,
                 preview: lastMessage?.content || 'No messages yet',
                 last_message_sent_at: lastMessage?.sent_at,
