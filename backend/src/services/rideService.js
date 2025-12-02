@@ -399,19 +399,45 @@ export async function deleteRideService(rideId, userId) {
 // helper function to remove a user from a ride they've joined
 export async function leaveRideService(rideId, userId) {
 
-    // query rides table to check if ride even exists
+    // query rides table to check if ride even exists and get owner_id
     const { data: ride, error: rideError } = await supabase
         .from('rides')
-        .select('id')
+        .select('id, owner_id')
         .eq('id', rideId)
         .single();
 
-    // throw error if : error OR ride doesn't exist
+    // throw error if error OR ride doesn't exist
     if (rideError || !ride) {
         const error = new Error('Ride not found');
         error.statusCode = 404;
         throw error;
     }
+
+    // check if user is the owner
+    const isOwner = ride.owner_id === userId;
+
+    if (isOwner) {
+        // owner can only leave if they've transferred ownership
+        // OR if the ride is empty
+
+        // count confirmed members excluding owner
+        const { data: otherMembers } = await supabase 
+            .from('ride_members')
+            .select('id')
+            .eq('ride_id', rideId)
+            .eq('status', 'CONFIRMED JOINING')
+            .neq('user_id', userId) // exclude owner
+
+        const hasOtherMembers = otherMembers && otherMembers.length > 0;
+
+        if (hasOtherMembers) {
+            const error = new Error('Cannot leave ride as owner. Please transfer ownership to to another member first.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+    }
+
     
     // check if user is in that ride
     const { data: existingMember } = await supabase
@@ -701,4 +727,104 @@ export async function getMyPendingRidesService(userId) {
     );
 
     return enrichedRides;
+}
+
+// transfer ownership of a ride to another member
+export async function transferOwnershipService(rideId, newOwnerUserId, currentOwnerId) {
+    // verify ride exists and get the current owner of the ride
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('id, owner_id')
+        .eq('id', rideId)
+        .single();
+
+    if (rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // verify current user is the owner
+    if (ride.owner_id !== currentOwnerId) {
+        const error = new Error('Unauthorized: Only the ride owner can transfer ownership of the ride');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // prevent transferring to yourself
+    if (newOwnerUserId === currentOwnerId) {
+        const error = new Error('Cannot transfer ownership to yourself if already owner');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // verify new owner is a confirmed member of the ride
+    const { data: newOwnerMember, error: memberError } = await supabase
+        .from('ride_members')
+        .select('id, status')
+        .eq('ride_id', rideId)
+        .eq('user_id', newOwnerUserId)
+        .eq('status', 'CONFIRMED JOINING')
+        .maybeSingle();
+
+    if (memberError) {
+        memberError.statusCode = 400;
+        throw memberError;
+    }
+
+    if (!newOwnerMember) {
+        const error = new Error('New owner must be a confirmed member of the ride');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // update the owner_id in the rides table 
+    const { error: updateError } = await supabase
+        .from('rides')
+        .update({ owner_id: newOwnerUserId })
+        .eq('id', rideId);
+
+    if (updateError) {
+        updateError.statusCode = 400;
+        throw updateError;
+    }
+
+    // ensure old owner remains a member of the ride after transferring ownership
+    const { data: oldOwnerMember } = await supabase
+        .from('ride_members')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('user_id', currentOwnerId)
+        .maybeSingle();
+
+    if (!oldOwnerMember) {
+        // add old onwer as a confirmed member
+        const { error: insertError } = await supabase
+            .from('ride_members')
+            .insert([{
+                ride_id: rideId,
+                user_id: currentOwnerId,
+                status: 'CONFIRMED JOINING'
+            }]);
+
+        if (insertError) {
+            insertError.statusCode = 400;
+            throw insertError;
+        }
+
+    } else {
+        // ensure old owner's status is 'CONFIRMED JOINING'
+        const { error: updateMemberError } = await supabase
+            .from('ride_members')
+            .update({ status: 'CONFIRMED JOINING'})
+            .eq('id', oldOwnerMember.id);
+        
+        if (updateMemberError) {
+            updateMemberError.statusCode = 400;
+            throw updateMemberError;
+        }
+            
+    }
+
+    return { message: 'Ownership transferred successfully' };
 }
