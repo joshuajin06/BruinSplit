@@ -582,6 +582,29 @@
     transform: scale(0.95);
 }
 
+/* Make Owner Button */
+
+.makeOwner {
+    padding: 0.4rem 0.9rem;
+    border: none;
+    background: rgba(220, 38, 38, 0.15);
+    color: #b91c1c;
+    font-size: 0.9rem;
+    border-radius: 0.35rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s;
+}
+
+.makeOwner:hover {
+    background: rgba(220, 38, 38, 0.25);
+    color: #7f1d1d;
+}
+
+.makeOwner:active {
+    transform: scale(0.95);
+}
+
 /* Join Button */
 .card-button-join, .card-button-details {
     padding: 0.75rem 1rem;
