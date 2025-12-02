@@ -1,8 +1,15 @@
 import express from 'express';
-import { getProfile, getProfileById, updateProfile } from '../controllers/profileController.js';
+import multer from 'multer';
+import { getProfile, getProfileById, updateProfile, uploadProfilePhoto, deleteProfilePhoto } from '../controllers/profileController.js';
 import { authenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
+
+// configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
 
 // GET /api/profile/me
 router.get('/me', authenticateUser, getProfile);
@@ -12,6 +19,12 @@ router.get('/:userId', getProfileById);
 
 // PUT /api/profile/me
 router.put('/me', authenticateUser, updateProfile);
+
+// POST /api/profile/me/photo - upload profile photo
+router.post('/me/photo', authenticateUser, upload.single('photo'), uploadProfilePhoto);
+
+// DELETE /api/profile/me/photo - delete profile photo
+router.delete('/me/photo', authenticateUser, deleteProfilePhoto);
 
 export default router;
 
