@@ -1,4 +1,5 @@
 import { supabase } from '../supabase.js';
+import sharp from 'sharp';
 
 /** 
  * upload a profile photo to Supabase profile-photos storage
