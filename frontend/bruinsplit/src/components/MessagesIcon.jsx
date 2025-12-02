@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import MessagesSidebar from './MessagesSidebar';
 import './MessagesIcon.css';
 
 export default function MessagesIcon() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(3);
+  const { isAuthenticated } = useAuth();
 
-  return (
+  return ( isAuthenticated && (
     <>
       <button
         className="messages-icon-btn"
@@ -21,6 +23,6 @@ export default function MessagesIcon() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-    </>
+    </>)
   );
 }
