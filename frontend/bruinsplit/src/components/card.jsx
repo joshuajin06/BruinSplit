@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
 import { set } from 'zod';
+import { is } from 'zod/locales';
 
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
@@ -173,6 +174,11 @@ export default function Card({ title, origin, destination, content, image, rideD
         setJoining(true);
         setJoinError(null);
 
+        if (isOwner) {
+            setJoining(false);
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             if (!token) throw new Error('User not authenticated');
@@ -213,7 +219,6 @@ export default function Card({ title, origin, destination, content, image, rideD
     }
 
     const executeDelete = async () => {
-
         setDeleteLoading(true);
         setDeleteError(null);
 
@@ -316,9 +321,30 @@ export default function Card({ title, origin, destination, content, image, rideD
                 await fetchRiders(); // refresh members list after kick
             } catch (err){
                 console.error("Kick error:", err);
-                alert(err.message);
+                //alert(err.message);
         }
     };
+
+    const handleTransferOnwership = async (newOwnerId) => {
+        if (!isOwner) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}/transfer-ownership/${newOwnerId}`, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error('Failed to transfer ownership');
+            await fetchRiders(); //refresh members list
+            setShowModal(false);
+
+        } catch (err) {
+            console.error("Transfer ownership error:", err);
+        }
+    }
     
 
     // Use origin/destination for title, fallback to title prop
@@ -544,7 +570,13 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                     <div className="rider-joined">Joined {timeAgo}</div>
                                                 </div>
 
-                                                {isOwner && rider.user_id !== ownerId && (<button className='kickButton' onClick={() => handleKickMember(rider.user_id)}>Kick</button>)}
+                                                {isOwner && rider.user_id !== ownerId && (
+                                                    <section className='ride-member-options'>
+                                                        <button className='kickButton' onClick={() => handleKickMember(rider.user_id)}>Kick</button>
+
+                                                        <button className='makeOwner' onClick={() => handleTransferOnwership(rider.user_id)}>Make Owner</button>
+                                                    </section>
+                                                )}
                                             </div>
                                         );
                                     })
