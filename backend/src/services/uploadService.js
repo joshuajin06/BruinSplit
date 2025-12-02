@@ -41,9 +41,26 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
             })
             .toBuffer();
     } catch (conversionError) {
+        // if conversion fails, it could be a corrupted file or unsupported format
         console.error('Image conversion error:', conversionError);
         const error = new Error('Invalid or unsupported image format. Please try a different image');
         error.statusCode = 400;
         throw error;
     }
+
+    // validate converted file size (should be <= 5 MB)
+    if (processedBuffer.length > maxSize) {
+        const error = new Error('Processed image is too large');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // generate unique filename: userId-timestamp.jpg
+    const timestamp = Date.now();
+    const fileName = `${userId}-${timestamp}.jpg`;
+    const filePath = `profile-photos/${fileName}`;
+
+    
+
+
 }
