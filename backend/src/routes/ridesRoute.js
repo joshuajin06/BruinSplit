@@ -1,5 +1,5 @@
 import express from 'express';
-import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember, getMyPendingRides } from '../controllers/ridesController.js';
+import { postRide, joinRide, deleteRide, leaveRide, getRides, getRideById, getMyRides, updateRide, getPendingRequests, approveRequest, rejectRequest, kickMember, getMyPendingRides, transferOwnership } from '../controllers/ridesController.js';
 import { authenticateUser, maybeAuthenticateUser } from '../middleware/authenticateUser.js';
 
 const router = express.Router();
@@ -15,6 +15,9 @@ router.post('/:id/approve/:userId', authenticateUser, approveRequest);
 
 // POST /api/rides/:id/reject/:userId - reject request to join a ride (owner only)
 router.post('/:id/reject/:userId', authenticateUser, rejectRequest);
+
+// POST /api/rides/:id/transfer-ownership/:userId - transfer ownership of a ride to a confirmed ride member 
+router.post('/:id/transfer-ownership/:userId', authenticateUser, transferOwnership);
 
 // DELETE /api/rides/:id - delete a ride
 router.delete('/:id', authenticateUser, deleteRide);
