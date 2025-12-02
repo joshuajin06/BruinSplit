@@ -73,5 +73,17 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
         throw error;
     }
 
+    // get public URL
+    const { data: urlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+    
+    if (!urlData?.publicUrl) {
+        const error = new Error('Failed to generate public URL');
+        error.statusCode = 500;
+        throw error;
+    }
+
+    return urlData.publicUrl;
 
 }
