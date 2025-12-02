@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "./card.css"
 
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
 export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId }) {
+    const navigate = useNavigate();
+    
     // Get who is accessing the ride
     const [currentUser, setCurrentUser] = useState(null);
     useEffect(() => {
@@ -36,13 +39,19 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [loadingRiders, setLoadingRiders] = useState(false);
     const [ridersError, setRidersError] = useState(null);
 
+    // State for details modal (separate from join modal)
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [rideDetailsFull, setRideDetailsFull] = useState(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [detailsError, setDetailsError] = useState(null);
+
     // Fetch riders function
     const fetchRiders = async () => {
         if (!rideId) return;
         setLoadingRiders(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}`, {
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             });
             if (!res.ok) throw new Error('Failed to load riders');
@@ -56,12 +65,44 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+    // Fetch full ride details for details modal
+    const fetchRideDetails = async () => {
+        if (!rideId) return;
+        setLoadingDetails(true);
+        setDetailsError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error('Failed to load ride details');
+            
+            const data = await res.json();
+            setRideDetailsFull(data.ride);
+        } catch (err) {
+            setDetailsError(err.message);
+        } finally {
+            setLoadingDetails(false);
+        }
+    };
 
+    // Handle details button click
+    const handleDetailsClick = async () => {
+        setShowDetailsModal(true);
+        if (!rideDetailsFull) {
+            await fetchRideDetails();
+        }
+    };
+
+    // Handle viewing profile
+    const handleViewProfile = (userId) => {
+        navigate(`/profile/${userId}`);
+    };
 
     const handleRequestAction = async (memberId, action) => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}/${action}/${memberId}`, {
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/${action}/${memberId}`, {
                 method: 'POST', 
                 headers: {
                     'content-type': 'application/json',
@@ -69,12 +110,11 @@ export default function Card({ title, origin, destination, content, image, rideD
                 }   
             });
         
+            if (!res.ok) throw new Error(`Failed to ${action} member`);
 
-        if (!res.ok) throw new Error(`Failed to ${action} member`);
-
-        await fetchRiders(); // refresh members list
-        }catch (err) {
-        console.error(`Error during ${action} member:`, err);
+            await fetchRiders(); // refresh members list
+        } catch (err) {
+            console.error(`Error during ${action} member:`, err);
         }
     };
 
@@ -104,7 +144,7 @@ export default function Card({ title, origin, destination, content, image, rideD
 
             if (!rideId) throw new Error('Ride id is missing');
 
-            const res = await fetch(`/api/rides/${rideId}/join`, {
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/join`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -137,7 +177,7 @@ export default function Card({ title, origin, destination, content, image, rideD
             if (!token) throw new Error('User not authenticated');
             if (!rideId) throw new Error('Ride id is missing');
 
-            const res = await fetch(`/api/rides/${rideId}/leave`, {
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/leave`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -194,7 +234,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                 const token = localStorage.getItem('token');
                 if (!token) return; // can't check membership without token
 
-                const res = await fetch(`/api/rides/${rideId}`, {
+                const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`,
@@ -235,14 +275,27 @@ export default function Card({ title, origin, destination, content, image, rideD
                     <span className="seats-badge">{availableSeats} of {totalSeats} seats available</span>
                 </p>
                 <p className="card-content">{content}</p>
-                <button 
-                    className="card-button" 
-                    onClick={handleJoinClick}
-                    type="button">
-                    {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button 
+                        className="card-button-details" 
+                        onClick={handleDetailsClick}
+                        type="button"
+                        style={{ flex: '1', minWidth: '100px' }}
+                    >
+                        Details
+                    </button>
+                    <button 
+                        className="card-button" 
+                        onClick={handleJoinClick}
+                        type="button"
+                        style={{ flex: '1', minWidth: '100px' }}
+                    >
+                        {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
+                    </button>
+                </div>
             </div>
 
+            {/* Join/Manage Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -347,7 +400,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                         const fullName = profile.first_name && profile.last_name 
                                             ? `${profile.first_name} ${profile.last_name}` 
                                             : profile.username || 'Unknown User';
-                                        const isOwner = rider.user_id === rideDetails?.owner_id;
+                                        const isRiderOwner = rider.user_id === rideDetails?.owner_id;
                                         const joinedDate = new Date(rider.joined_at);
                                         const timeAgo = getTimeAgo(joinedDate);
                                         
@@ -358,8 +411,17 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                 </div>
                                                 <div className="rider-info">
                                                     <div className="rider-name">
-                                                        {fullName}
-                                                        {isOwner && <span className="owner-badge">Owner</span>}
+                                                        <a 
+                                                            href="#" 
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                handleViewProfile(rider.user_id);
+                                                            }}
+                                                            style={{ cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }}
+                                                        >
+                                                            {fullName}
+                                                        </a>
+                                                        {isRiderOwner && <span className="owner-badge">Owner</span>}
                                                     </div>
                                                     {profile.username && (
                                                         <div className="rider-username">@{profile.username}</div>
@@ -423,6 +485,167 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 type="button"
                             >
                                 {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Details Modal */}
+            {showDetailsModal && (
+                <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                            className="modal-close" 
+                            onClick={() => setShowDetailsModal(false)}
+                            aria-label="Close modal"
+                        >
+                            ×
+                        </button>
+                        
+                        <h2 className="modal-title">{displayTitle}</h2>
+                        
+                        {loadingDetails ? (
+                            <p>Loading ride details...</p>
+                        ) : detailsError ? (
+                            <p className="error">{detailsError}</p>
+                        ) : rideDetailsFull ? (
+                            <>
+                                {/* Ride Logistics */}
+                                <div className="ride-details">
+                                    <h3>Ride Logistics</h3>
+                                    <div className="detail-row">
+                                        <span className="detail-label">From:</span>
+                                        <span className="detail-value">{rideDetailsFull.origin_text || origin || 'Not specified'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">To:</span>
+                                        <span className="detail-value">{rideDetailsFull.destination_text || destination || 'Not specified'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Departure:</span>
+                                        <span className="detail-value">{formattedDatetime}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Platform:</span>
+                                        <span className="detail-value">{rideDetailsFull.platform || platform || 'Not specified'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Max Seats:</span>
+                                        <span className="detail-value">{rideDetailsFull.max_seats || maxRiders || 'Not specified'}</span>
+                                    </div>
+                                    <div className="detail-row">
+                                        <span className="detail-label">Available Seats:</span>
+                                        <span className="detail-value">{rideDetailsFull.available_seats || availableSeats}</span>
+                                    </div>
+                                    {rideDetailsFull.notes && (
+                                        <div className="detail-row">
+                                            <span className="detail-label">Notes:</span>
+                                            <span className="detail-value">{rideDetailsFull.notes}</span>
+                                        </div>
+                                    )}
+                                    {rideDetailsFull.created_at && (
+                                        <div className="detail-row">
+                                            <span className="detail-label">Posted:</span>
+                                            <span className="detail-value">{new Date(rideDetailsFull.created_at).toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Owner Info */}
+                                {rideDetailsFull.owner && (
+                                    <div className="owner-section" style={{ marginTop: '20px', marginBottom: '20px' }}>
+                                        <h3>Ride Owner</h3>
+                                        <div className="rider-card">
+                                            <div className="rider-avatar">
+                                                {rideDetailsFull.owner.first_name ? rideDetailsFull.owner.first_name.charAt(0).toUpperCase() : 'U'}
+                                            </div>
+                                            <div className="rider-info">
+                                                <div className="rider-name">
+                                                    <a 
+                                                        href="#" 
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleViewProfile(rideDetailsFull.owner.id);
+                                                        }}
+                                                        style={{ cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }}
+                                                    >
+                                                        {rideDetailsFull.owner.first_name} {rideDetailsFull.owner.last_name}
+                                                    </a>
+                                                    <span className="owner-badge">Owner</span>
+                                                </div>
+                                                {rideDetailsFull.owner.username && (
+                                                    <div className="rider-username">@{rideDetailsFull.owner.username}</div>
+                                                )}
+                                                {rideDetailsFull.owner.email && (
+                                                    <div className="rider-email" style={{ fontSize: '0.9em', color: '#666' }}>{rideDetailsFull.owner.email}</div>
+                                                )}
+                                                {rideDetailsFull.owner.phone_number && (
+                                                    <div className="rider-phone" style={{ fontSize: '0.9em', color: '#666' }}>{rideDetailsFull.owner.phone_number}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Current Members */}
+                                <div className="members-section" style={{ marginTop: '20px' }}>
+                                    <h3>Current Members ({rideDetailsFull.members?.filter(m => m.status === 'CONFIRMED JOINING').length || 0})</h3>
+                                    {!rideDetailsFull.members || rideDetailsFull.members.length === 0 ? (
+                                        <p>No members yet.</p>
+                                    ) : (
+                                        <div className="riders-list">
+                                            {rideDetailsFull.members
+                                                .filter(m => m.status === 'CONFIRMED JOINING')
+                                                .map((member) => {
+                                                    const profile = member.profile || {};
+                                                    const fullName = profile.first_name && profile.last_name 
+                                                        ? `${profile.first_name} ${profile.last_name}` 
+                                                        : profile.username || 'Unknown User';
+                                                    
+                                                    return (
+                                                        <div key={member.id} className="rider-card">
+                                                            <div className="rider-avatar">
+                                                                {fullName.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="rider-info">
+                                                                <div className="rider-name">
+                                                                    <a 
+                                                                        href="#" 
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            handleViewProfile(member.user_id);
+                                                                        }}
+                                                                        style={{ cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }}
+                                                                    >
+                                                                        {fullName}
+                                                                    </a>
+                                                                </div>
+                                                                {profile.username && (
+                                                                    <div className="rider-username">@{profile.username}</div>
+                                                                )}
+                                                                {profile.email && (
+                                                                    <div className="rider-email" style={{ fontSize: '0.9em', color: '#666' }}>{profile.email}</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <p>No ride details available.</p>
+                        )}
+                        
+                        <div className="modal-actions" style={{ marginTop: '20px' }}>
+                            <button 
+                                className="btn-secondary" 
+                                onClick={() => setShowDetailsModal(false)}
+                                type="button"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
