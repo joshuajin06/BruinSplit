@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { getMessages, getConversations } from '../pages/api/messages';
+import { useAuth } from '../context/AuthContext';
 
 import './MessagesSidebar.css';
 
 const POLL_INTERVAL = 500; // Poll every 1 second
 
 export default function MessagesSidebar({ isOpen, onClose }) {
+  const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -160,7 +162,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
                 conversation.messages.map((msg) => {
                   const sender = members?.find(m => m.id === msg.user_id);
                   const senderName = sender?.first_name || 'Unknown User';
-                  const isSent = msg.user_id === conversation.owner_id;
+                  const isSent = msg.user_id === user?.id;
                   return (
                     <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
                       <p className="chat-sender">{senderName}</p>
