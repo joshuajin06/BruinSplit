@@ -1,7 +1,6 @@
 import { supabase } from "../supabase.js"; 
 import { getAllEvents, createEventService, fetchEventByIdService, deleteEventService, updateEventService} from '../services/eventServices.js';
 
-console.log("Supabase client URL from controller:", supabase.restUrl);
 
 
 
@@ -62,7 +61,7 @@ export const deleteEvent = async (req, res) => {
   try{
     await deleteEventService(eventId, user.id);
     res.json({ message: "Event Deleted" });
-    
+
   } catch (error) {
 
     if (error .message === "Unauthorized access") 

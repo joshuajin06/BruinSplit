@@ -437,3 +437,123 @@
     border-radius: 50%;
     margin-left: 6px;
 }
+
+
+/* Delete Button (top right) */
+.deleteButton {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    color: #dc2626;
+    font-size: 1.35rem;
+    font-weight: 600;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    padding-bottom: 3px;
+    cursor: pointer;
+
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.deleteButton:hover {
+    background-color: rgba(220, 38, 38, 0.12);
+    color: #b91c1c;
+    transform: scale(1.06);
+}
+
+.deleteButton:active {
+    transform: scale(0.94);
+}
+
+.deleteButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ================================
+   DELETE CONFIRMATION MODAL
+================================ */
+
+/* Strongest overlay: ABOVE main modal (1000) and any others */
+.delete-modal-overlay {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Delete modal box */
+.delete-modal-content {
+    background: white;
+    color: #333;
+    padding: 1.9rem;
+    width: 90%;
+    max-width: 420px;
+    border-radius: 1rem;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    animation: fadeInScale 0.18s ease-out;
+    position: relative;
+}
+
+/* Title */
+.delete-modal-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+/* Text */
+.delete-modal-text {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 1.4rem;
+}
+
+/* Optional error */
+.delete-modal-error {
+    margin-bottom: 1rem;
+}
+
+/* Buttons layout */
+.delete-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+/* Delete (danger) button override */
+.delete-btn-danger {
+    background-color: #dc2626 !important;
+    border: 1px solid #dc2626 !important;
+}
+
+.delete-btn-danger:hover:not(:disabled) {
+    background-color: #b91c1c !important;
+    border-color: #b91c1c !important;
+}
+
+/* Clean keyframe animation */
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
