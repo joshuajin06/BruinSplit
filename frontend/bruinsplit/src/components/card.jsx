@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import "./card.css"
+import { set } from 'zod';
 
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
-export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId }) {
+export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete }) {
     // Get who is accessing the ride
     const [currentUser, setCurrentUser] = useState(null);
     useEffect(() => {
@@ -161,6 +162,45 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+
+
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const handleDeleteConfirm = (e) => {
+        e.stopPropagation();
+        setShowDeleteConfirm(true);
+    }
+
+    const executeDelete = async () => {
+
+        setDeleteLoading(true);
+        setDeleteError(null);
+
+        try{
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}`, {
+                method: 'DELETE',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Failed to delete ride');
+            }
+
+            if (onDelete) onDelete(rideId);
+        } catch (err){
+            console.error("Delete error:", err);
+            setDeleteError(err.message || 'Error deleting ride');
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+
+
     // Calculate available seats
     const totalSeats = maxRiders || rideDetails?.seats || 3;
     const takenSeats = rideDetails?.current_members || 0;
@@ -183,10 +223,12 @@ export default function Card({ title, origin, destination, content, image, rideD
     }).replace(/\//g, '/') : 'Not specified';
     const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
 
+
+
     const handleJoinClick = async () => {
         setShowModal(true);
 
-        fetchRiders(); // gets riders who have joined
+        await fetchRiders(); // gets riders who have joined
 
         // If server didn't include membership_status, try to fetch it for this user
         if (rideDetails?.membership_status === undefined && rideId) {
@@ -216,6 +258,29 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+    const handleKickMember = async (memberId) => {
+        try{
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}/kick/${memberId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || 'Failed to kick member');
+                }
+
+                await fetchRiders(); // refresh members list after kick
+            } catch (err){
+                console.error("Kick error:", err);
+                alert(err.message);
+        }
+    };
+    
+
     // Use origin/destination for title, fallback to title prop
     const displayTitle = origin && destination ? `${origin} to ${destination}` : title;
 
@@ -228,6 +293,16 @@ export default function Card({ title, origin, destination, content, image, rideD
     return (
         <>
             <div className="card-container">
+                {isOwner && (
+                    <button 
+                        className='deleteButton' 
+                        onClick={handleDeleteConfirm} // Calls the function that opens the modal
+                        type="button"
+                        title="Delete Ride"
+                    >
+                        {deleteLoading ? '...' : 'x'}
+                    </button>
+                )}
                 <img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />
                 <h2 className="card-title">{displayTitle}</h2>
                 <p className="card-datetime">Departing at: {formattedDatetime}</p>
@@ -243,6 +318,46 @@ export default function Card({ title, origin, destination, content, image, rideD
                 </button>
             </div>
 
+            {/* DELETE CONFIRMATION MODAL */}
+                {showDeleteConfirm && (
+                    <div className="modal-overlay delete-modal-overlay">
+                        <div 
+                            className="delete-modal-content"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 className="delete-modal-title">Delete Ride?</h3>
+
+                            <p className="delete-modal-text">
+                                Are you sure you want to permanently delete this ride group?
+                                This action cannot be undone.
+                            </p>
+
+                            {deleteError && <p className="error delete-modal-error">{deleteError}</p>}
+
+                            <div className="delete-modal-actions">
+                                <button 
+                                    className="btn-secondary"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={deleteLoading}
+                                    type="button"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    className="btn-primary delete-btn-danger"
+                                    onClick={executeDelete}
+                                    disabled={deleteLoading}
+                                    type="button"
+                                >
+                                    {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+            {/* Ride Details */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -366,6 +481,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                     )}
                                                     <div className="rider-joined">Joined {timeAgo}</div>
                                                 </div>
+
+                                                {!isOwner   && (<button className='kickButton' onClick={() => handleKickMember(rider.user_id)}>Kick</button>)}
                                             </div>
                                         );
                                     })

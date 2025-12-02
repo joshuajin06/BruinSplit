@@ -128,6 +128,11 @@ export default function Postings() {
         }
     }
 
+    const removeRideFromState = (deletedId) => {
+    // This updates the UI instantly by filtering out the deleted item
+    setRides(currentRides => currentRides.filter(ride => ride.id !== deletedId));
+    };
+
     return (
     <>
         <div className="page-container">
@@ -151,6 +156,7 @@ export default function Postings() {
                         notes={ride.notes}
                         createdAt={ride.created_at}
                         content={ride.notes || 'Looking for riders'}
+                        onDelete={removeRideFromState}
                         rideDetails={{
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
