@@ -194,3 +194,35 @@ export async function uploadProfilePhoto(req, res, next) {
         next(error);
     }
 }
+
+// DELETE /api/profile/me/photo - delete profile photo
+export async function deleteProfilePhoto(req, res, next) {
+    try {
+        const userId = req.user.id;
+
+        // get current profile
+        const currentProfile = await getProfileService(userId);
+        const photoUrl = currentProfile.profile_photo_url;
+
+        if (!profileUrl) {
+            return res.status(400).json({ error: 'No profile photo to delete' });
+        }
+
+        // delete from storage
+        await deleteProfilePhotoService(photoUrl);
+
+        // update profile to remove photo URL
+        const updatedProfile = await updateProfilePhotoService(userId, {
+            profile_photo_url: null
+        });
+
+        return res.status(200).json({
+            message: 'Profile photo deleted successfully',
+            profile: updatedProfile
+        });
+
+    } catch (error) {
+        console.error('Delete profile photo error:', error);
+        next(error);
+    }
+}
