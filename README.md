@@ -3,7 +3,7 @@ With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to desig
 
 
 # Installation Instructions:
-Before running the aoo, make sure you have installed the following. 
+Before running the app, make sure you have installed the following. 
 
 Install [node.js](https://nodejs.org/en/download):
 
