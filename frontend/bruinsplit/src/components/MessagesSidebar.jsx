@@ -101,7 +101,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     const conversation = conversations.find(c => c.id === selectedConversation);
     if (!conversation) return null;
 
-    const primaryUser = conversation.other_users?.[0];
+    const groupName = conversation.members?.map(m => m.first_name).join(', ') || 'Group Chat';
 
     return (
       <>
@@ -115,9 +115,12 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             <button className="close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="conversation-title">
-            <h2>{primaryUser?.first_name || (conversation.other_users?.length === 0 ? 'Solo Ride' : 'User')}</h2>
+            <h2>{groupName}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
               {conversation.origin} → {conversation.destination}
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#bbb' }}>
+              {conversation.member_count} members
             </p>
           </div>
 
@@ -126,8 +129,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             {error && <p style={{ textAlign: 'center', color: '#f44336' }}>{error}</p>}
             {!loading && !error && conversation.messages && conversation.messages.length > 0 ? (
               conversation.messages.map((msg) => {
+                const sender = conversation.members?.find(m => m.id === msg.user_id);
+                const senderName = sender?.first_name || 'Unknown User';
                 const isSent = msg.user_id === conversation.owner_id;
-                const senderName = isSent ? 'You' : primaryUser?.first_name || 'User';
                 return (
                   <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
                     <p className="chat-sender">{senderName}</p>
@@ -166,15 +170,14 @@ export default function MessagesSidebar({ isOpen, onClose }) {
           {!initialLoading && conversations.length > 0 && (
             <div className="messages-list">
               {conversations.map((conv) => {
-                const primaryUser = conv.other_users?.[0];
-                const displayName = primaryUser?.first_name || (conv.other_users?.length === 0 ? 'Solo Ride' : 'User');
+                const groupName = conv.members?.map(m => m.first_name).join(', ') || 'Group Chat';
                 return (
                   <div
                     key={conv.id}
                     className="message-item"
                     onClick={() => setSelectedConversation(conv.id)}
                   >
-                    <p className="message-sender">{displayName}</p>
+                    <p className="message-sender">{groupName}</p>
                     <p className="message-preview">{conv.preview}</p>
                     <p className="message-time">{conv.last_message_sent_at ? new Date(conv.last_message_sent_at).toLocaleString() : 'No messages'}</p>
                   </div>
