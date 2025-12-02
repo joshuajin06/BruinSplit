@@ -139,7 +139,7 @@ export async function transferOwnership(req, res, next) {
             return res.status(400).json({ error: 'Ride ID and new owner user ID are required' });
         }
 
-        const result = await transferOwnershipService;
+        const result = await transferOwnershipService(rideId, newOwnerUserId, currentOwnerId);
 
         return res.status(200).json({
             message: 'Ride ownership transferred successfully',
