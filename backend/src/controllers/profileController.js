@@ -151,3 +151,46 @@ export async function updateProfile(req, res, next) {
     }
 }
 
+
+// POST /api/profile/me/photo - upload profile photo
+export async function uploadProfilePhoto(req, res, next) {
+    try {
+        const userId = req.user.id;
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // get current profile to delete old photo
+        const currentProfile = await getProfileService(userId);
+        const oldPhotoUrl = currentProfile.profile_photo_url;
+
+        // upload new photo (automatic JPEG conversion)
+        const photoUrl = await uploadProfilePhotoService(
+            userId,
+            req.file.buffer,
+            req.file.mimetype
+        );
+
+        // update profile with new photo URL
+        const updatedProfile = await updateProfileService(userId, {
+            profile_photo_url: photoUrl
+        });
+
+        // delete old photo in background (don't wait for it)
+        if (oldPhotoUrl) {
+            deleteProfilePhotoService(oldPhotoUrl).catch(err => {
+                console.error('Failed to delete old profile photo:', err);
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Profile photo uploaded successfully',
+            profile: updatedProfile
+        });
+
+    } catch (error) {
+        console.error('Upload profile photo error:', error);
+        next(error);
+    }
+}
