@@ -2,9 +2,15 @@
 With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to design an app called BruinSplit which helps UCLA students find other students to split the cost of a ride somewhere. This app will let users log in with their UCLA email, post or join ride requests based on time and destination. 
 
 
+# Installation Instructions:
+Before running the aoo, make sure you have installed the following. 
 
-Setup:
- - Make sure you have Node and Express set up
+Install [node.js](https://nodejs.org/en/download):
+
+Check which node version you have: 
+```bash
+node -v
+```
  - Install Dependencies `npm install`
  - Install Supabase, `npm install @supabase/supabase-js`
  - Install .env, `npm install dotenv`
