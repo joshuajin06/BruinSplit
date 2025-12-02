@@ -399,19 +399,45 @@ export async function deleteRideService(rideId, userId) {
 // helper function to remove a user from a ride they've joined
 export async function leaveRideService(rideId, userId) {
 
-    // query rides table to check if ride even exists
+    // query rides table to check if ride even exists and get owner_id
     const { data: ride, error: rideError } = await supabase
         .from('rides')
-        .select('id')
+        .select('id, owner_id')
         .eq('id', rideId)
         .single();
 
-    // throw error if : error OR ride doesn't exist
+    // throw error if error OR ride doesn't exist
     if (rideError || !ride) {
         const error = new Error('Ride not found');
         error.statusCode = 404;
         throw error;
     }
+
+    // check if user is the owner
+    const isOwner = ride.owner_id === userId;
+
+    if (isOwner) {
+        // owner can only leave if they've transferred ownership
+        // OR if the ride is empty
+
+        // count confirmed members excluding owner
+        const { data: otherMembers } = await supabase 
+            .from('ride_members')
+            .select('id')
+            .eq('ride_id', rideId)
+            .eq('status', 'CONFIRMED JOINING')
+            .neq('user_id', userId) // exclude owner
+
+        const hasOtherMembers = otherMembers && otherMembers.length > 0;
+
+        if (hasOtherMembers) {
+            const error = new Error('Cannot leave ride as owner. Please transfer ownership to to another member first.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+    }
+
     
     // check if user is in that ride
     const { data: existingMember } = await supabase
