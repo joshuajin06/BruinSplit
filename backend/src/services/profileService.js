@@ -6,7 +6,7 @@ export async function getProfileService(userId) {
 
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name, created_at, phone_number')
+        .select('id, email, username, first_name, last_name, created_at, phone_number, profile_photo_url')
         .eq('id', userId)
         .single();
 
@@ -35,7 +35,7 @@ export async function getProfileService(userId) {
 export async function getProfileByIdService(userId) {
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name, created_at, phone_number')
+        .select('id, email, username, first_name, last_name, created_at, phone_number, profile_photo_url')
         .eq('id', userId)
         .single();
 
@@ -64,7 +64,7 @@ export async function getProfileByIdService(userId) {
 export async function updateProfileService(userId, updates) {
 
     // will not allow updates to id, email, passwrod_hash, created_at
-    const allowedFields = ['first_name', 'last_name', 'username', 'phone_number'];
+    const allowedFields = ['first_name', 'last_name', 'username', 'phone_number, profile_photo_url'];
     
     // filter the updates object passed into the function to only allow the fields defined above
     // .reduce() builds a new object with only the allowed fields
@@ -131,7 +131,7 @@ export async function updateProfileService(userId, updates) {
         .from('profiles')
         .update(filteredUpdates)
         .eq('id', userId)
-        .select('id, email, username, first_name, last_name, created_at, phone_number')
+        .select('id, email, username, first_name, last_name, created_at, phone_number, profile_photo_url')
         .single()
     
     if (error) {
