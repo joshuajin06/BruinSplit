@@ -95,12 +95,21 @@ export async function removeFriend(req, res, next) {
 
 
 
+
 // GET /api/friends - get all friends
 export async function getFriends(req, res, next) {
     try {
+        const userId = req.user.id;
+
+        const friends = await getFriendsService(userId);
+
+        return res.status(200).json({
+            friends
+        });
 
     } catch (error) {
-
+        console.error('Get friends error:', error);
+        next(error);
     }
 }
 
