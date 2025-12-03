@@ -196,6 +196,67 @@
   color: #999;
 }
 
+.message-input-container {
+  display: flex;
+  gap: 8px;
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  flex-shrink: 0;
+}
+
+.message-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+.message-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.message-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.message-send-btn {
+  padding: 10px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.message-send-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.message-send-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.message-send-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (max-width: 768px) {
   .messages-sidebar {
     width: 100%;
