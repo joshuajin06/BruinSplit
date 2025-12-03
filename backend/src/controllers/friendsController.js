@@ -206,7 +206,17 @@ export async function getFriendRides(req, res, next) {
 export async function getFriendsUpcomingRides(req, res, next) {
     try {
 
-    } catch (error) {
+        const userId = req.user.id;
+        const daysAhead = parseInt(req.query.days) || 7;
 
+        const rides = await getFriendsUpcomingRidesService(userId, daysAhead);
+
+        return res.status(200).json({
+            rides
+        });
+
+    } catch (error) {
+        console.error('Get friends upcoming rides error:', error);
+        next(error);
     }
 }
