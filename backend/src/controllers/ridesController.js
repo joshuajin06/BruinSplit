@@ -319,7 +319,7 @@ export async function getRideById(req, res) {
         if (userIds.length > 0) {
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, username, first_name, last_name')
+                .select('id, username, first_name, last_name, profile_photo_url')
                 .in('id', userIds);
             profilesById = (profiles || []).reduce((acc, p) => {
                 acc[p.id] = p; return acc;
@@ -335,7 +335,7 @@ export async function getRideById(req, res) {
         // get owner profile
         const { data: owner } = await supabase
             .from('profiles')
-            .select('id, username, first_name, last_name, email, phone_number')
+            .select('id, username, first_name, last_name, email, phone_number, profile_photo_url')
             .eq('id', ride.owner_id)
             .single();
         
