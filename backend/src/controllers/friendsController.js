@@ -51,9 +51,22 @@ export async function acceptFriendRequest(req, res, next) {
 // POST /api/friends/reject/:userId - reject friend request
 export async function rejectFriendRequest(req, res, next) {
     try {
+        const { userId: requesterId } = req.params;
+        const userId = req.user.id;
+
+        if (!requesterId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const result = await rejectFriendRequestService(userId, requesterId);
+
+        return res.status(200).json({
+            message: result.message
+        });
 
     } catch (error) {
-
+        console.error('Reject friend request error:', error);
+        next(error);
     }
 }
 
