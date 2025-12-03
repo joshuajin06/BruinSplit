@@ -74,9 +74,22 @@ export async function rejectFriendRequest(req, res, next) {
 // DELETE /api/friends/:userId - remove/unfriend
 export async function removeFriend(req, res, next) {
     try {
+        const { userId: friendId } = req.params;
+        const userId = req.user.id;
+
+        if (!friendId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const result = await removeFriendService(userId, friendId);
+
+        return res.status(200).json({
+            message: result.message
+        });
 
     } catch (error) {
-
+        console.error('Remove friend error:', error);
+        next(error);
     }
 }
 
