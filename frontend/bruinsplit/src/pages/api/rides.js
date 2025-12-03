@@ -120,8 +120,3 @@ export const updateRide = async (rideId, updateData) => {
     throw err;
   }
 };
-
-
-//TODO: leaveRide, deleteRide, getMyRides, getRideById, updateRide functions
-
-// someone make sure this is correct 

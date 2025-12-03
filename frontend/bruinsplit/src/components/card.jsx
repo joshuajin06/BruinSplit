@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
-
+import { getTimeAgo, formatDatetimeLocal, hashString} from './utils/cardUtils';
 import { useMemo } from "react";
-
 const gradients = [
   "gradient-blue",
   "gradient-purple",
@@ -13,9 +12,7 @@ const gradients = [
   "gradient-red",
 ];
 
-const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
-
-export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete, onTransferOwnership, onEdit }) {
+export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete, onTransferOwnership, onEdit, onLeave }) {
     const navigate = useNavigate();
 
     // Random gradient for title
@@ -23,6 +20,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     
     // Get who is accessing the ride
     const [currentUser, setCurrentUser] = useState(null);
+
     useEffect(() => {
         try {
             const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -209,7 +207,11 @@ export default function Card({ title, origin, destination, content, image, rideD
 
             // update local state to not a member and notify parent to refresh
             setMembershipStatus(null);
-            if (onJoin) await onJoin(rideId);
+            if (onLeave) {
+            await onLeave(rideId);
+        } else if (onJoin) {
+            await onJoin(rideId);
+        }
 
             alert('Left ride');
             setShowModal(false);
@@ -219,7 +221,6 @@ export default function Card({ title, origin, destination, content, image, rideD
             setJoining(false);
         }
     };
-
 
 
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -278,18 +279,8 @@ export default function Card({ title, origin, destination, content, image, rideD
         day: '2-digit',
         year: 'numeric'
     }).replace(/\//g, '/') : 'Not specified';
-    const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
     
-    const formatDatetimeLocal = (isoString) => {
-        if (!isoString) return '';
-        const date = new Date(isoString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-};
+    const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
 
 
     const handleJoinClick = async () => {
@@ -423,7 +414,7 @@ export default function Card({ title, origin, destination, content, image, rideD
    
    const [editModalOpen, setEditModalOpen] = useState(false);
 
-   // Add this state near your other state declarations
+    // Memoize confirmed members for card display to prevent re-renders
 const [cardMembers, setCardMembers] = useState([]);
 
 //fetch members on mount
@@ -450,8 +441,11 @@ useEffect(() => {
     fetchCardMembers();
     }, [rideId]);
    
+
+    // Rendering 
     return (
         <>
+{/*Main Card*/}
             <div className="card-container">
                 {isOwner && (
                     <div className='owner-utilities'>
@@ -467,7 +461,6 @@ useEffect(() => {
                         <button className='editButton' type='button' onClick={() => setEditModalOpen(true)}>edit</button>
                     </div>
                 )}
-                {/*<img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />*/ }
                 <h2 className={`card-title ${gradientClass}`}>{displayTitle}</h2>
 
                 {/* Member Avatars Display */}
@@ -497,7 +490,6 @@ useEffect(() => {
                                 </div>
                             )}
                         </div>
-                        <span className="member-count-text">{cardMembers.length} {cardMembers.length === 1 ? 'rider' : 'riders'}</span>
                     </div>
                 )}
                 
@@ -528,6 +520,8 @@ useEffect(() => {
                     </button>
                 </div>
             </div>
+{/*Main Card*/}
+
 
             {/* EDIT RIDE MODAL */} 
             {editModalOpen && isOwner && (
@@ -999,37 +993,4 @@ useEffect(() => {
             )}
         </>
     );
-}
-
-// Helper function to calculate time ago
-function getTimeAgo(date) {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    
-    const intervals = {
-        year: 31536000,
-        month: 2592000,
-        week: 604800,
-        day: 86400,
-        hour: 3600,
-        minute: 60
-    };
-    
-    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-        const interval = Math.floor(seconds / secondsInUnit);
-        if (interval >= 1) {
-            return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
-        }
-    }
-    
-    return 'just now';
-}
-
-// Helper for consistent gradient assignment
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0; // Convert to 32bit int
-  }
-  return Math.abs(hash);
 }
