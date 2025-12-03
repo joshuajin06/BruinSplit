@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getMessages, getConversations } from '../pages/api/messages';
+import { postMessage, getMessages, getConversations } from '../pages/api/messages';
 import { useAuth } from '../context/AuthContext';
 
 import './MessagesSidebar.css';
@@ -127,6 +127,17 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     setSelectedConversation(null);
   };
 
+  const handleSendMessage = async (rideId) => {
+    try {
+      const messageSent = await postMessage(rideId, messageInput);
+      console.log("Message sent: ", messageSent);
+      setMessageInput('');
+    } catch(error) {
+      console.error("Failed to send message: ", error);
+      setError(error.message);
+    }
+  }
+
   if (selectedConversation) {
     const conversation = conversations.find(c => c.id === selectedConversation);
     if (!conversation) return null;
@@ -187,6 +198,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && messageInput.trim()) {
                   // Placeholder for send handler - you'll connect this to your backend
+                  handleSendMessage(conversation.ride_id);
                 }
               }}
               placeholder="Type a message..."
