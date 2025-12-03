@@ -4,9 +4,23 @@ import { sendFriendRequestService, acceptFriendRequestService, rejectFriendReque
 // POST /api/friends/request/:userId - send friend request
 export async function sendFriendRequest(req, res, next) {
     try {
+        const { userId: addresseeId } = req.params;
+        const requesterId = req.user.id;
+
+        if (!addresseeId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const result = await sendFriendRequestService(requesterId, addresseeId);
+
+        return res.status(201).json({
+            message: result.message,
+            status: result.status || 'PENDING'
+        });
 
     } catch (error) {
-
+        console.error('Send friend request:', error);
+        next(error);
     }
 }
 
@@ -97,6 +111,6 @@ export async function getFriendsUpcomingRides(req, res, next) {
     try {
 
     } catch (error) {
-        
+
     }
 }
