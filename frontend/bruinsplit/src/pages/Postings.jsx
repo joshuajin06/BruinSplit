@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { getMyRides } from '../pages/api/rides';
 import './pages.css';
 import Card from '../components/card.jsx';
 import SearchBar from '../components/searchBar.jsx';
@@ -10,9 +12,8 @@ export default function Postings() {
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const user = JSON.parse(localStorage.getItem('user'));
+    const { isAuthenticated } = useAuth();
     const token = localStorage.getItem('token');
-    const isAuthenticated = !!user && !!token;
 
     //fetches rides when component loads
     useEffect(() => {
@@ -120,8 +121,11 @@ export default function Postings() {
             const data = await res.json();
             // Extract rides array from response (controller returns { message, rides })
             const ridesArray = data.rides || data || [];
+            const myRidesResponse = await getMyRides();
+            const myRidesArray = myRidesResponse.rides || [];
+            const filteredArr = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
             setRides(ridesArray);
-            setFilteredRides(ridesArray);
+            setFilteredRides(filteredArr);
         } catch (err) {
             console.error('fetchRides error:', err);
             setError(err.message || 'Failed to load rides');
