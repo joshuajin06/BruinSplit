@@ -158,7 +158,7 @@ export default function Postings() {
                 {isAuthenticated && <button className='add-post' onClick={() => setShowModal(!showModal)}><a>+</a></button>}
             </section>
             
-            <div style={{ marginBottom: '24px', maxWidth: '600px' }}>
+            <div style={{ marginBottom: '24px', width: '60%', maxWidth: '1200px', margin: '0 auto 24px auto' }}>
                 <SearchBar onSearch={handleSearch} />
             </div>
 
