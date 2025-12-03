@@ -129,51 +129,59 @@ export default function MyRides() {
         <div className="page-container">
             <h1>My Rides</h1>
 
-            {/* Pending Requests Section */}
-            <section className="rides-section">
-                <h2>Pending Requests</h2>
-                {pendingRides.length === 0 ? (
-                    <p>No pending ride requests.</p>
-                ) : (
-                    <div className="card-grid">
-                        {pendingRides.map(ride => (
-                            <div key={ride.id} className="pending-ride-wrapper">
-                                {renderRideCard(ride, false)}
-                                <button 
-                                    className="btn-cancel-pending"
-                                    onClick={() => handleCancelPending(ride.id)}
-                                >
-                                    Cancel Request
-                                </button>
+            <div className="three-column-layout">
+                {/* Created Rides Column - Left */}
+                <section className="rides-column">
+                    <h2>Created</h2>
+                    <div className="column-content">
+                        {createdRides.length === 0 ? (
+                            <p className="empty-message">No rides created yet.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {createdRides.map(ride => renderRideCard(ride, true))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
 
-            {/* Created Rides Section */}
-            <section className="rides-section">
-                <h2>Created Rides</h2>
-                {createdRides.length === 0 ? (
-                    <p>No rides created yet.</p>
-                ) : (
-                    <div className="card-grid">
-                        {createdRides.map(ride => renderRideCard(ride, true))}
+                {/* Joined Rides Column - Middle */}
+                <section className="rides-column">
+                    <h2>Joined</h2>
+                    <div className="column-content">
+                        {joinedRides.length === 0 ? (
+                            <p className="empty-message">No rides joined yet.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {joinedRides.map(ride => renderRideCard(ride, true))}
+                            </div>
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
 
-            {/* Joined Rides Section */}
-            <section className="rides-section">
-                <h2>Joined Rides</h2>
-                {joinedRides.length === 0 ? (
-                    <p>No rides joined yet.</p>
-                ) : (
-                    <div className="card-grid">
-                        {joinedRides.map(ride => renderRideCard(ride, true))}
+                {/* Requested Rides Column - Right */}
+                <section className="rides-column">
+                    <h2>Requested</h2>
+                    <div className="column-content">
+                        {pendingRides.length === 0 ? (
+                            <p className="empty-message">No pending ride requests.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {pendingRides.map(ride => (
+                                    <div key={ride.id} className="pending-ride-wrapper">
+                                        {renderRideCard(ride, false)}
+                                        <button
+                                            className="btn-cancel-pending"
+                                            onClick={() => handleCancelPending(ride.id)}
+                                        >
+                                            Cancel Request
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
+            </div>
         </div>
     );
 }
