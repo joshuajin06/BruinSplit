@@ -5,7 +5,7 @@ import './MessagesIcon.css';
 
 export default function MessagesIcon() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  // const [unreadCount, setUnreadCount] = useState(3);
   const { isAuthenticated } = useAuth();
 
   return ( isAuthenticated && (
@@ -16,7 +16,7 @@ export default function MessagesIcon() {
         title="Messages"
       >
         <span className="icon">💬</span>
-        {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
+        {/* {unreadCount > 0 && <span className="badge">{unreadCount}</span>} */}
       </button>
 
       <MessagesSidebar
