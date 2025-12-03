@@ -159,8 +159,21 @@ export async function getFriendCount(req, res, next) {
 export async function getUserFriends(req, res, next) {
     try {
 
-    } catch (error) {
+        const { userId } = req.params;
 
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const friends = await getFriendsService(userId);
+
+        return res.status(200).json({
+            friends
+        });
+
+    } catch (error) {
+        console.error('Get user friends error:', error);
+        next(error);
     }
 }
 
