@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import './pages.css';
 import Card from '../components/card.jsx';
 import { getMyRides, getMyPendingRides, deleteRide, leaveRide } from './api/rides.js';
@@ -9,6 +10,8 @@ export default function MyRides() {
     const [createdRides, setCreatedRides] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const { user } = useAuth();
 
     useEffect(() => {
         loadMyRides();
@@ -27,8 +30,8 @@ export default function MyRides() {
             const pending = pendingResponse.rides || [];
 
             // Separate rides by role
-            const owned = allRides.filter(ride => ride.user_role === 'owner');
-            const joined = allRides.filter(ride => ride.user_role === 'member');
+            const owned = allRides.filter(ride => ride.owner_id === user?.id);
+            const joined = allRides.filter(ride => ride.owner_id != user?.id);
 
             setCreatedRides(owned);
             setJoinedRides(joined);
