@@ -110,6 +110,15 @@ export default function Profile() {
     <div className="profile-container">
       <div className="profile-card">
         <div className="profile-header">
+          <div className="profile-picture-section">
+            {user?.profile_photo_url ? (
+              <img src={user.profile_photo_url} alt="Profile" className="profile-picture" />
+            ) : (
+              <div className="profile-picture-placeholder">
+                <span>{user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}</span>
+              </div>
+            )}
+          </div>
           <h1>My Profile</h1>
         </div>
 
