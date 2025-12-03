@@ -1,4 +1,4 @@
-import { createMessage, getMessagesForRide } from '../services/messageService.js';
+import { createMessage, getMessagesForRide, getConversationsForUser } from '../services/messageService.js';
 
 
 // POST /api/messages
@@ -33,7 +33,7 @@ export async function postMessage(req, res, next) {
 // GET /api/messages
 export async function getMessages(req, res, next) {
     try{
-        
+
         const { ride_id } = req.query;
 
         const userId = req.user.id;
@@ -47,10 +47,28 @@ export async function getMessages(req, res, next) {
         return res.status(200).json({
             messages
         })
-        
+
 
     } catch (error) {
         console.error('Get messages error', error);
+        next(error);
+    }
+}
+
+// GET /api/messages/conversations (get all conversations for current user)
+export async function getConversations(req, res, next) {
+    try {
+        const userId = req.user.id;
+        console.log('Fetching conversations for userId:', userId);
+
+        const conversations = await getConversationsForUser(userId);
+        console.log('Conversations found:', conversations.length);
+
+        return res.status(200).json({
+            conversations
+        });
+    } catch (error) {
+        console.error('Get conversations error', error);
         next(error);
     }
 }

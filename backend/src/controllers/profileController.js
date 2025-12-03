@@ -1,4 +1,15 @@
 import { getProfileService, getProfileByIdService, updateProfileService } from '../services/profileService.js';
+import multer from 'multer';
+import { uploadProfilePhotoService, deleteProfilePhotoService } from '../services/uploadService.js';
+
+
+// configure multer for file uploads (memory storage)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5 MB limit
+    }
+});
 
 
 // GET /api/profile/me
@@ -140,3 +151,78 @@ export async function updateProfile(req, res, next) {
     }
 }
 
+
+// POST /api/profile/me/photo - upload profile photo
+export async function uploadProfilePhoto(req, res, next) {
+    try {
+        const userId = req.user.id;
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // get current profile to delete old photo
+        const currentProfile = await getProfileService(userId);
+        const oldPhotoUrl = currentProfile.profile_photo_url;
+
+        // upload new photo (automatic JPEG conversion)
+        const photoUrl = await uploadProfilePhotoService(
+            userId,
+            req.file.buffer,
+            req.file.mimetype
+        );
+
+        // update profile with new photo URL
+        const updatedProfile = await updateProfileService(userId, {
+            profile_photo_url: photoUrl
+        });
+
+        // delete old photo in background (don't wait for it)
+        if (oldPhotoUrl) {
+            deleteProfilePhotoService(oldPhotoUrl).catch(err => {
+                console.error('Failed to delete old profile photo:', err);
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Profile photo uploaded successfully',
+            profile: updatedProfile
+        });
+
+    } catch (error) {
+        console.error('Upload profile photo error:', error);
+        next(error);
+    }
+}
+
+// DELETE /api/profile/me/photo - delete profile photo
+export async function deleteProfilePhoto(req, res, next) {
+    try {
+        const userId = req.user.id;
+
+        // get current profile
+        const currentProfile = await getProfileService(userId);
+        const photoUrl = currentProfile.profile_photo_url;
+
+        if (!photoUrl) {
+            return res.status(400).json({ error: 'No profile photo to delete' });
+        }
+
+        // delete from storage
+        await deleteProfilePhotoService(photoUrl);
+
+        // update profile to remove photo URL
+        const updatedProfile = await updateProfileService(userId, {
+            profile_photo_url: null
+        });
+
+        return res.status(200).json({
+            message: 'Profile photo deleted successfully',
+            profile: updatedProfile
+        });
+
+    } catch (error) {
+        console.error('Delete profile photo error:', error);
+        next(error);
+    }
+}
