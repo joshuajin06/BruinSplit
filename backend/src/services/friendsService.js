@@ -325,7 +325,7 @@ export async function areFriendsService(userId1, userId2) {
 
 
 // get rides that a friend has joined and that are upcoming
-export async function getFriendRidesServie(userId, friendId) {
+export async function getFriendRidesService(userId, friendId) {
     // verify friendship
     const areFriends = await areFriendsService(userId, friendId);
     if (!areFriends) {
@@ -373,4 +373,77 @@ export async function getFriendRidesServie(userId, friendId) {
     );
 
     return enrichedRides;
+}
+
+
+// get upcomign rides from all friends (next few days)
+export async function getFriendsUpcomingRidesService(userId, daysAhead = 7) {
+
+    // get all friends
+    const friends = await getFriendsService(userId);
+    const friendIds = friends.map(f => f.id);
+
+    if (friendIds.length === 0) {
+        return [];
+    }
+
+    // get all rides where friends are confirmed members
+    const { data: memberRecords, error: memberError } = await supabase
+        .from('ride_members')
+        .select('ride_id, user_id')
+        .in('user_id', friendIds)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (memberError) {
+        memberError.statusCode = 500;
+        throw memberError;
+    }
+
+    const rideIds = [...new Set((memberRecords || []).map(r => r.ride_id))];
+
+    if (rideIds.length === 0) {
+        return [];
+    }
+
+    // get upcoming rides within the next N days
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+
+    const { data: rides, error: ridesError } = await supabase
+        .from('rides')
+        .select('*')
+        .in('id', rideIds)
+        .gte('depart_at', now.toISOString())
+        .lte('depart_at', futureDate.toISOString())
+        .order('depart_at', { ascending: true });
+
+    if (ridesError) {
+        ridesError.statusCode = 500;
+        throw ridesError;
+    }
+
+    // enrich rides and attach friend info
+    const { enrichRide } = await import('./rideService.js');
+    const enrichedRides = await Promise.all(
+        (rides || []).map(async (ride) => {
+            const enriched = await enrichRide(ride, userId);
+            // find which friends are in this ride
+            const friendsInRide = memberRecords
+                .filter(m => m.ride_id === ride.id)
+                .map(m => {
+                    const friend = friends.find(f => f.id === m.user_id);
+                    return friend ? { id: friend.id, username: friend.username, first_name: friend.first_name, last_name: friend.last_name, profile_photo_url: friend.profile_photo_url } : null;
+                })
+                .filter(Boolean);
+            
+            return {
+                ...enriched,
+                friends_in_ride: friendsInRide
+            };
+        })
+    );
+
+    return enrichedRides;
+
 }
