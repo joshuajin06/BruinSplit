@@ -277,20 +277,20 @@ export default function Card({ title, origin, destination, content, image, rideD
                 <p className="card-content">{content}</p>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button 
-                        className="card-button-details" 
+                        className="card-button" 
                         onClick={handleDetailsClick}
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
                         Details
                     </button>
-                    <button 
-                        className="card-button" 
+                    <button
+                        className="card-button"
                         onClick={handleJoinClick}
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
-                        {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
+                        {isOwner ? 'View Requests' : membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
                     </button>
                 </div>
             </div>
@@ -471,21 +471,23 @@ export default function Card({ title, origin, destination, content, image, rideD
                         {joinError && <p className="error">{joinError}</p>}
 
                         <div className="modal-actions">
-                            <button 
-                                className="btn-secondary" 
+                            <button
+                                className="btn-secondary"
                                 onClick={handleCancel}
                                 type="button"
                             >
-                                Cancel
+                                Close
                             </button>
-                            <button 
-                                className="btn-primary" 
-                                onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin} 
-                                disabled={joining}
-                                type="button"
-                            >
-                                {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
-                            </button>
+                            {!isOwner && (
+                                <button
+                                    className="btn-primary"
+                                    onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin}
+                                    disabled={joining}
+                                    type="button"
+                                >
+                                    {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
