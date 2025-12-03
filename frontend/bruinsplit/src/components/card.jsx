@@ -290,7 +290,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
-                        {isOwner ? 'View Requests' : membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
+                        {isOwner ? 'View Requests' : membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending...' : 'Join Ride'}
                     </button>
                 </div>
             </div>
