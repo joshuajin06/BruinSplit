@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
-import { set } from 'zod';
-import { is } from 'zod/locales';
 
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
-export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete }) {
+export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete, onTransferOwnership, onEdit }) {
     const navigate = useNavigate();
     
     // Get who is accessing the ride
@@ -267,7 +265,17 @@ export default function Card({ title, origin, destination, content, image, rideD
         year: 'numeric'
     }).replace(/\//g, '/') : 'Not specified';
     const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
-
+    
+    const formatDatetimeLocal = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 
     const handleJoinClick = async () => {
@@ -325,6 +333,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+
     const handleTransferOnwership = async (newOwnerId) => {
         if (!isOwner) return;
 
@@ -338,14 +347,58 @@ export default function Card({ title, origin, destination, content, image, rideD
                 }
             });
             if (!res.ok) throw new Error('Failed to transfer ownership');
+            //setShowModal(false);
+            if (onTransferOwnership) onTransferOwnership(rideId, newOwnerId);
             await fetchRiders(); //refresh members list
-            setShowModal(false);
 
         } catch (err) {
             console.error("Transfer ownership error:", err);
         }
     }
+
+    // Default form state for editing ride
+    const [form, setForm] = useState({
+            origin_text: origin || '',
+            destination_text: destination || '',
+            depart_at: formatDatetimeLocal(departureDatetime) || '',
+            platform: platform ,
+            max_seats: maxRiders || 2,
+            notes: notes || ''
+        });
+
+    function handleEditChange(e) {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+    }
     
+    const handleEdit = async(e) => {
+        e.preventDefault();
+
+        if (!isOwner) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}`, {
+                method: 'PUT',
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(form)
+            });
+            if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to update ride');
+            }
+            if (onEdit) onEdit(rideId);
+
+            const data = await res.json();
+
+            setEditModalOpen(false);
+        } catch (err) {
+            console.error("Edit ride error:", err);
+        }
+    }
 
     // Use origin/destination for title, fallback to title prop
     const displayTitle = origin && destination ? `${origin} to ${destination}` : title;
@@ -354,20 +407,24 @@ export default function Card({ title, origin, destination, content, image, rideD
     const confirmedRiders = allMembers.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
     const pendingRequests = allMembers.filter(m => m.status === 'PENDING');
    
-   
+   const [editModalOpen, setEditModalOpen] = useState(false);
    
     return (
         <>
             <div className="card-container">
                 {isOwner && (
-                    <button 
-                        className='deleteButton' 
-                        onClick={handleDeleteConfirm} // Calls the function that opens the modal
-                        type="button"
-                        title="Delete Ride"
-                    >
-                        {deleteLoading ? '...' : 'x'}
-                    </button>
+                    <div className='owner-utilities'>
+                        <button 
+                            className='deleteButton' 
+                            onClick={handleDeleteConfirm} // Calls the function that opens the modal
+                            type="button"
+                            title="Delete Ride"
+                        >
+                            {deleteLoading ? '...' : 'x'}
+                        </button>
+
+                        <button className='editButton' type='button' onClick={() => setEditModalOpen(true)}>edit</button>
+                    </div>
                 )}
                 <img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />
                 <h2 className="card-title">{displayTitle}</h2>
@@ -395,6 +452,69 @@ export default function Card({ title, origin, destination, content, image, rideD
                     </button>
                 </div>
             </div>
+
+            {/* EDIT RIDE MODAL */} 
+            {editModalOpen && isOwner && (
+                <section className="ride-form" onClick={() => setEditModalOpen(false)}>
+                    <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleEdit}>
+                        <button 
+                            className="modal-close" 
+                            onClick={() => setEditModalOpen(false)}
+                            aria-label="Close modal" 
+                            type="button">
+                        ×
+                        </button>
+                        <h2>Edit Ride</h2>
+                        {/*modalError && <p className="error">{modalError}</p>*/}
+
+                        <label>
+                            Origin
+                            <input name="origin_text" value={form.origin_text} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Destination
+                            <input name="destination_text" value={form.destination_text} onChange={handleEditChange}/>
+                        </label>
+
+                        <label>
+                            Departure
+                            <input name="depart_at" type="datetime-local" value={form.depart_at} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Platform
+                            <select name="platform" value={form.platform} onChange={handleEditChange}>
+                                <option>LYFT</option>
+                                <option>UBER</option>
+                                <option>WAYMO</option>
+                                <option>OTHER</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Max Seats
+                            <input name="max_seats" type="number" min="2" max="6" value={form.max_seats} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Notes
+                            <textarea name="notes" value={form.notes} onChange={handleEditChange} />
+                        </label>
+
+                        <div className="form-actions">
+                            <button type="submit">Confirm</button>
+                            <button type="button" onClick={() => setForm({origin_text: origin || '',
+                                destination_text: destination || '',
+                                depart_at: formatDatetimeLocal(departureDatetime) || '',
+                                platform: platform || 'LYFT',
+                                max_seats: maxRiders || 2,
+                                notes: notes || ''})}>
+                            Reset</button>
+                        </div>
+                    </form>
+                </section>
+            )}
 
             {/* DELETE CONFIRMATION MODAL */}
                 {showDeleteConfirm && (
@@ -434,6 +554,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                         </div>
                     </div>
                 )}
+
 
             {/* Ride Details */}
             {/* Join/Manage Modal */}
