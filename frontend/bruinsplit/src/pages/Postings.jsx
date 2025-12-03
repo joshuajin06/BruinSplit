@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './pages.css';
 import Card from '../components/card.jsx';
+import SearchBar from '../components/searchBar.jsx';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
+    const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
@@ -115,11 +117,11 @@ export default function Postings() {
                 const text = await res.text().catch(() => '');
                 throw new Error(`Expected JSON but received: ${contentType} \n${text.slice(0, 300)}`);
             }
-
             const data = await res.json();
             // Extract rides array from response (controller returns { message, rides })
             const ridesArray = data.rides || data || [];
             setRides(ridesArray);
+            setFilteredRides(ridesArray);
         } catch (err) {
             console.error('fetchRides error:', err);
             setError(err.message || 'Failed to load rides');
@@ -128,6 +130,26 @@ export default function Postings() {
         }
     }
 
+    const handleSearch = (searchQuery) => {
+        if (!searchQuery.trim()) {
+            setFilteredRides(rides);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const filtered = rides.filter(ride => {
+            const origin = ride.origin_text?.toLowerCase() || '';
+            const destination = ride.destination_text?.toLowerCase() || '';
+            const combinedText = `${origin} to ${destination}`;
+            
+            return origin.includes(query) || 
+                   destination.includes(query) || 
+                   combinedText.includes(query);
+        });
+        
+        setFilteredRides(filtered);
+    };
+
     return (
     <>
         <div className="page-container">
@@ -135,11 +157,19 @@ export default function Postings() {
                 <h1>Posts</h1>
                 {isAuthenticated && <button className='add-post' onClick={() => setShowModal(!showModal)}><a>+</a></button>}
             </section>
+            
+            <div style={{ marginBottom: '24px', maxWidth: '600px' }}>
+                <SearchBar onSearch={handleSearch} />
+            </div>
+
             {loading && <p>Loading rides...</p>}
             {error && <p className="error-message">{error}</p>}
             {!loading && rides.length === 0 && <p>No rides available.</p>}
+            {!loading && rides.length > 0 && filteredRides.length === 0 && (
+                <p>No rides match your search.</p>
+            )}
             <div className='card-grid'> 
-                {rides.map(ride => (
+                {filteredRides.map(ride => (
                     <Card key={ride.id}
                         rideId={ride.id}
                         ownerId={ride.owner_id}
