@@ -324,3 +324,53 @@ export async function areFriendsService(userId1, userId2) {
 }
 
 
+// get rides that a friend has joined and that are upcoming
+export async function getFriendRidesServie(userId, friendId) {
+    // verify friendship
+    const areFriends = await areFriendsService(userId, friendId);
+    if (!areFriends) {
+        const error = new Error('Not friends with this user');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    // get rides where friend is a confirmed member
+    const { data: memberRecords, error: memberError } = await supabase
+        .from('ride_members')
+        .select('ride_id')
+        .eq('user_id', friendId)
+        .eq('status', 'CONFIRMED JOINING');
+
+    if (memberError) {
+        memberError.statusCode = 500;
+        throw memberError;
+    }
+
+    const rideIds = (memberRecords || []).map(r => r.ride_id);
+
+    if (rideIds.length === 0) {
+        return [];
+    }
+
+    // get rides that are upcoming (depart_at > now)
+    const now = new Date();
+    const { data: rides, error: ridesError } = await supabase
+        from('rides')
+        .select('*')
+        .in('id', rideIds)
+        .gte('depart_at', now.toISOString())
+        .order('depart_at', { ascending: true });
+    
+    if (ridesError) {
+        ridesError.statusCode = 500;
+        throw ridesError;
+    }
+
+    // enrich rides
+    const { enrichRide } = await import('./rideService.js');
+    const enrichedRides = await Promise.all(
+        (rides || []).map(ride => enrichRide(ride, userId))
+    );
+
+    return enrichedRides;
+}
