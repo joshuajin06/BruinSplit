@@ -1,439 +1,747 @@
-/* Card Container */
-.card-container {
-    width: 20rem;
-    justify-content: center;
-    border: 1px solid #ddd;
-    border-radius: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        /* Card Container */
+        .card-container {
+            position: relative;
+            width: 20rem;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            min-height: 12rem;
+            color: black;
+            text-align: center;
+            background: white;
+        }
+
+        .card-title, 
+        .card-description,
+        .card-datetime,
+        .card-content {
+            margin: 0.5rem 1rem;
+        }
+
+        .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0.75rem 1rem;       /* consistent internal spacing */
+        min-height: 3rem;            /* fixed height for gradient block */
+        
+
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+
+        /* remove default margin override so spacing is consistent */
+        margin: 0.75rem 1rem;
+
+        text-align: center;
+        line-height: 1.2;
+    }
+
+        .card-datetime {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0.25rem 1rem;
+        }
+
+        .card-seats {
+            margin: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .seats-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        .card-description {
+            color: #666;
+            flex-grow: 1;
+        }
+
+        /*
+        .card-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+        }
+        */
+
+        /* Card Button */
+        .card-button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin-top: auto;
+            border: none;
+            border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
+            background-color: #333;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .card-button:hover {
+            background-color: #555;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #666;
+            width: auto;
+            padding: 0;
+            line-height: 1;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .modal-close:hover {
+            color: #333;
+            background: none;
+        }
+
+        .modal-title {
+            margin: 0 0 1.5rem 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        /* Ride Details Section */
+        .ride-details {
+            background: #f5f5f5;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .modal-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Modal Action Buttons */
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #333;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #555;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        /* Modal Tabs */
+        .modal-tabs {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-size: 1rem;
+            color: #666;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .tab-button:hover {
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #333;
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Riders List */
+        .riders-list {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .riders-loading,
+        .riders-error,
+        .riders-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .riders-error {
+            color: #e53e3e;
+        }
+
+        /* Rider Card */
+        .rider-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #e0e0e0;
+            transition: box-shadow 0.2s;
+        }
+
+        .rider-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .rider-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Rider Avatar */
+        .rider-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        /* Rider Info */
+        .rider-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .rider-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .owner-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rider-username {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .rider-joined {
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        /* Error message */
+        .error {
+            background-color: #fee;
+            color: #c00;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #fcc;
+        }
+
+        /* Scrollbar styling for riders list */
+        .riders-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .riders-list::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .riders-list::-webkit-scrollbar-thumb {
+            background: #999;
+            border-radius: 4px;
+        }
+
+        .riders-list::-webkit-scrollbar-thumb:hover {
+            background: #666;
+        }
+
+        .requests-list {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .request-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #e0e0e0;
+            transition: box-shadow 0.2s;
+        }
+
+        .request-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .request-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Approve button */
+        .btn-approve {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-approve:hover {
+            opacity: 0.9;
+        }
+
+        /* Reject button */
+        .btn-reject {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-reject:hover {
+            opacity: 0.9;
+        }
+
+        /* Notification dot for Requests tab */
+        .notification-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-left: 6px;
+        }
+
+
+        /* Delete Button (top right) */
+        .deleteButton {
+            position: absolute;
+            top: 0.65rem;
+            right: 0.65rem;
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            color: #dc2626;
+            font-size: 1.35rem;
+            font-weight: 600;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            padding-bottom: 3px;
+            cursor: pointer;
+
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+        }
+
+        .deleteButton:hover {
+            background-color: rgba(220, 38, 38, 0.12);
+            color: #b91c1c;
+            transform: scale(1.06);
+        }
+
+        .deleteButton:active {
+            transform: scale(0.94);
+        }
+
+        .deleteButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+            
+        /* DELETE CONFIRMATION MODAL */
+
+        /* Strongest overlay: ABOVE main modal (1000) and any others */
+        .delete-modal-overlay {
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        /* Delete modal box */
+        .delete-modal-content {
+            background: white;
+            color: #333;
+            padding: 1.9rem;
+            width: 90%;
+            max-width: 420px;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            animation: fadeInScale 0.18s ease-out;
+            position: relative;
+        }
+
+        /* Title */
+        .delete-modal-title {
+            margin: 0 0 1rem 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        /* Text */
+        .delete-modal-text {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 1.4rem;
+        }
+
+        /* Optional error */
+        .delete-modal-error {
+            margin-bottom: 1rem;
+        }
+
+        /* Buttons layout */
+        .delete-modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        /* Delete (danger) button override */
+        .delete-btn-danger {
+            background-color: #dc2626 !important;
+            border: 1px solid #dc2626 !important;
+        }
+
+        .delete-btn-danger:hover:not(:disabled) {
+            background-color: #b91c1c !important;
+            border-color: #b91c1c !important;
+        }
+
+        /* Clean keyframe animation */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+
+        /* Kick Button */
+        .kickButton {
+            padding: 0.4rem 0.9rem;
+            border: none;
+            background: rgba(220, 38, 38, 0.15);
+            color: #b91c1c;
+            font-size: 0.9rem;
+            border-radius: 0.35rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .kickButton:hover {
+            background: rgba(220, 38, 38, 0.25);
+            color: #7f1d1d;
+        }
+
+        .kickButton:active {
+            transform: scale(0.95);
+        }
+
+        /* Make Owner Button */
+
+        .makeOwner {
+            padding: 0.4rem 0.9rem;
+            border: none;
+            background: rgba(220, 38, 38, 0.15);
+            color: #b91c1c;
+            font-size: 0.9rem;
+            border-radius: 0.35rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .makeOwner:hover {
+            background: rgba(220, 38, 38, 0.25);
+            color: #7f1d1d;
+        }
+
+        .makeOwner:active {
+            transform: scale(0.95);
+        }
+
+        /* Join Button */
+        .card-button-join, .card-button-details {
+            padding: 0.75rem 1rem;
+            border: none;
+            background: #333;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            width: 100%;
+            transition: background 0.2s, transform 0.15s;
+        }
+
+        .card-button-join:hover, .card-button-details:hover {
+            background: #555;
+            transform: scale(1.02);
+        }
+
+        .card-button-join:disabled , .card-button-details:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .editButton {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+
+        background-color: #3b82f6; 
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: 0.2s ease;
+        }
+
+        .editButton:hover {
+        background-color: #2563eb;
+        }
+
+        /* Gradient Classes */
+    .gradient-blue {
+    background: linear-gradient(135deg, #93c5fd, #bfdbfe);
+    }
+
+    .gradient-purple {
+    background: linear-gradient(135deg, #c4b5fd, #e9d5ff);
+    }
+
+    .gradient-green {
+    background: linear-gradient(135deg, #86efac, #bbf7d0);
+    }
+
+    .gradient-orange {
+    background: linear-gradient(135deg, #fdba74, #fed7aa);
+    }
+
+    .gradient-pink {
+    background: linear-gradient(135deg, #f9a8d4, #fbcfe8);
+    }
+
+    .gradient-red {
+    background: linear-gradient(135deg, #fca5a5, #fecaca);
+    }
+
+/* MODAL BUBBLES */
+/* Member Avatars on Card */
+.card-members {
     display: flex;
-    flex-direction: column;
-    min-height: 12rem;
-    color: black;
-    text-align: center;
-    background: white;
-}
-
-.card-title, 
-.card-description,
-.card-datetime,
-.card-content {
-    margin: 0.5rem 1rem;
-}
-
-.card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.card-datetime {
-    font-size: 0.9rem;
-    color: #666;
-    margin: 0.25rem 1rem;
-}
-
-.card-seats {
-    margin: 0.5rem 1rem;
-    font-size: 0.85rem;
-}
-
-.seats-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 0.35rem 0.75rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
-}
-
-.card-description {
-    color: #666;
-    flex-grow: 1;
-}
-
-.card-image {
-    width: 100%;
-    aspect-ratio: 16/9;
-    object-fit: cover;
-    border-top-left-radius: 1rem;
-    border-top-right-radius: 1rem;
-}
-
-/* Card Button */
-.card-button {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    margin-top: auto;
-    border: none;
-    border-radius: 0.5rem 0.5rem 0.5rem 0.5rem;
-    background-color: #333;
-    color: white;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-}
-
-.card-button:hover {
-    background-color: #555;
-}
-
-/* Modal Styles */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
     align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.modal-close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
-    color: #666;
-    width: auto;
-    padding: 0;
-    line-height: 1;
-    margin: 0;
-    border-radius: 0;
-}
-
-.modal-close:hover {
-    color: #333;
-    background: none;
-}
-
-.modal-title {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.5rem;
-    color: #333;
-}
-
-/* Ride Details Section */
-.ride-details {
-    background: #f5f5f5;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.detail-row:last-child {
-    border-bottom: none;
-}
-
-.detail-label {
-    font-weight: 600;
-    color: #555;
-}
-
-.detail-value {
-    color: #333;
-}
-
-.modal-description {
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-}
-
-/* Modal Action Buttons */
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.btn-primary,
-.btn-secondary {
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s;
-}
-
-.btn-primary {
-    background-color: #333;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #555;
-}
-
-.btn-secondary {
-    background-color: #e0e0e0;
-    color: #333;
-}
-
-.btn-secondary:hover {
-    background-color: #d0d0d0;
-}
-
-/* Modal Tabs */
-.modal-tabs {
-    display: flex;
     gap: 0.5rem;
-    border-bottom: 2px solid #e0e0e0;
-    margin-bottom: 1.5rem;
-}
-
-.tab-button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    font-size: 1rem;
-    color: #666;
-    transition: all 0.2s;
-    font-weight: 500;
-}
-
-.tab-button:hover {
-    color: #333;
-    background-color: #f5f5f5;
-}
-
-.tab-button.active {
-    border-bottom-color: #333;
-    color: #333;
-    font-weight: 600;
-}
-
-/* Riders List */
-.riders-list {
-    background: #f5f5f5;
-    padding: 1rem;
+    margin: 0.75rem 1rem;
+    padding: 0.5rem;
+    background: #f9fafb;
     border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
-    max-height: 400px;
-    overflow-y: auto;
 }
 
-.riders-loading,
-.riders-error,
-.riders-empty {
-    text-align: center;
-    padding: 2rem;
-    color: #666;
-}
-
-.riders-error {
-    color: #e53e3e;
-}
-
-/* Rider Card */
-.rider-card {
+.member-avatars {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #e0e0e0;
-    transition: box-shadow 0.2s;
 }
 
-.rider-card:last-child {
-    margin-bottom: 0;
-}
-
-.rider-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Rider Avatar */
-.rider-avatar {
-    width: 48px;
-    height: 48px;
+.member-avatar-small {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-/* Rider Info */
-.rider-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.rider-name {
-    font-weight: 600;
-    font-size: 1rem;
-    color: #333;
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.owner-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-    padding: 0.15rem 0.5rem;
-    border-radius: 0.25rem;
     font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border: 2px solid white;
+    margin-left: -8px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, z-index 0s;
 }
 
-.rider-username {
-    font-size: 0.875rem;
+.member-avatar-small:first-child {
+    margin-left: 0;
+}
+
+.member-avatar-small:hover {
+    transform: scale(1.15);
+    z-index: 20 !important;
+}
+
+.member-avatar-more {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    font-size: 0.7rem;
+}
+
+.member-count-text {
+    font-size: 0.85rem;
     color: #666;
-    margin-bottom: 0.25rem;
-}
-
-.rider-joined {
-    font-size: 0.75rem;
-    color: #999;
-}
-
-/* Error message */
-.error {
-    background-color: #fee;
-    color: #c00;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid #fcc;
-}
-
-/* Scrollbar styling for riders list */
-.riders-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.riders-list::-webkit-scrollbar-track {
-    background: #e0e0e0;
-    border-radius: 4px;
-}
-
-.riders-list::-webkit-scrollbar-thumb {
-    background: #999;
-    border-radius: 4px;
-}
-
-.riders-list::-webkit-scrollbar-thumb:hover {
-    background: #666;
-}
-
-.requests-list {
-    background: #f5f5f5;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    margin-bottom: 1.5rem;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.request-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid #e0e0e0;
-    transition: box-shadow 0.2s;
-}
-
-.request-card:last-child {
-    margin-bottom: 0;
-}
-
-.request-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.request-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-/* Approve button */
-.btn-approve {
-    padding: 0.5rem 1rem;
-    border: none;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border-radius: 0.4rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: opacity 0.2s;
-    white-space: nowrap;
-}
-
-.btn-approve:hover {
-    opacity: 0.9;
-}
-
-/* Reject button */
-.btn-reject {
-    padding: 0.5rem 1rem;
-    border: none;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    border-radius: 0.4rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: opacity 0.2s;
-    white-space: nowrap;
-}
-
-.btn-reject:hover {
-    opacity: 0.9;
-}
-
-/* Notification dot for Requests tab */
-.notification-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    background: #ef4444;
-    border-radius: 50%;
-    margin-left: 6px;
+    font-weight: 500;
 }
