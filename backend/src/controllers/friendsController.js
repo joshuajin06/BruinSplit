@@ -136,9 +136,21 @@ export async function getPendingRequests(req, res, next) {
 // GET /api/friends/count/:userId - get friend count for a user (public)
 export async function getFriendCount(req, res, next) {
     try {
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const count = await getFriendCountService(userId);
+
+        return res.status(200).json({
+            friend_count: count
+        });
 
     } catch (error) {
-        
+        console.error('Get friend count error:', error);
+        next(error);
     }
 }
 
