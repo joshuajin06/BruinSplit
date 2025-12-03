@@ -23,6 +23,9 @@ router.get('/', authenticateUser, getFriends);
 // GET /api/friends/pending - get pending friend requests
 router.get('/pending', authenticateUser, getPendingRequests);
 
+// GET /api/friends/rides/upcoming - get upcoming rides from all friends
+router.get('/rides/upcoming', authenticateUser, getFriendsUpcomingRides);
+
 // GET /api/friends/count/:userId - get friend count (public)
 router.get('/count/:userId', getFriendCount);
 
@@ -32,8 +35,6 @@ router.get('/:userId/friends', getUserFriends);
 // GET /api/friends/:userId/rides - get rides a friend has joined
 router.get('/:userId/rides', authenticateUser, getFriendRides);
 
-// GET /api/friends/rides/upcoming - get upcoming rides from all friends
-router.get('/rides/upcoming', authenticateUser, getFriendsUpcomingRides);
 
 
 export default router;
