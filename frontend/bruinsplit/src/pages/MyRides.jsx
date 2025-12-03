@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import './pages.css';
 import Card from '../components/card.jsx';
 import { getMyRides, getMyPendingRides, deleteRide, leaveRide } from './api/rides.js';
@@ -9,6 +10,8 @@ export default function MyRides() {
     const [createdRides, setCreatedRides] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const { user } = useAuth();
 
     useEffect(() => {
         loadMyRides();
@@ -27,8 +30,8 @@ export default function MyRides() {
             const pending = pendingResponse.rides || [];
 
             // Separate rides by role
-            const owned = allRides.filter(ride => ride.user_role === 'owner');
-            const joined = allRides.filter(ride => ride.user_role === 'member');
+            const owned = allRides.filter(ride => ride.owner_id === user?.id);
+            const joined = allRides.filter(ride => ride.owner_id != user?.id);
 
             setCreatedRides(owned);
             setJoinedRides(joined);
@@ -129,51 +132,59 @@ export default function MyRides() {
         <div className="page-container">
             <h1>My Rides</h1>
 
-            {/* Pending Requests Section */}
-            <section className="rides-section">
-                <h2>Pending Requests</h2>
-                {pendingRides.length === 0 ? (
-                    <p>No pending ride requests.</p>
-                ) : (
-                    <div className="card-grid">
-                        {pendingRides.map(ride => (
-                            <div key={ride.id} className="pending-ride-wrapper">
-                                {renderRideCard(ride, false)}
-                                <button 
-                                    className="btn-cancel-pending"
-                                    onClick={() => handleCancelPending(ride.id)}
-                                >
-                                    Cancel Request
-                                </button>
+            <div className="three-column-layout">
+                {/* Created Rides Column - Left */}
+                <section className="rides-column">
+                    <h2>Created</h2>
+                    <div className="column-content">
+                        {createdRides.length === 0 ? (
+                            <p className="empty-message">No rides created yet.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {createdRides.map(ride => renderRideCard(ride, true))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
 
-            {/* Created Rides Section */}
-            <section className="rides-section">
-                <h2>Created Rides</h2>
-                {createdRides.length === 0 ? (
-                    <p>No rides created yet.</p>
-                ) : (
-                    <div className="card-grid">
-                        {createdRides.map(ride => renderRideCard(ride, true))}
+                {/* Joined Rides Column - Middle */}
+                <section className="rides-column">
+                    <h2>Joined</h2>
+                    <div className="column-content">
+                        {joinedRides.length === 0 ? (
+                            <p className="empty-message">No rides joined yet.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {joinedRides.map(ride => renderRideCard(ride, true))}
+                            </div>
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
 
-            {/* Joined Rides Section */}
-            <section className="rides-section">
-                <h2>Joined Rides</h2>
-                {joinedRides.length === 0 ? (
-                    <p>No rides joined yet.</p>
-                ) : (
-                    <div className="card-grid">
-                        {joinedRides.map(ride => renderRideCard(ride, true))}
+                {/* Requested Rides Column - Right */}
+                <section className="rides-column">
+                    <h2>Requested</h2>
+                    <div className="column-content">
+                        {pendingRides.length === 0 ? (
+                            <p className="empty-message">No pending ride requests.</p>
+                        ) : (
+                            <div className="column-grid">
+                                {pendingRides.map(ride => (
+                                    <div key={ride.id} className="pending-ride-wrapper">
+                                        {renderRideCard(ride, false)}
+                                        <button
+                                            className="btn-cancel-pending"
+                                            onClick={() => handleCancelPending(ride.id)}
+                                        >
+                                            Cancel Request
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
-            </section>
+                </section>
+            </div>
         </div>
     );
 }
