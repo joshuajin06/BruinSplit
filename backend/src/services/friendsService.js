@@ -164,3 +164,39 @@ export async function rejectFriendRequestService(userId, requesterId) {
     return { message: 'Friend request rejected' };
     
 }
+
+
+// remove/unfriend a friend 
+export async function removeFriendService(userId, friendId) {
+    // find the friendship (can be the requester or accepter)
+    const { data: friendship, error: findError } = await supabase
+        .from('friendships')
+        .select('id, status')
+        .or(`and(requester_id.eq.${userId},addressee_id.eq.${friendId}),and(requester_id.eq.${friendId},addressee_id.eq.${userId})`)
+        .eq('status', 'ACCEPTED')
+        .maybeSingle();
+
+    if (findError) {
+        findError.statusCode = 500;
+        throw findError;
+    }
+
+    if (!friendship) {
+        const error = new Error('Friendship not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // delete the friendship
+    const { error: deleteError } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', friendship.id);
+
+    if (deleteError) {
+        deleteError.statusCode = 500;
+        throw deleteError;
+    }
+
+    return { message: 'Friend removed' };
+}
