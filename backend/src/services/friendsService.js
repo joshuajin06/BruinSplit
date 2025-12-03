@@ -200,3 +200,41 @@ export async function removeFriendService(userId, friendId) {
 
     return { message: 'Friend removed' };
 }
+
+// get all friends for a user
+export async function getFriendsService(userId) {
+    // get all accepted friendships where usr is either requester or addressee
+    const { data: friendships, error } = await supabase
+        .from('friendships')
+        .select('id, requester_id, addressee_id, created_at')
+        .eq('status', 'ACCEPTED')
+        .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
+
+    if (error) {
+        error.statusCode = 500;
+        throw error;
+    }
+
+    // extract friend IDs
+    const friendIds = (friendships || []).map(f =>
+        f.requester_id === userId ? f.addressee_id : f.requester_id
+    );
+
+    if (friendIds.length === 0) {
+        return [];
+    }
+
+    // get friend profiles
+    const { data: friends, error: friendsError } = await supabase
+        .from('profiles')
+        .select('id, username, first_name, last_name, profile_photo_url')
+        .in('id', friendIds);
+
+    if (friendsError) {
+        friendsError.statusCode = 500;
+        throw friendsError;
+    }
+
+    return friends || [];
+}
+
