@@ -28,9 +28,22 @@ export async function sendFriendRequest(req, res, next) {
 // POST /api/friends/accept/:userId - accept friend request
 export async function acceptFriendRequest(req, res, next) {
     try {
+        const { userId: requesterId } = req.params;
+        const userId = req.user.id;
 
+        if (!requesterId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const result = await acceptFriendRequestService(userId, requesterId);
+
+        return res.status(200).json({
+            message: result.message
+        });
+        
     } catch (error) {
-
+        console.error('Accept friend request error:', error);
+        next(error);
     }
 }
 
