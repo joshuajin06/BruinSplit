@@ -90,3 +90,39 @@ export async function sendFriendRequestService(requesterId, addresseeId) {
     return { message: 'Friend request sent', friendship };
     
 }
+
+export async function acceptFriendRequestService(userId, requesterId) {
+
+    // find the pending request
+    const { data: friendship, error: findError } = await supabase
+        .from('friendships')
+        .select('id, status')
+        .eq('requester_id', requesterId)
+        .eq('addressee_id', userId)
+        .eq('status', 'PENDING')
+        .maybeSingle();
+
+    if (findError) {
+        findError.statusCode = 500;
+        throw findError;
+    }
+
+    if (!friendship) {
+        const error = new Error('Friend request not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // update status to ACCEPTED
+    const { error: updateError } = await supabase
+    .from('friendships')
+    .update({ status: 'ACCEPTED', updated_at: new Date().toISOString() })
+    .eq('id', friendship.id);
+
+    if (updateError) {
+        updateError.statusCode = 500;
+        throw updateError;
+    }
+
+    return { message: 'Friend request accepted' };
+}
