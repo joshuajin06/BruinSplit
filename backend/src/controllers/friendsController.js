@@ -117,9 +117,18 @@ export async function getFriends(req, res, next) {
 // GET /api/friends/pending - get pending requests
 export async function getPendingRequests(req, res, next) {
     try {
+        const userId = req.user.id;
+
+        const requests = await getPendingFriendRequestsService(userId);
+
+        return res.status(200).json({
+            sent: requests.sent,
+            received: requests.received
+        });
 
     } catch (error) {
-
+        console.error('Get pending requests error:', error);
+        next(error);
     }
 }
 
