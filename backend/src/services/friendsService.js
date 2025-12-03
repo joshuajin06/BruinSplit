@@ -289,3 +289,20 @@ export async function getPendingFriendRequestsService(userId) {
     };
 }
 
+
+// get friend count for a user 
+export async function getFriendCountService(userId) {
+    const { count, error } = await supabase
+        .from('friendships')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ACCEPTED')
+        .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
+
+    if (error) {
+        error.statusCode = 500;
+        throw error;
+    }
+
+    return count || 0;
+}
+
