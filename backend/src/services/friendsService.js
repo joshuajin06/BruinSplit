@@ -1,7 +1,7 @@
 import { supabase } from '../supabase.js';
 
 export async function sendFriendRequestService(requesterId, addresseeId) {
-    
+
     // prevent adding yourself as a friend
     if (requesterId === addresseId) {
         const error = new Error('Cannot send friend request to yourself');
@@ -71,6 +71,22 @@ export async function sendFriendRequestService(requesterId, addresseeId) {
         }
     }
 
+    // create new friend request
+    const { data: friendship, error: insertError } = await supabase
+        .from('friendships')
+        .insert([{
+            requester_id: requesterId,
+            addressee_id: addresseeId,
+            status: 'PENDING'
+        }])
+        .select('*')
+        .single();
 
+    if (insertError) {
+        insertError.statusCode = 500;
+        throw insertError;
+    }
+
+    return { message: 'Friend request sent', friendship };
     
 }
