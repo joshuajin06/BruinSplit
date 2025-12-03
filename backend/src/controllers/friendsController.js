@@ -182,8 +182,22 @@ export async function getUserFriends(req, res, next) {
 export async function getFriendRides(req, res, next) {
     try {
 
+        const { userId: friendId } = req.params;
+        const userId = req.user.id;
+
+        if (!friendId) {
+            return res.status(400).json({ error: 'Friend ID is required' });
+        }
+
+        const rides = await getFriendRidesService(userId, friendId);
+
+        return res.status(200).json({
+            rides
+        });
+
     } catch (error) {
-        
+        console.error('Get friend rides error:', error);
+        next(error);
     }
 }
 
