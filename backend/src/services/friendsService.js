@@ -3,7 +3,7 @@ import { supabase } from '../supabase.js';
 export async function sendFriendRequestService(requesterId, addresseeId) {
 
     // prevent adding yourself as a friend
-    if (requesterId === addresseId) {
+    if (requesterId === addresseeId) {
         const error = new Error('Cannot send friend request to yourself');
         error.statusCode = 400;
         throw error;
@@ -16,10 +16,25 @@ export async function sendFriendRequestService(requesterId, addresseeId) {
         .eq('id', addresseeId)
         .single();
 
+    if (userError || !addressee) {
+        const error = new Error('User does not exist');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    // check if friendship already exists
+    const { data: existingFriendship, error: checkError } = await supabase
+        .from('friendships')
+        .select('id, status, requester_id, addressee_id')
+        .or(`and(requester_id.eq.${requesterId},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${requesterId})`)
+        .maybeSingle();
+
     if (checkError) {
         checkError.statusCode = 500;
         throw checkError;
     }
+
+    
 
     if (existingFriendship) {
 
@@ -30,7 +45,7 @@ export async function sendFriendRequestService(requesterId, addresseeId) {
         }
 
         if (existingFriendship.status === 'PENDING') {
-            if (existingFriendship.requester.id === requesterId) {
+            if (existingFriendship.requester_id === requesterId) {
                 const error = new Error('Friend request already sent');
                 error.statusCode = 400;
                 throw error;
@@ -38,7 +53,7 @@ export async function sendFriendRequestService(requesterId, addresseeId) {
                 // other user already sent a request, so auto accept it
                 const { error: updateError } = await supabase
                     .from('friendships')
-                    .update({ status: 'ACCEPTED', updated_at: new Date().toISOString })
+                    .update({ status: 'ACCEPTED', updated_at: new Date().toISOString() })
                     .eq('id', existingFriendship.id);
 
                 if (updateError) {
@@ -132,7 +147,7 @@ export async function rejectFriendRequestService(userId, requesterId) {
 
     // find the pending request
     const { data: friendship, error: findError } = await supabase
-        .from('friendshups')
+        .from('friendships')
         .select('id')
         .eq('requester_id', requesterId)
         .eq('addressee_id', userId)
@@ -145,7 +160,7 @@ export async function rejectFriendRequestService(userId, requesterId) {
     }
 
     if (!friendship) {
-        const error = new Error('Friend requester not found');
+        const error = new Error('Friend request not found');
         error.statusCode = 404;
         throw error;
     }
@@ -268,6 +283,17 @@ export async function getPendingFriendRequestsService(userId) {
 
     // get profiles for sent requests
     const sentUserIds = (sentRequests || []).map(r => r.addressee_id);
+    let sentProfiles = [];
+    if (sentUserIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, first_name, last_name, profile_photo_url')
+            .in('id', sentUserIds);
+        sentProfiles = profiles || [];
+    }
+
+    // get profiles for received requests
+    const receivedUserIds = (receivedRequests || []).map(r => r.requester_id);
     let receivedProfiles = [];
     if (receivedUserIds.length > 0) {
         const { data: profiles } = await supabase
@@ -280,11 +306,11 @@ export async function getPendingFriendRequestsService(userId) {
     return {
         sent: (sentRequests || []).map((req, idx) => ({
             ...req,
-            user: sentProfiles[idx] || null
+            user: sentProfiles.find(p => p.id === req.addressee_id) || null
         })),
         received: (receivedRequests || []).map((req, idx) => ({
             ...req,
-            user: receivedProfiles[idx] || null
+            user: receivedProfiles.find(p => p.id === req.requester_id) || null
         }))
     };
 }
@@ -355,7 +381,7 @@ export async function getFriendRidesService(userId, friendId) {
     // get rides that are upcoming (depart_at > now)
     const now = new Date();
     const { data: rides, error: ridesError } = await supabase
-        from('rides')
+        .from('rides')
         .select('*')
         .in('id', rideIds)
         .gte('depart_at', now.toISOString())
