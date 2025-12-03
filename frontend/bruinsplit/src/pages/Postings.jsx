@@ -134,6 +134,11 @@ export default function Postings() {
         }
     }
 
+    const removeRideFromState = (deletedId) => {
+    // This updates the UI instantly by filtering out the deleted item
+    setRides(currentRides => currentRides.filter(ride => ride.id !== deletedId));
+    };
+    
     const handleSearch = (searchQuery) => {
         if (!searchQuery.trim()) {
             setFilteredRides(rides);
@@ -185,6 +190,11 @@ export default function Postings() {
                         notes={ride.notes}
                         createdAt={ride.created_at}
                         content={ride.notes || 'Looking for riders'}
+                        onDelete={removeRideFromState}
+                        onTransferOwnership={async (joinedRideId, newOwnerId) => {
+                            // re-fetch all rides
+                            await fetchRides();
+                        }}
                         rideDetails={{
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
@@ -193,8 +203,11 @@ export default function Postings() {
                             membership_status: ride.membership_status  // null, 'PENDING', or 'CONFIRMED JOINING'
                         }}
                         onJoin={async (joinedRideId) => {
-                        // re-fetch all rides
-                        await fetchRides();
+                            // re-fetch all rides
+                            await fetchRides();
+                        }}
+                        onEdit={ async (editedRideId) => {
+                            await fetchRides();
                         }}
                     /> 
                 ))}

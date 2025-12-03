@@ -2,10 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
 
+import { useMemo } from "react";
+
+const gradients = [
+  "gradient-blue",
+  "gradient-purple",
+  "gradient-green",
+  "gradient-orange",
+  "gradient-pink",
+  "gradient-red",
+];
+
 const DEFAULT_RIDE_IMAGE = "https://wp.dailybruin.com/images/2021/11/web.news_.globalranking2021.ND_.jpg";
 
-export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId }) {
+export default function Card({ title, origin, destination, content, image, rideDetails, departureDatetime, platform, notes, maxRiders, createdAt, rideId, onJoin, ownerId, onDelete, onTransferOwnership, onEdit }) {
     const navigate = useNavigate();
+
+    // Random gradient for title
+    const gradientClass = gradients[hashString(rideId || title) % gradients.length];
     
     // Get who is accessing the ride
     const [currentUser, setCurrentUser] = useState(null);
@@ -172,6 +186,11 @@ export default function Card({ title, origin, destination, content, image, rideD
         setJoining(true);
         setJoinError(null);
 
+        if (isOwner) {
+            setJoining(false);
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             if (!token) throw new Error('User not authenticated');
@@ -201,6 +220,44 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+
+
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const handleDeleteConfirm = (e) => {
+        e.stopPropagation();
+        setShowDeleteConfirm(true);
+    }
+
+    const executeDelete = async () => {
+        setDeleteLoading(true);
+        setDeleteError(null);
+
+        try{
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}`, {
+                method: 'DELETE',
+                headers: {
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Failed to delete ride');
+            }
+
+            if (onDelete) onDelete(rideId);
+        } catch (err){
+            console.error("Delete error:", err);
+            setDeleteError(err.message || 'Error deleting ride');
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+
+
     // Calculate available seats
     const totalSeats = maxRiders || rideDetails?.seats || 3;
     const takenSeats = rideDetails?.current_members || 0;
@@ -215,18 +272,30 @@ export default function Card({ title, origin, destination, content, image, rideD
         hour: '2-digit',
         minute: '2-digit',
         hour12: true
-    }).replace(/\//g, '/') : 'Not specified';
+    }).replace(/\//g, '/') : 'Not specified';                                                                     
     const departureDate = departureObj ? departureObj.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit',
         year: 'numeric'
     }).replace(/\//g, '/') : 'Not specified';
     const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
+    
+    const formatDatetimeLocal = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 
     const handleJoinClick = async () => {
         setShowModal(true);
 
-        fetchRiders(); // gets riders who have joined
+        await fetchRiders(); // gets riders who have joined
 
         // If server didn't include membership_status, try to fetch it for this user
         if (rideDetails?.membership_status === undefined && rideId) {
@@ -256,45 +325,314 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+    const handleKickMember = async (memberId) => {
+        try{
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}/kick/${memberId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.error || 'Failed to kick member');
+                }
+
+                await fetchRiders(); // refresh members list after kick
+            } catch (err){
+                console.error("Kick error:", err);
+                //alert(err.message);
+        }
+    };
+
+
+    const handleTransferOnwership = async (newOwnerId) => {
+        if (!isOwner) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}/transfer-ownership/${newOwnerId}`, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!res.ok) throw new Error('Failed to transfer ownership');
+            //setShowModal(false);
+            if (onTransferOwnership) onTransferOwnership(rideId, newOwnerId);
+            await fetchRiders(); //refresh members list
+
+        } catch (err) {
+            console.error("Transfer ownership error:", err);
+        }
+    }
+
+    // Default form state for editing ride
+    const [form, setForm] = useState({
+            origin_text: origin || '',
+            destination_text: destination || '',
+            depart_at: formatDatetimeLocal(departureDatetime) || '',
+            platform: platform ,
+            max_seats: maxRiders || 2,
+            notes: notes || ''
+        });
+
+    function handleEditChange(e) {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+    }
+    
+    const handleEdit = async(e) => {
+        e.preventDefault();
+
+        if (!isOwner) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/rides/${rideId}`, {
+                method: 'PUT',
+                headers: {
+                    'content-type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(form)
+            });
+            if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to update ride');
+            }
+            if (onEdit) onEdit(rideId);
+
+            const data = await res.json();
+
+            setEditModalOpen(false);
+        } catch (err) {
+            console.error("Edit ride error:", err);
+        }
+    }
+
     // Use origin/destination for title, fallback to title prop
-    const displayTitle = origin && destination ? `${origin} to ${destination}` : title;
+    const displayTitle = origin && destination ? `${origin} ➡ ${destination}` : title;
 
     //filter members into confirmed riders and pending requests
     const confirmedRiders = allMembers.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
     const pendingRequests = allMembers.filter(m => m.status === 'PENDING');
    
-   
+   const [editModalOpen, setEditModalOpen] = useState(false);
+
+   // Add this state near your other state declarations
+const [cardMembers, setCardMembers] = useState([]);
+
+//fetch members on mount
+useEffect(() => {
+    const fetchCardMembers = async () => {
+        if (!rideId) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!res.ok) return;
+            
+            const data = await res.json();
+            const members = data?.ride?.members || [];
+            // Only show confirmed members
+            const confirmed = members.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
+            setCardMembers(confirmed);
+        } catch (err) {
+            console.debug('Could not fetch members for card', err);
+        }
+    };
+    
+    fetchCardMembers();
+    }, [rideId]);
    
     return (
         <>
             <div className="card-container">
-                <img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />
-                <h2 className="card-title">{displayTitle}</h2>
+                {isOwner && (
+                    <div className='owner-utilities'>
+                        <button 
+                            className='deleteButton' 
+                            onClick={handleDeleteConfirm} // Calls the function that opens the modal
+                            type="button"
+                            title="Delete Ride"
+                        >
+                            {deleteLoading ? '...' : 'x'}
+                        </button>
+
+                        <button className='editButton' type='button' onClick={() => setEditModalOpen(true)}>edit</button>
+                    </div>
+                )}
+                {/*<img  src={image || DEFAULT_RIDE_IMAGE}  alt={displayTitle} className="card-image" />*/ }
+                <h2 className={`card-title ${gradientClass}`}>{displayTitle}</h2>
+
+                {/* Member Avatars Display */}
+                {cardMembers.length > 0 && (
+                    <div className="card-members">
+                        <div className="member-avatars">
+                            {cardMembers.slice(0, 4).map((member, index) => {
+                                const profile = member.profile || {};
+                                const fullName = profile.first_name && profile.last_name 
+                                    ? `${profile.first_name} ${profile.last_name}` 
+                                    : profile.username || 'Unknown User';
+                                
+                                return (
+                                    <div 
+                                        key={member.id} 
+                                        className="member-avatar-small"
+                                        title={fullName}
+                                        style={{ zIndex: 10 - index }}
+                                    >
+                                        {fullName.charAt(0).toUpperCase()}
+                                    </div>
+                                );
+                            })}
+                            {cardMembers.length > 4 && (
+                                <div className="member-avatar-small member-avatar-more" title={`+${cardMembers.length - 4} more`}>
+                                    +{cardMembers.length - 4}
+                                </div>
+                            )}
+                        </div>
+                        <span className="member-count-text">{cardMembers.length} {cardMembers.length === 1 ? 'rider' : 'riders'}</span>
+                    </div>
+                )}
+                
                 <p className="card-datetime">Departing at: {formattedDatetime}</p>
                 <p className="card-seats">
                     <span className="seats-badge">{availableSeats} of {totalSeats} seats available</span>
                 </p>
                 <p className="card-content">{content}</p>
+
+
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button 
-                        className="card-button" 
+                        className="card-button-details" 
                         onClick={handleDetailsClick}
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
                         Details
+                        
                     </button>
-                    <button
-                        className="card-button"
+                    <button 
+                        className="card-button-join" 
                         onClick={handleJoinClick}
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
-                        {isOwner ? 'View Requests' : membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending...' : 'Join Ride'}
+                        {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
                     </button>
                 </div>
             </div>
 
+            {/* EDIT RIDE MODAL */} 
+            {editModalOpen && isOwner && (
+                <section className="ride-form" onClick={() => setEditModalOpen(false)}>
+                    <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleEdit}>
+                        <button 
+                            className="modal-close" 
+                            onClick={() => setEditModalOpen(false)}
+                            aria-label="Close modal" 
+                            type="button">
+                        ×
+                        </button>
+                        <h2>Edit Ride</h2>
+                        {/*modalError && <p className="error">{modalError}</p>*/}
+
+                        <label>
+                            Origin
+                            <input name="origin_text" value={form.origin_text} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Destination
+                            <input name="destination_text" value={form.destination_text} onChange={handleEditChange}/>
+                        </label>
+
+                        <label>
+                            Departure
+                            <input name="depart_at" type="datetime-local" value={form.depart_at} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Platform
+                            <select name="platform" value={form.platform} onChange={handleEditChange}>
+                                <option>LYFT</option>
+                                <option>UBER</option>
+                                <option>WAYMO</option>
+                                <option>OTHER</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Max Seats
+                            <input name="max_seats" type="number" min="2" max="6" value={form.max_seats} onChange={handleEditChange} />
+                        </label>
+
+                        <label>
+                            Notes
+                            <textarea name="notes" value={form.notes} onChange={handleEditChange} />
+                        </label>
+
+                        <div className="form-actions">
+                            <button type="submit">Confirm</button>
+                            <button type="button" onClick={() => setForm({origin_text: origin || '',
+                                destination_text: destination || '',
+                                depart_at: formatDatetimeLocal(departureDatetime) || '',
+                                platform: platform || 'LYFT',
+                                max_seats: maxRiders || 2,
+                                notes: notes || ''})}>
+                            Reset</button>
+                        </div>
+                    </form>
+                </section>
+            )}
+
+            {/* DELETE CONFIRMATION MODAL */}
+                {showDeleteConfirm && (
+                    <div className="modal-overlay delete-modal-overlay">
+                        <div 
+                            className="delete-modal-content"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 className="delete-modal-title">Delete Ride?</h3>
+
+                            <p className="delete-modal-text">
+                                Are you sure you want to permanently delete this ride group?
+                                This action cannot be undone.
+                            </p>
+
+                            {deleteError && <p className="error delete-modal-error">{deleteError}</p>}
+
+                            <div className="delete-modal-actions">
+                                <button 
+                                    className="btn-secondary"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={deleteLoading}
+                                    type="button"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    className="btn-primary delete-btn-danger"
+                                    onClick={executeDelete}
+                                    disabled={deleteLoading}
+                                    type="button"
+                                >
+                                    {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+
+            {/* Ride Details */}
             {/* Join/Manage Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -428,6 +766,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                     )}
                                                     <div className="rider-joined">Joined {timeAgo}</div>
                                                 </div>
+
+                                                {isOwner && rider.user_id !== ownerId && (
+                                                    <section className='ride-member-options'>
+                                                        <button className='kickButton' onClick={() => handleKickMember(rider.user_id)}>Kick</button>
+
+                                                        <button className='makeOwner' onClick={() => handleTransferOnwership(rider.user_id)}>Make Owner</button>
+                                                    </section>
+                                                )}
                                             </div>
                                         );
                                     })
@@ -471,23 +817,21 @@ export default function Card({ title, origin, destination, content, image, rideD
                         {joinError && <p className="error">{joinError}</p>}
 
                         <div className="modal-actions">
-                            <button
-                                className="btn-secondary"
+                            <button 
+                                className="btn-secondary" 
                                 onClick={handleCancel}
                                 type="button"
                             >
-                                Close
+                                Cancel
                             </button>
-                            {!isOwner && (
-                                <button
-                                    className="btn-primary"
-                                    onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin}
-                                    disabled={joining}
-                                    type="button"
-                                >
-                                    {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
-                                </button>
-                            )}
+                            <button 
+                                className="btn-primary" 
+                                onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin} 
+                                disabled={joining}
+                                type="button"
+                            >
+                                {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -678,4 +1022,14 @@ function getTimeAgo(date) {
     }
     
     return 'just now';
+}
+
+// Helper for consistent gradient assignment
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit int
+  }
+  return Math.abs(hash);
 }
