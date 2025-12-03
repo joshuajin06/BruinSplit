@@ -238,3 +238,54 @@ export async function getFriendsService(userId) {
     return friends || [];
 }
 
+
+// get pending friend requests (sent and received)
+export async function getPendingFriendRequestsService(userId) {
+
+    // get requests user sent (pending)
+    const { data: sentRequests, error: sentError } = await supabase
+        .from('friendships')
+        .select('id, addressee_id, created_at')
+        .eq('requester_id', userId)
+        .eq('status', 'PENDING');
+    
+    if (sentError) {
+        sentError.statusCode = 500;
+        throw sentError;
+    }
+
+    // get requests user received (pending)
+    const { data: receivedRequests, error: receivedError } = await supabase
+        .from('friendships')
+        .select('id, requester_id, created_at')
+        .eq('addressee_id', userId)
+        .eq('status', 'PENDING');
+
+    if (receivedError) {
+        receivedError.statusCode = 500;
+        throw receivedError;
+    }
+
+    // get profiles for sent requests
+    const sentUserIds = (sentRequests || []).map(r => r.addressee_id);
+    let receivedProfiles = [];
+    if (receivedUserIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, first_name, last_name, profile_photo_url')
+            .in('id', receivedUserIds);
+        receivedProfiles = profiles || [];
+    }
+
+    return {
+        sent: (sentRequests || []).map((req, idx) => ({
+            ...req,
+            user: sentProfiles[idx] || null
+        })),
+        received: (receivedRequests || []).map((req, idx) => ({
+            ...req,
+            user: receivedProfiles[idx] || null
+        }))
+    };
+}
+
