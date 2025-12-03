@@ -306,3 +306,21 @@ export async function getFriendCountService(userId) {
     return count || 0;
 }
 
+// check if two users are friends
+export async function areFriendsService(userId1, userId2) {
+    const { data: friendship, error } = await supabase
+        .from('friendships')
+        .select('id, status')
+        .or(`and(requester_id.eq.${userId1},addressee_id.eq.${userId2}),and(requester_id.eq.${userId2},addressee_id.eq.${userId1})`)
+        .eq('status', 'ACCEPTED')
+        .maybeSingle();
+    
+    if (error) {
+        error.statusCode = 500;
+        throw error;
+    }
+
+    return !!friendship;
+}
+
+
