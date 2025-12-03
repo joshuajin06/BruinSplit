@@ -13,6 +13,8 @@ export default function MessagesSidebar({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [messageInput, setMessageInput] = useState('');
+  const [sending, setSending] = useState(false);
   const conversationsRef = useRef(conversations);
 
   // Update ref whenever conversations change
@@ -175,6 +177,31 @@ export default function MessagesSidebar({ isOpen, onClose }) {
                 <p style={{ textAlign: 'center', color: '#999' }}>No messages yet</p>
               )
             )}
+          </div>
+
+          <div className="message-input-container">
+            <input
+              type="text"
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && messageInput.trim()) {
+                  // Placeholder for send handler - you'll connect this to your backend
+                }
+              }}
+              placeholder="Type a message..."
+              className="message-input"
+              disabled={sending}
+            />
+            <button
+              className="message-send-btn"
+              disabled={sending || !messageInput.trim()}
+              onClick={() => {
+                // Placeholder for send handler - you'll connect this to your backend
+              }}
+            >
+              {sending ? '...' : 'Send'}
+            </button>
           </div>
         </div>
       </>
