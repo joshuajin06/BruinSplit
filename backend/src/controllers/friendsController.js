@@ -1,0 +1,102 @@
+import { sendFriendRequestService, acceptFriendRequestService, rejectFriendRequestService, removeFriendService, getFriendsService, getPendingFriendRequestsService, getFriendCountService, getFriendRidesService, getFriendsUpcomingRidesService } from '../services/friendsService.js';
+
+
+// POST /api/friends/request/:userId - send friend request
+export async function sendFriendRequest(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// POST /api/friends/accept/:userId - accept friend request
+export async function acceptFriendRequest(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// POST /api/friends/reject/:userId - reject friend request
+export async function rejectFriendRequest(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// DELETE /api/friends/:userId - remove/unfriend
+export async function removeFriend(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+
+// GET /api/friends - get all friends
+export async function getFriends(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// GET /api/friends/pending - get pending requests
+export async function getPendingRequests(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// GET /api/friends/count/:userId - get friend count for a user (public)
+export async function getFriendCount(req, res, next) {
+    try {
+
+    } catch (error) {
+        
+    }
+}
+
+
+// GET /api/friends/:userId/friends - get a user's friends list (public)
+export async function getUserFriends(req, res, next) {
+    try {
+
+    } catch (error) {
+
+    }
+}
+
+
+// GET /api/friends/:userId/rides - get rides a friend has joined
+export async function getFriendRides(req, res, next) {
+    try {
+
+    } catch (error) {
+        
+    }
+}
+
+
+// GET /api/friends/rides/upcoming - get upcoming rides from all friends
+export async function getFriendsUpcomingRides(req, res, next) {
+    try {
+
+    } catch (error) {
+        
+    }
+}
