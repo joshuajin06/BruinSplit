@@ -27,6 +27,39 @@ img {
   text-align: center;
 }
 
+.profile-picture-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.profile-picture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-picture-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-picture-placeholder span {
+  font-size: 48px;
+  font-weight: 600;
+  color: white;
+}
+
 .profile-header h1 {
   margin: 0;
   font-size: 28px;
