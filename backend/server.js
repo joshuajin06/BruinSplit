@@ -16,6 +16,8 @@ import ridesRoutes from './src/routes/ridesRoute.js';
 import eventsRoutes from './src/routes/eventsRoute.js';
 import messagesRoutes from './src/routes/messagesRoute.js';
 import profileRoutes from './src/routes/profileRoute.js';
+import friendsRoutes from './src/routes/friendsRoute.js';
+
 
 // import middleware
 import { logger } from './src/middleware/logger.js';
@@ -36,7 +38,7 @@ app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/profile', profileRoutes);
-
+app.use('/api/friends', friendsRoutes);
 
 
 // 404 handler - no route is found
