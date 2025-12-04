@@ -11,7 +11,8 @@ import {
     updateRide,
     manageRequest,     
     kickMember,        
-    transferOwnership  
+    transferOwnership,
+    getPendingRequests
 } from '../pages/api/rides';
 
 const gradients = [
@@ -61,6 +62,11 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [loadingRiders, setLoadingRiders] = useState(false);
     const [ridersError, setRidersError] = useState(null);
 
+    // State for pending requests tab
+    const [pendingRequestsList, setPendingRequestsList] = useState([]);
+    const [loadingPendingRequests, setLoadingPendingRequests] = useState(false);
+    const [pendingRequestsError, setPendingRequestsError] = useState(null);
+
     // State for details modal
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [rideDetailsFull, setRideDetailsFull] = useState(null);
@@ -78,6 +84,20 @@ export default function Card({ title, origin, destination, content, image, rideD
             setRidersError(err.response?.data?.message || err.message);
         } finally {
             setLoadingRiders(false);
+        }
+    };
+
+    // Fetch pending requests function
+    const fetchPendingRequests = async () => {
+        if (!rideId) return;
+        setLoadingPendingRequests(true);
+        try {
+            const data = await getPendingRequests(rideId);
+            setPendingRequestsList(data?.pending_requests || []);
+        } catch (err) {
+            setPendingRequestsError(err.response?.data?.message || err.message);
+        } finally {
+            setLoadingPendingRequests(false);
         }
     };
 
@@ -114,6 +134,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         try {
             await manageRequest(rideId, memberId, action);
             await fetchRiders(); // refresh members list
+            await fetchPendingRequests(); // refresh pending requests list
         } catch (err) {
             console.error(`Error during ${action} member:`, err);
             alert(`Failed to ${action} member`);
@@ -237,6 +258,9 @@ export default function Card({ title, origin, destination, content, image, rideD
         setShowModal(true);
 
         await fetchRiders(); // gets riders who have joined
+        if (isOwner) {
+            await fetchPendingRequests(); // fetch pending requests if user is owner
+        }
 
         // Check membership status if undefined
         if (rideDetails?.membership_status === undefined && rideId) {
@@ -312,7 +336,6 @@ export default function Card({ title, origin, destination, content, image, rideD
 
     // Filter members
     const confirmedRiders = allMembers.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
-    const pendingRequests = allMembers.filter(m => m.status === 'PENDING');
    
     const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -559,13 +582,13 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 Current Riders ({confirmedRiders.length})
                             </button>
                             {isOwner && (
-                                <button 
+                                <button
                                 className={`tab-button ${activeTab === 'requests' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('requests')}
                                 type="button"
                             >
-                                Requests ({pendingRequests.length})
-                                {pendingRequests.length > 0 && <span className="notification-dot"></span>}
+                                Requests ({pendingRequestsList.length})
+                                {pendingRequestsList.length > 0 && <span className="notification-dot"></span>}
                             </button>)}
                         </div>
 
@@ -678,10 +701,14 @@ export default function Card({ title, origin, destination, content, image, rideD
 
                         {activeTab === 'requests' && isOwner && (
                             <div className="requests-list">
-                                {pendingRequests.length === 0 ? (
+                                {loadingPendingRequests ? (
+                                    <div className="riders-loading">Loading requests...</div>
+                                ) : pendingRequestsError ? (
+                                    <div className="riders-error">{pendingRequestsError}</div>
+                                ) : pendingRequestsList.length === 0 ? (
                                     <div className="riders-empty">No pending requests</div>
                                 ) : (
-                                    pendingRequests.map((request) => (
+                                    pendingRequestsList.map((request) => (
                                         <div key={request.user_id} className="request-card">
                                             <div className="rider-info">
                                                 <strong>{request.profile?.first_name} {request.profile?.last_name}</strong>
