@@ -6,7 +6,6 @@ import MessagesIcon from './components/MessagesIcon.jsx'
 import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
-import Events from './pages/Events.jsx'
 import Postings from './pages/Postings.jsx'
 import MyRides from './pages/MyRides.jsx'
 import Profile from './pages/Profile.jsx'
@@ -27,7 +26,6 @@ function App() {
               <div className="content">
               <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/postings" element={<ProtectedRoute><Postings /></ProtectedRoute>} />
                   <Route path="/myrides" element={<ProtectedRoute><MyRides /></ProtectedRoute>} />

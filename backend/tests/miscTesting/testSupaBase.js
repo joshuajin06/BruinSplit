@@ -18,7 +18,7 @@ async function testConnection() {
   console.log("🌟 Testing Supabase connection...");
 
   try {
-    const { data, error } = await supabase.from("events").select("*").limit(1);
+    const { data, error } = await supabase.from("profiles").select("*").limit(1);
 
     if (error) {
       console.error("❌ Supabase error:", error);
