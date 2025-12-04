@@ -145,7 +145,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
     // Handle both 'members' (new) and 'other_users' (old) for backward compatibility
     const members = conversation.members || conversation.other_users || [];
-    const groupName = members?.map(m => m.first_name).join(', ') || 'Group Chat';
+    const groupName = `${conversation.origin} → ${conversation.destination}`;
 
     return (
       <>
@@ -162,7 +162,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
           <div className="conversation-title">
             <h2>{groupName}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
-              {conversation.origin} → {conversation.destination}
+              {conversation.members?.map(m => m.first_name).join(', ') || 'No members'}
             </p>
             <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#bbb' }}>
               {conversation.member_count} members
