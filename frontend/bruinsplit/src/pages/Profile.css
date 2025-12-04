@@ -20,6 +20,10 @@ img {
   overflow: hidden;
 }
 
+.edit-profile-pic {
+  display: none;
+}
+
 .profile-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -86,6 +90,11 @@ img {
 
 .profile-edit-btn:active {
   transform: scale(0.95);
+}
+
+.profile-edit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .profile-picture-placeholder {
