@@ -168,7 +168,7 @@ export async function sendAnswer(req, res, next) {
         });
 
         res.json({ success: true });
-        
+
     } catch (error) {
         next(error);
     }
@@ -179,9 +179,54 @@ export async function sendAnswer(req, res, next) {
 // - send ICE candidate (network discovery)
 export async function sendIceCandidate(req, res, next) {
     try {
+        const { rideId, targetUserId } = req.params;
+        const { candidate } = req.body;
+        const fromUserId = req.user.id;
+
+        if (!candidate) {
+            return res.status(400).json({ error: 'ICE candidate is required' });
+        }
+
+        // get the call state
+        const call = activeCalls.get(rideId);
+        if (!call || !call.participants.has(fromUserId)) {
+            return res.status(404).json({
+                error: 'Call not found or user not in call'
+            })
+        }
+
+        // verify target user is a confirmed member
+        const isTargetMember = await verifyRideMembership(rideId, targetUserId);
+        if (!isTargetMember) {
+            return res.status(403).json({
+                error: 'Target user is not a confirmed member of this ride'
+            });
+        }
+
+        // store ICE candidate in target user's peer connection state
+        if (!call.peerConnections.has(targetUserId)) {
+            call.peerConnections.set(targetUserId, {
+                offers: new Map(),
+                answers: new Map(),
+                iceCandidates: new Map()
+            });
+        }
+
+        const targetState = call.peerConnections.get(targetUserId);
+        if (!targetState.iceCandidates.has(fromUserId)) {
+            targetState.iceCandidates.set(fromUserId, []);
+        }
+
+        targetState.iceCandidates.get(fromUserId).push({
+            from: fromUserId,
+            candidate,
+            timestamp: Date.now()
+        });
+
+        res.json({ success: true });
 
     } catch (error) {
-
+        next(error);
     }
 }
 
