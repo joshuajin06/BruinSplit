@@ -121,6 +121,7 @@ export default function MyRides() {
                 onDelete={handleDeleteRide}
                 onEdit={loadMyRides}
                 onLeave={showActions ? () => handleLeaveRide(ride.id) : null}
+                onTransferOwnership={loadMyRides}
             />
         );
     }
