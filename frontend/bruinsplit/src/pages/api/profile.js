@@ -43,3 +43,20 @@ export const updatePassword = async (passwordData) => {
     throw error;
   }
 };
+
+export const updateProfilePic = async(file) => {
+  try {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await axios.post(`${url}/profile/me/photo`, formData, { headers });
+    return response.data;
+  } catch(err) {
+      const errorMessage = err.response?.data?.error || err.message;
+      console.error('Error updating profile pic:', errorMessage);
+      const error = new Error(errorMessage);
+      throw error;
+  }
+}

@@ -23,7 +23,7 @@ export async function authenticateUser(req, res, next) {
       // changed to get user from profiles table (NOT users)
       const {data: user, error} = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name')
+        .select('id, email, username, first_name, last_name, profile_photo_url, created_at')
         .eq('id', decoded.userId)
         .single();
   
@@ -55,7 +55,7 @@ export async function authenticateUser(req, res, next) {
 
       const { data: user, error } = await supabase
         .from('profiles')
-        .select('id, email, username, first_name, last_name')
+        .select('id, email, username, first_name, last_name, profile_photo_url, created_at')
         .eq('id', decoded.userId)
         .single();
 

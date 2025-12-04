@@ -6,7 +6,7 @@ import "./navbar.css"; // Import the CSS file
 export default function Navbar() {
   // const [loginClicked, setLoginClicked] = useState(false);
   const menuRef = useRef(null);
-  const { logout, isAuthenticated } = useAuth();
+  const { logout, isAuthenticated, user } = useAuth();
 
   //  useEffect(() => {
   //   function handleClickOutside(e) {
@@ -33,16 +33,26 @@ export default function Navbar() {
         <li className="myrides"><Link to="/myrides">My Rides</Link></li>
 
         <li className="navButtonLogin" ref={menuRef}>
-          <a className="profileButton">Profile</a>
+          <a className="profileButton">
+            {isAuthenticated && user?.profile_photo_url ? (
+              <img src={user.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+            ) : isAuthenticated ? (
+              <div className="navbar-profile-placeholder">
+                {user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}
+              </div>
+            ) : (
+              "Profile"
+            )}
+          </a>
             <div className="submenu">
-              {isAuthenticated && 
-                <Link to="/profile" 
+              {isAuthenticated &&
+                <Link to="/profile"
                 className="submenu-item">
                   View Profile
                 </Link>
               }
-              <Link to="/login" 
-                className="submenu-item" 
+              <Link to="/login"
+                className="submenu-item"
                 onClick={() => {
                   if(isAuthenticated) logout();
                 }}>
