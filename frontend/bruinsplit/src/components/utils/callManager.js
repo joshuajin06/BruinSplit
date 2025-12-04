@@ -312,6 +312,18 @@ class CallManager {
             this.onError?.(`Error stopping call: ${error.message}`);
         }
     }
+
+    getParticipants() {
+        return Array.from(this.participants).filter(id => id !== this.userId);
+    }
+
+    getRemoteStream(userId) {
+        return this.remoteStreams.get(userId);
+    }
+
+    isActive() {
+        return this.isCallActive;
+    }
 }
 
 export default CallManager;
