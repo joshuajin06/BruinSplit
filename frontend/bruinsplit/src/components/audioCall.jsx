@@ -1,120 +1,168 @@
 import { useState, useRef, useEffect } from 'react';
-import { Phone, PhoneOff, Mic, MicOff } from '@mui/icons-material';
+import { Phone, CallEnd, Mic, MicOff } from '@mui/icons-material';
 import { IconButton, Tooltip } from '@mui/material';
+import CallManager from './utils/callManager';
 import './audioCall.css';
 
-const AudioCall = ({ userId, onCallStateChange }) => {
+const AudioCall = ({ userId, rideId, onCallStateChange }) => {
     const [isCallActive, setIsCallActive] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [error, setError] = useState(null);
-    
-    const localStreamRef = useRef(null);
-    const peerConnectionRef = useRef(null);
-    const remoteAudioRef = useRef(null);
+    const [participants, setParticipants] = useState([]);
+    const [remoteStreams, setRemoteStreams] = useState(new Map());
+
+    const callManagerRef = useRef(null);
+    const remoteAudioRefsRef = useRef(new Map());
 
     const handleCall = async () => {
         try {
-            // Request microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }, 
-                video: false 
-            });
-            
-            localStreamRef.current = stream;
+            if (!rideId) {
+                setError('Ride ID is required to start a call.');
+                return;
+            }
+
+            // Initialize CallManager
+            callManagerRef.current = new CallManager(rideId, userId);
+
+            // Set up callbacks
+            const onRemoteStream = (remoteUserId, stream) => {
+                console.log(`Received audio stream from user ${remoteUserId}`);
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.set(remoteUserId, stream);
+                    return newStreams;
+                });
+
+                // Attach stream to audio element (may not exist yet, will retry after render)
+                setTimeout(() => {
+                    const audioElement = remoteAudioRefsRef.current.get(remoteUserId);
+                    if (audioElement) {
+                        audioElement.srcObject = stream;
+                        console.log(`Attached audio stream for user ${remoteUserId}`);
+                    }
+                }, 100);
+            };
+
+            const onParticipantJoined = (participantId) => {
+                console.log(`Participant joined: ${participantId}`);
+                setParticipants(prevParticipants => {
+                    if (!prevParticipants.includes(participantId)) {
+                        return [...prevParticipants, participantId];
+                    }
+                    return prevParticipants;
+                });
+            };
+
+            const onParticipantLeft = (participantId) => {
+                console.log(`Participant left: ${participantId}`);
+                setParticipants(prevParticipants =>
+                    prevParticipants.filter(id => id !== participantId)
+                );
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.delete(participantId);
+                    return newStreams;
+                });
+            };
+
+            const onError = (errorMessage) => {
+                console.error('Call error:', errorMessage);
+                setError(errorMessage);
+            };
+
+            // Start the call with callbacks
+            const result = await callManagerRef.current.startCall(
+                onRemoteStream,
+                onParticipantJoined,
+                onParticipantLeft,
+                onError
+            );
+
             setIsCallActive(true);
             setError(null);
-            
-            // Initialize WebRTC peer connection
-            const peerConnection = new RTCPeerConnection({
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            });
-            
-            peerConnectionRef.current = peerConnection;
-            
-            // Add local stream tracks to peer connection
-            stream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, stream);
-            });
-            
-            // Handle incoming remote stream
-            peerConnection.ontrack = (event) => {
-                if (remoteAudioRef.current) {
-                    remoteAudioRef.current.srcObject = event.streams[0];
-                }
-            };
-            
-            // TODO: Implement signaling server connection here
-            // This would involve WebSocket connection to exchange SDP offers/answers
-            // and ICE candidates with the other peer
-            
+            setParticipants(result.participants.filter(id => id !== userId));
+
             if (onCallStateChange) {
                 onCallStateChange(true, userId);
             }
-            
+
         } catch (err) {
-            console.error('Error accessing microphone:', err);
-            setError('Could not access microphone. Please check permissions.');
-            alert('Microphone access denied. Please enable microphone permissions.');
+            console.error('Error starting call:', err);
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to start audio call';
+            setError(errorMessage);
+            setIsCallActive(false);
         }
     };
 
-    const handleEndCall = () => {
-        // Stop all media tracks
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
-            localStreamRef.current = null;
-        }
-        
-        // Close peer connection
-        if (peerConnectionRef.current) {
-            peerConnectionRef.current.close();
-            peerConnectionRef.current = null;
-        }
-        
-        setIsCallActive(false);
-        setIsMuted(false);
-        
-        if (onCallStateChange) {
-            onCallStateChange(false, userId);
-        }
-    };
-    
-    const toggleMute = () => {
-        if (localStreamRef.current) {
-            const audioTrack = localStreamRef.current.getAudioTracks()[0];
-            if (audioTrack) {
-                audioTrack.enabled = !audioTrack.enabled;
-                setIsMuted(!audioTrack.enabled);
+    const handleEndCall = async () => {
+        try {
+            if (callManagerRef.current) {
+                await callManagerRef.current.stopCall();
+                callManagerRef.current = null;
             }
+
+            // Clear remote streams and audio refs
+            remoteAudioRefsRef.current.forEach(audio => {
+                audio.srcObject = null;
+            });
+            remoteAudioRefsRef.current.clear();
+
+            setIsCallActive(false);
+            setIsMuted(false);
+            setParticipants([]);
+            setRemoteStreams(new Map());
+            setError(null);
+
+            if (onCallStateChange) {
+                onCallStateChange(false, userId);
+            }
+        } catch (err) {
+            console.error('Error ending call:', err);
+            setError('Error ending call. Please try again.');
         }
     };
-    
+
+    const toggleMute = () => {
+        if (callManagerRef.current) {
+            callManagerRef.current.toggleMute(isMuted);
+            setIsMuted(!isMuted);
+        }
+    };
+
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach(track => track.stop());
-            }
-            if (peerConnectionRef.current) {
-                peerConnectionRef.current.close();
+            if (callManagerRef.current && isCallActive) {
+                callManagerRef.current.stopCall().catch(err => {
+                    console.error('Error cleaning up call on unmount:', err);
+                });
             }
         };
-    }, []);
+    }, [isCallActive]);
 
     return (
         <div className="audio-call-button">
-            <audio ref={remoteAudioRef} autoPlay />
-            
+            {/* Remote audio elements for each participant */}
+            {remoteStreams.size > 0 && (
+                <div className="remote-audio-container">
+                    {Array.from(remoteStreams.entries()).map(([participantId]) => (
+                        <audio
+                            key={`audio-${participantId}`}
+                            ref={(ref) => {
+                                if (ref) {
+                                    remoteAudioRefsRef.current.set(participantId, ref);
+                                }
+                            }}
+                            autoPlay
+                            playsInline
+                        />
+                    ))}
+                </div>
+            )}
+
             {!isCallActive ? (
                 <Tooltip title="Start audio call">
-                    <IconButton 
+                    <IconButton
                         onClick={handleCall}
                         color="primary"
                         size="large"
@@ -126,7 +174,7 @@ const AudioCall = ({ userId, onCallStateChange }) => {
             ) : (
                 <div className="call-controls">
                     <Tooltip title={isMuted ? "Unmute" : "Mute"}>
-                        <IconButton 
+                        <IconButton
                             onClick={toggleMute}
                             color={isMuted ? "warning" : "default"}
                             size="large"
@@ -135,20 +183,27 @@ const AudioCall = ({ userId, onCallStateChange }) => {
                             {isMuted ? <MicOff /> : <Mic />}
                         </IconButton>
                     </Tooltip>
-                    
+
                     <Tooltip title="End call">
-                        <IconButton 
+                        <IconButton
                             onClick={handleEndCall}
                             color="error"
                             size="large"
                             aria-label="end audio call"
                         >
-                            <PhoneOff />
+                            <CallEnd />
                         </IconButton>
                     </Tooltip>
                 </div>
             )}
-            
+
+            {/* Participant count during call */}
+            {isCallActive && participants.length > 0 && (
+                <div className="participants-info">
+                    {participants.length} {participants.length === 1 ? 'participant' : 'participants'} on call
+                </div>
+            )}
+
             {error && <p className="error-message">{error}</p>}
         </div>
     );
