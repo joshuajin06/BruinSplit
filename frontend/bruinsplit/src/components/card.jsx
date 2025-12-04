@@ -14,6 +14,7 @@ import {
     transferOwnership,
     getPendingRequests
 } from '../pages/api/rides';
+import { sendFriendRequest, getFriends } from '../pages/api/friends';
 
 const gradients = [
   "gradient-blue",
@@ -72,6 +73,48 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [rideDetailsFull, setRideDetailsFull] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [detailsError, setDetailsError] = useState(null);
+
+    // Friends state
+    const [friendsList, setFriendsList] = useState([]);
+    const [sendingRequest, setSendingRequest] = useState({});
+
+    // Fetch friends list
+    useEffect(() => {
+        const fetchFriends = async () => {
+            try {
+                const data = await getFriends();
+                setFriendsList(data.friends || []);
+            } catch (error) {
+                console.error('Failed to fetch friends:', error);
+            }
+        };
+        if (currentUser) {
+            fetchFriends();
+        }
+    }, [currentUser]);
+
+    // Check if user is a friend
+    const isFriend = (userId) => {
+        return friendsList.some(friend => friend.id === userId);
+    };
+
+    // Handle add friend
+    const handleAddFriend = async (userId) => {
+        if (sendingRequest[userId]) return;
+        
+        setSendingRequest(prev => ({ ...prev, [userId]: true }));
+        try {
+            await sendFriendRequest(userId);
+            // Refresh friends list
+            const data = await getFriends();
+            setFriendsList(data.friends || []);
+        } catch (error) {
+            console.error('Failed to send friend request:', error);
+            alert('Failed to send friend request');
+        } finally {
+            setSendingRequest(prev => ({ ...prev, [userId]: false }));
+        }
+    };
 
     // Fetch riders function
     const fetchRiders = async () => {
@@ -851,6 +894,21 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                 {rideDetailsFull.owner.phone_number && (
                                                     <div className="rider-phone" style={{ fontSize: '0.9em', color: '#666' }}>{rideDetailsFull.owner.phone_number}</div>
                                                 )}
+                                                {currentUser && currentUser.id !== rideDetailsFull.owner.id && (
+                                                    <div style={{ marginTop: '10px' }}>
+                                                        {isFriend(rideDetailsFull.owner.id) ? (
+                                                            <span className="friend-badge">Friend</span>
+                                                        ) : (
+                                                            <button 
+                                                                className="add-friend-btn"
+                                                                onClick={() => handleAddFriend(rideDetailsFull.owner.id)}
+                                                                disabled={sendingRequest[rideDetailsFull.owner.id]}
+                                                            >
+                                                                {sendingRequest[rideDetailsFull.owner.id] ? 'Sending...' : 'Add Friend'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -894,6 +952,21 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                                 )}
                                                                 {profile.email && (
                                                                     <div className="rider-email" style={{ fontSize: '0.9em', color: '#666' }}>{profile.email}</div>
+                                                                )}
+                                                                {currentUser && currentUser.id !== member.user_id && (
+                                                                    <div style={{ marginTop: '10px' }}>
+                                                                        {isFriend(member.user_id) ? (
+                                                                            <span className="friend-badge">Friend</span>
+                                                                        ) : (
+                                                                            <button 
+                                                                                className="add-friend-btn"
+                                                                                onClick={() => handleAddFriend(member.user_id)}
+                                                                                disabled={sendingRequest[member.user_id]}
+                                                                            >
+                                                                                {sendingRequest[member.user_id] ? 'Sending...' : 'Add Friend'}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         </div>
