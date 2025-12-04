@@ -26,6 +26,7 @@ class CallManager {
         this.onParticipantJoined = null;
         this.onParticipantLeft = null;
         this.onError = null;
+        this.pendingIceCandidates = new Map(); // userId -> [candidates]
     }
     async startCall(onRemoteStream, onParticipantJoined, onParticipantLeft, onError) {
         try {
@@ -273,6 +274,20 @@ class CallManager {
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
                 console.warn(`No peer connection found for ${fromUserId} to add ICE candidate`);
+                // queue candidate for later
+                if (!this.pendingIceCandidates.has(fromUserId)) {
+                    this.pendingIceCandidates.set(fromUserId, []);
+                }
+                this.pendingIceCandidates.get(fromUserId).push(candidateObj);
+                return;
+            }
+
+            // if remote descripton not set, queue the candidate
+            if (peerConnection.remoteDescription === null) {
+                if (!this.pendingIceCandidates.has(fromUserId)) {
+                    this.pendingIceCandidates.set(fromUserId, []);
+                }
+                this.pendingIceCandidates.get(fromUserId);
                 return;
             }
 
