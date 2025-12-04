@@ -11,6 +11,10 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
     const [participants, setParticipants] = useState([]);
     const [remoteStreams, setRemoteStreams] = useState(new Map());
 
+    const [enableVideo, setEnableVideo] = useState(false);
+    const [localVideoStream, setLocalVideoStream] = useState(null);
+    const remoteVideoRefsRef = useRef(new Map());
+
     const callManagerRef = useRef(null);
     const remoteAudioRefsRef = useRef(new Map());
 
@@ -41,6 +45,35 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
                         console.log(`Attached audio stream for user ${remoteUserId}`);
                     }
                 }, 100);
+
+                // attach video stream if video is enabled
+                if (enableVideo) {
+                    setTimeout(() => {
+                        const videoElement = remoteVideoRefsRef.current.get(remoteUserId);
+                        if (videoElement) {
+                            videoElement.srcObject = stream;
+                        }
+                    }, 100);
+                }
+            };
+
+            // added toggle video func
+            const toggleVideo = async () => {
+                if (callManagerRef.current) {
+                    try {
+                        const newVideoState = !enableVideo;
+                        await callManagerRef.current.toggleVideo(newVideoState);
+                        setEnableVideo(newVideoState);
+                        
+                        // update local video stream
+                        if (callManagerRef.current.getLocalStream()) {
+                            setLocalVideoStream(callManagerRef.current.getLocalStream());
+                        }
+                    } catch (error) {
+                        console.error('Error toggling video:', error);
+                        setError('Failed to toggle video');
+                    }
+                }
             };
 
             const onParticipantJoined = (participantId) => {
@@ -75,7 +108,8 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
                 onRemoteStream,
                 onParticipantJoined,
                 onParticipantLeft,
-                onError
+                onError,
+                enableVideo
             );
 
             setIsCallActive(true);
