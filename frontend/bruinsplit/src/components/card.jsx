@@ -77,25 +77,36 @@ export default function Card({ title, origin, destination, content, image, rideD
     // Friends state
     const [friendsList, setFriendsList] = useState([]);
     const [sendingRequest, setSendingRequest] = useState({});
+    const [sentRequests, setSentRequests] = useState([]);
 
-    // Fetch friends list
+    // Fetch friends list and pending requests
     useEffect(() => {
-        const fetchFriends = async () => {
+        const fetchFriendsData = async () => {
             try {
-                const data = await getFriends();
-                setFriendsList(data.friends || []);
+                const friendsData = await getFriends();
+                setFriendsList(friendsData.friends || []);
+                
+                // Also fetch pending requests to know who we've sent requests to
+                const { getPendingRequests } = await import('../pages/api/friends');
+                const requestsData = await getPendingRequests();
+                setSentRequests(requestsData.sent || []);
             } catch (error) {
-                console.error('Failed to fetch friends:', error);
+                console.error('Failed to fetch friends data:', error);
             }
         };
         if (currentUser) {
-            fetchFriends();
+            fetchFriendsData();
         }
     }, [currentUser]);
 
     // Check if user is a friend
     const isFriend = (userId) => {
         return friendsList.some(friend => friend.id === userId);
+    };
+
+    // Check if friend request was sent
+    const hasRequestSent = (userId) => {
+        return sentRequests.some(request => request.id === userId);
     };
 
     // Handle add friend
@@ -105,9 +116,13 @@ export default function Card({ title, origin, destination, content, image, rideD
         setSendingRequest(prev => ({ ...prev, [userId]: true }));
         try {
             await sendFriendRequest(userId);
-            // Refresh friends list
-            const data = await getFriends();
-            setFriendsList(data.friends || []);
+            // Refresh friends list and pending requests
+            const friendsData = await getFriends();
+            setFriendsList(friendsData.friends || []);
+            
+            const { getPendingRequests } = await import('../pages/api/friends');
+            const requestsData = await getPendingRequests();
+            setSentRequests(requestsData.sent || []);
         } catch (error) {
             console.error('Failed to send friend request:', error);
             alert('Failed to send friend request');
@@ -898,6 +913,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                     <div style={{ marginTop: '10px' }}>
                                                         {isFriend(rideDetailsFull.owner.id) ? (
                                                             <span className="friend-badge">Friend</span>
+                                                        ) : hasRequestSent(rideDetailsFull.owner.id) ? (
+                                                            <span className="request-sent-badge">Friend Req. Sent</span>
                                                         ) : (
                                                             <button 
                                                                 className="add-friend-btn"
@@ -957,6 +974,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                                     <div style={{ marginTop: '10px' }}>
                                                                         {isFriend(member.user_id) ? (
                                                                             <span className="friend-badge">Friend</span>
+                                                                        ) : hasRequestSent(member.user_id) ? (
+                                                                            <span className="request-sent-badge">Friend Req. Sent</span>
                                                                         ) : (
                                                                             <button 
                                                                                 className="add-friend-btn"
