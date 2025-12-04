@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
+import { useAuth } from '../context/AuthContext'
 import { getTimeAgo, formatDatetimeLocal, hashString } from './utils/cardUtils';
 import { 
     getRideById, 
@@ -369,13 +370,18 @@ export default function Card({ title, origin, destination, content, image, rideD
                                     : profile.username || 'Unknown User';
                                 
                                 return (
-                                    <div 
-                                        key={member.id} 
+                                    <div
+                                        key={member.id}
                                         className="member-avatar-small"
-                                        title={fullName}
-                                        style={{ zIndex: 10 - index }}
-                                    >
-                                        {fullName.charAt(0).toUpperCase()}
+                                        title={fullName}>
+                                        {profile?.profile_photo_url ? (
+                                            <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+                                        ) : 
+                                        (
+                                            <div className="navbar-profile-placeholder">
+                                                {profile?.first_name?.charAt(0)}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
