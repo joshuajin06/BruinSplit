@@ -1,19 +1,21 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
-import { updateProfile, updatePassword } from './api/profile.js'
+import { updateProfile, updatePassword, updateProfilePic } from './api/profile.js'
 import './Profile.css';
-import { is } from 'zod/locales';
 
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState('');
+  const [photoError, setPhotoError] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
@@ -96,6 +98,37 @@ export default function Profile() {
     setError(null);
   };
 
+  const handleEditPhotoClick = () => {
+    fileInputRef.current?.click();
+  }
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+
+    if(!file) return;
+
+    try {
+      setUploading(true);
+      setPhotoError('');
+      const response = await updateProfilePic(file);
+
+      // Update user in context with the new profile data from the response
+      if (response.profile) {
+        updateUser(response.profile);
+      }
+    }
+    catch(error) {
+      setPhotoError(error.message || 'Failed to upload profile picture');
+    }
+    finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
   if (!user) {
     return (
       <div className="profile-container">
@@ -109,6 +142,13 @@ export default function Profile() {
   return (
     <div className="profile-container">
       <div className="profile-card">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoSelect}
+          style={{ display: 'none' }}
+        />
         <div className="profile-header">
           <div className="profile-picture-section">
             <div className="profile-picture-wrapper">
@@ -119,8 +159,13 @@ export default function Profile() {
                   <span>{user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}</span>
                 </div>
               )}
-              <button className="profile-edit-btn" title="Edit profile picture">
-                📷
+              <button
+                className="profile-edit-btn"
+                title="Edit profile picture"
+                onClick={handleEditPhotoClick}
+                disabled={uploading}
+              >
+                {uploading ? '⏳' : '📷'}
               </button>
             </div>
           </div>
@@ -225,6 +270,7 @@ export default function Profile() {
               )}
             </div>
           </div>
+          {photoError && <div className="error-message">{photoError}</div>}
           <div className="error-message">{error}</div>
 
           <div className="profile-actions">
