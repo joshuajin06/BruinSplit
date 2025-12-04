@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService } from '../services/rideService.js';
+import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService, transferOwnershipService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group
@@ -125,6 +125,29 @@ export async function rejectRequest(req, res, next) {
 
     } catch (error) {
         console.error('Reject request error:', error);
+        next(error);
+    }
+}
+
+// POST /api/rides/:id/transfer-ownership/:userId - transfer ride ownership to another confirmed member
+export async function transferOwnership(req, res, next) {
+    try {
+        const { id: rideId, userId: newOwnerUserId } = req.params;
+        const currentOwnerId = req.user.id;
+
+        if (!rideId || !newOwnerUserId) {
+            return res.status(400).json({ error: 'Ride ID and new owner user ID are required' });
+        }
+
+        const result = await transferOwnershipService(rideId, newOwnerUserId, currentOwnerId);
+
+        return res.status(200).json({
+            message: 'Ride ownership transferred successfully',
+            data: result
+        })
+
+    } catch (error) {
+        console.error('Transfer ownership error:', error);
         next(error);
     }
 }
@@ -296,7 +319,7 @@ export async function getRideById(req, res) {
         if (userIds.length > 0) {
             const { data: profiles } = await supabase
                 .from('profiles')
-                .select('id, username, first_name, last_name')
+                .select('id, username, first_name, last_name, profile_photo_url')
                 .in('id', userIds);
             profilesById = (profiles || []).reduce((acc, p) => {
                 acc[p.id] = p; return acc;
@@ -312,7 +335,7 @@ export async function getRideById(req, res) {
         // get owner profile
         const { data: owner } = await supabase
             .from('profiles')
-            .select('id, username, first_name, last_name, email, phone_number')
+            .select('id, username, first_name, last_name, email, phone_number, profile_photo_url')
             .eq('id', ride.owner_id)
             .single();
         

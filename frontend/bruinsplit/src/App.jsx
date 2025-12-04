@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/navbar.jsx'
 import Footer from './components/footer.jsx'
+import MessagesIcon from './components/MessagesIcon.jsx'
 import './App.css'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
@@ -35,6 +36,7 @@ function App() {
                 </Routes>
               </div>
             </Router>
+            <MessagesIcon/>
           </AuthProvider>
         </main>      
         <Footer />
