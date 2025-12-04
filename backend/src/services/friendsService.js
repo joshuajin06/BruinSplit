@@ -304,14 +304,28 @@ export async function getPendingFriendRequestsService(userId) {
     }
 
     return {
-        sent: (sentRequests || []).map((req, idx) => ({
-            ...req,
-            user: sentProfiles.find(p => p.id === req.addressee_id) || null
-        })),
-        received: (receivedRequests || []).map((req, idx) => ({
-            ...req,
-            user: receivedProfiles.find(p => p.id === req.requester_id) || null
-        }))
+        sent: (sentRequests || []).map(req => {
+            const profile = sentProfiles.find(p => p.id === req.addressee_id);
+            return {
+                id: req.addressee_id,
+                username: profile?.username || null,
+                first_name: profile?.first_name || null,
+                last_name: profile?.last_name || null,
+                profile_photo_url: profile?.profile_photo_url || null,
+                created_at: req.created_at
+            };
+        }),
+        received: (receivedRequests || []).map(req => {
+            const profile = receivedProfiles.find(p => p.id === req.requester_id);
+            return {
+                id: req.requester_id,
+                username: profile?.username || null,
+                first_name: profile?.first_name || null,
+                last_name: profile?.last_name || null,
+                profile_photo_url: profile?.profile_photo_url || null,
+                created_at: req.created_at
+            };
+        })
     };
 }
 
