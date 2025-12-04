@@ -1,6 +1,31 @@
 import { es } from 'zod/locales';
 import { verifyRideMembership, getConfirmedMembers } from '../services/callService.js';
 
+
+/** 
+ WebRTC enables direct peer-to-peer connections, it:
+ * uses a signaling server (our backend) to exchange connection info
+ * has media flow through peers once connected
+ 
+We will be going through three phases : 
+
+(1) SDP (session description protocol) : has an offer/answer flow
+    - sendOffer() stores x's offer so the y can fetch it
+    - sendAnswer() stores y's answer so x can fetch it
+    - getCallStatus() lets each peer poll for offers/answers 
+
+(2) ICE candidates (Interactive Connectivity Establishment) : finds the best network path between peers and tries multiple connection methods (e.g. local IP, public IP, via STUN, relay via TURN)
+    - sendIceCandidate() stores each candidate as it's discovered
+    - getCallStatus() returns all pending candidates
+
+(3) Connection Establishment : once both peers have both SDP and ICE, WebRTC will try to establish a direct connection-- once connected, media flows directly and our backend is no longer involved
+
+*** our app will temporarily store offers/answers/ICE -> signal messages b/t peers -> verify permissions ***
+
+*/
+
+
+
 const activeCalls = new Map();
 
 
@@ -55,7 +80,8 @@ export async function joinCall(req, res, next) {
 }
 
 
-// POST /api/calls/:rideId/offer/:targetUserId - send WebRTC offer from current user to target user
+// POST /api/calls/:rideId/offer/:targetUserId 
+// - create & send WebRTC offer from current user to target user
 export async function sendOffer(req, res, next) {
     try {
         const { rideId, targetUserId } = req.params;
@@ -98,7 +124,7 @@ export async function sendOffer(req, res, next) {
 }
 
 
-// POST /api/calls/:rideId/answer/:targetUserId - send WebRTC answer
+// POST /api/calls/:rideId/answer/:targetUserId - create and send WebRTC answer
 export async function sendAnswer(req, res, next) {
     try {
 
@@ -108,7 +134,8 @@ export async function sendAnswer(req, res, next) {
 }
 
 
-// POST /api/calls/:rideId/ice-candidate/:targetUserId - send ICE candidate
+// POST /api/calls/:rideId/ice-candidate/:targetUserId 
+// - send ICE candidate (network discovery)
 export async function sendIceCandidate(req, res, next) {
     try {
 
@@ -118,7 +145,7 @@ export async function sendIceCandidate(req, res, next) {
 }
 
 
-// GET /api/calls/:rideId/status - poll for signaling data
+// GET /api/calls/:rideId/status - poll for signaling data (any new offers & ICE ?)
 export async function getCallStatus(req, res, next) {
     try {
 
@@ -130,7 +157,7 @@ export async function getCallStatus(req, res, next) {
 
 
 
-// GET /api/calls/:rideId/info - get call information
+// GET /api/calls/:rideId/info - get call information 
 export async function getCallInfo(req, res, next) {
     try {
 
