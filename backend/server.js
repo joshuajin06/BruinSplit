@@ -17,6 +17,7 @@ import eventsRoutes from './src/routes/eventsRoute.js';
 import messagesRoutes from './src/routes/messagesRoute.js';
 import profileRoutes from './src/routes/profileRoute.js';
 import friendsRoutes from './src/routes/friendsRoute.js';
+import callsRoutes from './src/routes/callsRoute.js'; // ✅ ADD THIS
 
 
 // import middleware
@@ -39,6 +40,7 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/calls', callsRoutes); 
 
 
 // 404 handler - no route is found
