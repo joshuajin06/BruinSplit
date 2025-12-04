@@ -254,14 +254,62 @@ class CallManager {
         }
     }
 
-    /**
-     * Send ICE candidate to peer
-     */
     async sendIceCandidate(remoteUserId, candidate) {
         try {
             await sendIceCandidate(this.rideId, remoteUserId, candidate);
         } catch (error) {
             console.error(`Error sending ICE candidate to ${remoteUserId}:`, error);
+        }
+    }
+
+    toggleMute(isMuted) {
+        if (this.localStream) {
+            this.localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+        }
+    }
+
+    closePeerConnection(userId) {
+        const peerConnection = this.peerConnections.get(userId);
+        if (peerConnection) {
+            peerConnection.close();
+            this.peerConnections.delete(userId);
+        }
+        this.remoteStreams.delete(userId);
+    }
+
+    async stopCall() {
+        try {
+            // Stop polling
+            if (this.signalingInterval) {
+                clearInterval(this.signalingInterval);
+                this.signalingInterval = null;
+            }
+
+            // Close all peer connections
+            for (const peerConnection of this.peerConnections.values()) {
+                peerConnection.close();
+            }
+            this.peerConnections.clear();
+            this.remoteStreams.clear();
+
+            // Stop local audio tracks
+            if (this.localStream) {
+                this.localStream.getTracks().forEach(track => track.stop());
+                this.localStream = null;
+            }
+
+            // Notify backend
+            if (this.isCallActive) {
+                await leaveCall(this.rideId);
+            }
+
+            this.isCallActive = false;
+            this.participants.clear();
+        } catch (error) {
+            console.error('Error stopping call:', error);
+            this.onError?.(`Error stopping call: ${error.message}`);
         }
     }
 }
