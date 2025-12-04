@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 
 import { updateProfile, updatePassword, updateProfilePic } from './api/profile.js'
-import { getFriendCount } from './api/friends.js';
+import { getFriendCount, getFriends } from './api/friends.js';
 import './Profile.css';
 
 
@@ -15,6 +15,9 @@ export default function Profile() {
   const [photoError, setPhotoError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [friendCount, setFriendCount] = useState(null);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -45,6 +48,19 @@ export default function Profile() {
     };
     fetchFriendCount();
   }, [user?.id]);
+
+  const handleShowFriends = async () => {
+    setShowFriendsModal(true);
+    setLoadingFriends(true);
+    try {
+      const data = await getFriends();
+      setFriends(data.friends || []);
+    } catch (error) {
+      console.error('Failed to fetch friends:', error);
+    } finally {
+      setLoadingFriends(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -188,12 +204,51 @@ export default function Profile() {
           </div>
           <h1>My Profile</h1>
           {friendCount !== null && (
-            <div className="friend-count">
+            <button className="friend-count" onClick={handleShowFriends}>
               <span className="friend-count-number">{friendCount}</span>
               <span className="friend-count-label">Friend{friendCount !== 1 ? 's' : ''}</span>
-            </div>
+            </button>
           )}
         </div>
+
+        {showFriendsModal && (
+          <>
+            <div className="modal-overlay" onClick={() => setShowFriendsModal(false)} />
+            <div className="friends-modal">
+              <div className="friends-modal-header">
+                <h2>My Friends</h2>
+                <button className="close-modal-btn" onClick={() => setShowFriendsModal(false)}>✕</button>
+              </div>
+              <div className="friends-modal-content">
+                {loadingFriends ? (
+                  <p className="loading-text">Loading friends...</p>
+                ) : friends.length === 0 ? (
+                  <p className="no-friends-text">No friends yet</p>
+                ) : (
+                  <ul className="friends-list">
+                    {friends.map((friend) => (
+                      <li key={friend.id} className="friend-item">
+                        <div className="friend-info">
+                          {friend.profile_photo_url ? (
+                            <img src={friend.profile_photo_url} alt={friend.first_name} className="friend-avatar" />
+                          ) : (
+                            <div className="friend-avatar-placeholder">
+                              {friend.first_name?.charAt(0)}{friend.last_name?.charAt(0)}
+                            </div>
+                          )}
+                          <div className="friend-details">
+                            <span className="friend-name">{friend.first_name} {friend.last_name}</span>
+                            <span className="friend-username">@{friend.username}</span>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="profile-content">
           <div className="profile-section">
