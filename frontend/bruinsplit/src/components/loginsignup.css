@@ -59,6 +59,7 @@
 
 .header h1{
     color: white;
+    font: 700 2.5rem 'ubuntu', sans-serif;
 }
 
 .input{
