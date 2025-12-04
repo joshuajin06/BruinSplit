@@ -67,6 +67,61 @@ class CallManager {
             throw error;
         }
     }
+
+    async createPeerConnection(remoteUserId) {
+        try {
+            if (this.peerConnections.has(remoteUserId)) {
+                return this.peerConnections.get(remoteUserId);
+            }
+
+            const peerConnection = new RTCPeerConnection({
+                iceServers: STUN_SERVERS
+            });
+
+            // Add local audio tracks
+            this.localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, this.localStream);
+            });
+
+            // Handle incoming remote audio
+            peerConnection.ontrack = (event) => {
+                console.log('Received remote track from', remoteUserId);
+                this.remoteStreams.set(remoteUserId, event.streams[0]);
+                this.onRemoteStream?.(remoteUserId, event.streams[0]);
+            };
+
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    this.sendIceCandidate(remoteUserId, event.candidate);
+                }
+            };
+
+            // Handle connection state changes
+            peerConnection.onconnectionstatechange = () => {
+                console.log(`Connection state with ${remoteUserId}:`, peerConnection.connectionState);
+                if (peerConnection.connectionState === 'failed') {
+                    console.error(`Connection failed with ${remoteUserId}`);
+                    this.peerConnections.delete(remoteUserId);
+                }
+            };
+
+            this.peerConnections.set(remoteUserId, peerConnection);
+
+            // Create and send offer
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            await sendOffer(this.rideId, remoteUserId, offer);
+
+            return peerConnection;
+        } catch (error) {
+            console.error(`Error creating peer connection with ${remoteUserId}:`, error);
+            this.onError?.(`Failed to connect with participant: ${error.message}`);
+            throw error;
+        }
+    }
+
+    
 }
 
 export default CallManager;
