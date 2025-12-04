@@ -20,11 +20,99 @@ img {
   overflow: hidden;
 }
 
+.edit-profile-pic {
+  display: none;
+}
+
 .profile-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 30px 20px;
   text-align: center;
+}
+
+.profile-picture-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.profile-picture-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-picture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  display: block;
+}
+
+.profile-edit-btn {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2D5AA8 0%, #1A3A7A 100%);
+  border: 3px solid white;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(45, 90, 168, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  line-height: 1;
+}
+
+.profile-picture-wrapper:hover .profile-edit-btn {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1.1);
+}
+
+.profile-edit-btn:hover {
+  box-shadow: 0 6px 16px rgba(45, 90, 168, 0.4);
+  transform: scale(1.15);
+}
+
+.profile-edit-btn:active {
+  transform: scale(0.95);
+}
+
+.profile-edit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-picture-placeholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-picture-placeholder span {
+  font-size: 48px;
+  font-weight: 600;
+  color: white;
 }
 
 .profile-header h1 {

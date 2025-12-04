@@ -60,6 +60,38 @@
   color: #535bf2;
 }
 
+.navbar-profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  transition: border-color 0.25s ease;
+}
+
+.navButtonLogin:hover .navbar-profile-pic {
+  border-color: #535bf2;
+}
+
+.navbar-profile-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 0.25s ease;
+}
+
+.navButtonLogin:hover .navbar-profile-placeholder {
+  border-color: #535bf2;
+}
+
 .profileButton::after {
   content: "▼";
   font-size: 0.6rem;
