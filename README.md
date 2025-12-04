@@ -3,18 +3,18 @@ With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to desig
 
 # Tech Stack:
 ## Frontend:
- - ** React **
- - ** Vite **
- - ** Material UI **
+ - React 
+ - Vite
+ - Material UI 
 
 ## Backend: 
-- ** Express **
-- ** Supabase **
+- Express
+- Supabase
 
 ## Tooling:
- - ** Jest **
- - ** ESLint **
- - ** Babel **
+ - Jest
+ - ESLint 
+ - Babel
 
 # Installation Instructions:
 Clone the following link: https://github.com/joshuajin06/BruinSplit.git 
