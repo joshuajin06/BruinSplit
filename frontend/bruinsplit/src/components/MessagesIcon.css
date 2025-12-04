@@ -1,26 +1,28 @@
 .messages-icon-btn {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #007bff;
-  border: none;
-  cursor: pointer;
-  font-size: 28px;
-  display: flex;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  border-radius: 50%;
+  font-size: 28px;
+  line-height: 1;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  box-shadow: 0 8px 26px rgba(79,70,229,0.20), 0 2px 6px rgba(0,0,0,0.12);
+  padding: 0;
+  z-index: 900;
 }
 
 .messages-icon-btn:hover {
-  background-color: #0056b3;
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.06);
+  box-shadow: 0 14px 38px rgba(79,70,229,0.26), 0 4px 10px rgba(0,0,0,0.14);
 }
 
 .messages-icon-btn .badge {
