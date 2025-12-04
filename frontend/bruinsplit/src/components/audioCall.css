@@ -1,0 +1,40 @@
+.audio-call-button {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.call-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.audio-call-button .MuiIconButton-root {
+    transition: transform 0.2s ease-in-out;
+}
+
+.audio-call-button .MuiIconButton-root:hover {
+    transform: scale(1.1);
+}
+
+.audio-call-button .MuiIconButton-colorPrimary {
+    background-color: rgba(46, 125, 50, 0.1);
+}
+
+.audio-call-button .MuiIconButton-colorError {
+    background-color: rgba(211, 47, 47, 0.1);
+}
+
+.audio-call-button .MuiIconButton-colorWarning {
+    background-color: rgba(237, 108, 2, 0.1);
+}
+
+.error-message {
+    color: #d32f2f;
+    font-size: 12px;
+    margin-top: 4px;
+    text-align: center;
+}
