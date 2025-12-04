@@ -33,11 +33,14 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
                     return newStreams;
                 });
 
-                // Attach stream to audio element
-                const audioElement = remoteAudioRefsRef.current.get(remoteUserId);
-                if (audioElement) {
-                    audioElement.srcObject = stream;
-                }
+                // Attach stream to audio element (may not exist yet, will retry after render)
+                setTimeout(() => {
+                    const audioElement = remoteAudioRefsRef.current.get(remoteUserId);
+                    if (audioElement) {
+                        audioElement.srcObject = stream;
+                        console.log(`Attached audio stream for user ${remoteUserId}`);
+                    }
+                }, 100);
             };
 
             const onParticipantJoined = (participantId) => {
