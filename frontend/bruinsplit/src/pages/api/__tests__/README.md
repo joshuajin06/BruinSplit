@@ -177,7 +177,6 @@ Set the TEST_TOKEN environment variable with a valid JWT token from your backend
 
 ## Future Improvements
 
-- [ ] Add tests for events API (when implemented)
 - [ ] Add tests for authentication flow (login/logout)
 - [ ] Add performance tests
 - [ ] Add E2E tests with Playwright/Cypress

@@ -29,20 +29,4 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 export const api = {
-
-  // Events
-  getEvents: async () => {
-    return fetchWithAuth(`${API_URL}/events`);
-  },
-
-  getEvent: async (eventId) => {
-    return fetchWithAuth(`${API_URL}/events/${eventId}`);
-  },
-  
-  createEvent: async () => {
-    return fetchWithAuth(`${API_URL}/events`, {
-      method: 'POST',
-      body: JSON.stringify(eventData)
-    });
-  }
 }
