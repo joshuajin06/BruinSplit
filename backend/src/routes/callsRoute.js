@@ -1,5 +1,5 @@
 import express from 'express';
-import { joinCall, sendOffer, sendIceCandidate, getCallStatus, leaveCall, getCallInfo } from '../controllers/callsController.js';
+import { joinCall, sendOffer, sendAnswer, sendIceCandidate, getCallStatus, leaveCall, getCallInfo } from '../controllers/callsController.js';
 
 
 const router = express.Router();
