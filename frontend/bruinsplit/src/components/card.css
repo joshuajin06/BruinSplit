@@ -695,6 +695,7 @@
 /* Member Avatars on Card */
 .card-members {
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 0.5rem;
     margin: 0.75rem 1rem;

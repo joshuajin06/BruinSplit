@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { getMyRides } from '../pages/api/rides';
 import './pages.css';
 import Card from '../components/card.jsx';
 import SearchBar from '../components/searchBar.jsx';
+
+import { useAuth } from '../context/AuthContext';
+import { getMyRides } from '../pages/api/rides';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
@@ -12,8 +13,8 @@ export default function Postings() {
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const { isAuthenticated } = useAuth();
     const token = localStorage.getItem('token');
+    const { isAuthenticated } = useAuth();
 
     //fetches rides when component loads
     useEffect(() => {
@@ -120,10 +121,12 @@ export default function Postings() {
             }
             const data = await res.json();
             // Extract rides array from response (controller returns { message, rides })
+            
             const ridesArray = data.rides || data || [];
             const myRidesResponse = await getMyRides();
             const myRidesArray = myRidesResponse.rides || [];
             const filteredArr = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
+
             setRides(ridesArray);
             setFilteredRides(filteredArr);
         } catch (err) {
@@ -134,9 +137,10 @@ export default function Postings() {
         }
     }
 
-    const removeRideFromState = (deletedId) => {
+    const removeRideFromState = async (deletedId) => {
     // This updates the UI instantly by filtering out the deleted item
     setRides(currentRides => currentRides.filter(ride => ride.id !== deletedId));
+    await fetchRides();
     };
     
     const handleSearch = (searchQuery) => {
@@ -206,6 +210,10 @@ export default function Postings() {
                             // re-fetch all rides
                             await fetchRides();
                         }}
+                        onLeave={async (leftRideId) => {
+                            await fetchRides();
+                        }}
+
                         onEdit={ async (editedRideId) => {
                             await fetchRides();
                         }}
