@@ -1,5 +1,6 @@
 import express from 'express';
 import { joinCall, sendOffer, sendAnswer, sendIceCandidate, getCallStatus, leaveCall, getCallInfo } from '../controllers/callsController.js';
+import { authenticateUser } from '../middleware/authenticateUser.js'; 
 
 
 const router = express.Router();

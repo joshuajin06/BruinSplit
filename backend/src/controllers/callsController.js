@@ -1,5 +1,4 @@
-import { es } from 'zod/locales';
-import { verifyRideMembership, getConfirmedMembers } from '../services/callService.js';
+import { verifyRideMembership, getConfirmedMembers } from '../services/callsService.js';
 
 
 /** 
@@ -90,6 +89,13 @@ export async function sendOffer(req, res, next) {
 
         if (!offer) {
             return res.status(400).json({ error: 'Offer is required' });
+        }
+
+        const call = activeCalls.get(rideId);
+        if (!call || !call.participants.has(fromUserId)) {
+            return res.status(404).json({
+                error: 'Call not found or user not in call'
+            });
         }
 
         // verify user is in the call
@@ -244,14 +250,14 @@ export async function getCallStatus(req, res, next) {
 
         const userState = call.peerConnections.get(userId) || {
             offers: new Map(),
-            answers: newMap(),
+            answers: new Map(),
             iceCandidates: new Map()
         };
 
         // convert Maps to plain objects for JSON response
         const offers = {};
         userState.offers.forEach((value, key) => {
-            offer[key] = value;
+            offers[key] = value;
         });
 
         const answers = {};
@@ -279,7 +285,7 @@ export async function getCallStatus(req, res, next) {
 
 
     } catch (error) {
-        next (error);
+        next(error);
     }
 }
 
