@@ -122,6 +122,28 @@ img {
   color: white;
 }
 
+.friend-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 15px;
+  gap: 4px;
+}
+
+.friend-count-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: white;
+}
+
+.friend-count-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .profile-content {
   padding: 40px;
 }
