@@ -234,9 +234,52 @@ export async function sendIceCandidate(req, res, next) {
 // GET /api/calls/:rideId/status - poll for signaling data (any new offers & ICE ?)
 export async function getCallStatus(req, res, next) {
     try {
+        const { rideId } = req.params;
+        const userId = req.user.id;
+
+        const call = activeCalls.get(rideId);
+        if (!call || !call.participants.has(userId)) {
+            return res.json({ active: false });
+        }
+
+        const userState = call.peerConnections.get(userId) || {
+            offers: new Map(),
+            answers: newMap(),
+            iceCandidates: new Map()
+        };
+
+        // convert Maps to plain objects for JSON response
+        const offers = {};
+        userState.offers.forEach((value, key) => {
+            offer[key] = value;
+        });
+
+        const answers = {};
+        userState.answers.forEach((value, key) => {
+            answers[key] = value;
+        });
+
+        const iceCandidates = {};
+        userState.iceCandidates.forEach((candidates, key) => {
+            iceCandidates[key] = candidates;
+        });
+
+        // clear processed signaling data after sending (frontend will process this)
+        userState.offers.clear();
+        userState.answers.clear();
+        userState.iceCandidates.clear();
+
+        res.json({
+            active: true,
+            participants: Array.from(call.participants),
+            offers,
+            answers,
+            iceCandidates
+        });
+
 
     } catch (error) {
-
+        next (error);
     }
 }
 
