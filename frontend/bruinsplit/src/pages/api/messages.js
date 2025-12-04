@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const url = "http://localhost:8080/api";
+const backend_url = "http://localhost:8080/api";
 
 // Created axios instance with url
 const apiClient = axios.create({
-    baseURL: url
+    baseURL: backend_url
 });
 
 // add auth header if token exists
@@ -27,23 +27,38 @@ apiClient.interceptors.response.use(
 
 // POST /api/messages
 export const postMessage = async (rideId, content) => {
-    const { data } = await apiClient.post('/messages', { 
-        ride_id: rideId, 
-        content 
-    });
-    return data;
+    try {
+        const { data } = await apiClient.post('/messages', { 
+            ride_id: rideId, 
+            content 
+        });
+        return data;
+    } catch (error) {
+        console.error('Error posting message:', error.response?.data || error.message);
+        throw error;
+    }
 };
 
 // GET /api/messages?ride_id=<rideId>
 export const getMessages = async (rideId) => {
-    const { data } = await apiClient.get('/messages', {
-        params: { ride_id: rideId }
-    });
-    return data;
+    try {
+        const { data } = await apiClient.get('/messages', {
+            params: { ride_id: rideId }
+        });
+        return data;
+    } catch (error) {
+        console.error('Error getting messages:', error.response?.data || error.message);
+        throw error;
+    }
 };
 
 // GET /api/messages/conversations
 export const getConversations = async () => {
-    const { data } = await apiClient.get('/messages/conversations');
-    return data;
+    try {
+        const { data } = await apiClient.get('/messages/conversations');
+        return data;
+    } catch (error) {
+        console.error('Error getting conversations:', error.response?.data || error.message);
+        throw error;
+    }
 };
