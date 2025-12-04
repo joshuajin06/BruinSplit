@@ -37,6 +37,22 @@ class CallManager {
             this.onParticipantLeft = onParticipantLeft;
             this.onError = onError;
 
+            // Get local media stream (audio + optional video)
+            const constraints = {
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                },
+                video: enableVideo ? {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user'
+                } : false
+            };
+
+            this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
             // Get local audio stream
             this.localStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -363,6 +379,43 @@ class CallManager {
                 track.enabled = !isMuted;
             });
         }
+    }
+
+    async toggleVideo(enable) {
+        if (!this.localStream) return;
+
+        const videoTracks = this.localStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+            videoTracks.forEach(track => {
+                track.enabled = enable;
+            });
+        } else if (enable) {
+            // add video track if it doesn't exist
+            try {
+                const videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    }
+                });
+                const videoTrack = videoStream.getVideoTracks()[0];
+                this.localStream.addTrack(videoTrack);
+
+                // add video track to all existing peer connections
+                this.peerConnections.forEach((peerConnections) => {
+                    peerConnections.addTrack(videoTrack, this.localStream);
+                });
+
+            } catch (error) {
+                console.error('Error enabling video:', error);
+                throw error;
+            }
+        }
+    }
+
+    getLocalStream() {
+        return this.localStream;
     }
 
     closePeerConnection(userId) {
