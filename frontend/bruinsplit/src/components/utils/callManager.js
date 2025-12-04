@@ -426,7 +426,7 @@ class CallManager {
 
                 // add video track to all existing peer connections
                 this.peerConnections.forEach((peerConnection) => {
-                    peerConnections.addTrack(videoTrack, this.localStream);
+                    peerConnection.addTrack(videoTrack, this.localStream);
                 });
 
             } catch (error) {
