@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { getMyRides } from '../pages/api/rides';
 import './pages.css';
 import Card from '../components/card.jsx';
+import SearchBar from '../components/searchBar.jsx';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
+    const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const user = JSON.parse(localStorage.getItem('user'));
+    const { isAuthenticated } = useAuth();
     const token = localStorage.getItem('token');
-    const isAuthenticated = !!user && !!token;
 
     //fetches rides when component loads
     useEffect(() => {
@@ -115,11 +118,14 @@ export default function Postings() {
                 const text = await res.text().catch(() => '');
                 throw new Error(`Expected JSON but received: ${contentType} \n${text.slice(0, 300)}`);
             }
-
             const data = await res.json();
             // Extract rides array from response (controller returns { message, rides })
             const ridesArray = data.rides || data || [];
+            const myRidesResponse = await getMyRides();
+            const myRidesArray = myRidesResponse.rides || [];
+            const filteredArr = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
             setRides(ridesArray);
+            setFilteredRides(filteredArr);
         } catch (err) {
             console.error('fetchRides error:', err);
             setError(err.message || 'Failed to load rides');
@@ -128,6 +134,31 @@ export default function Postings() {
         }
     }
 
+    const removeRideFromState = (deletedId) => {
+    // This updates the UI instantly by filtering out the deleted item
+    setRides(currentRides => currentRides.filter(ride => ride.id !== deletedId));
+    };
+    
+    const handleSearch = (searchQuery) => {
+        if (!searchQuery.trim()) {
+            setFilteredRides(rides);
+            return;
+        }
+
+        const query = searchQuery.toLowerCase();
+        const filtered = rides.filter(ride => {
+            const origin = ride.origin_text?.toLowerCase() || '';
+            const destination = ride.destination_text?.toLowerCase() || '';
+            const combinedText = `${origin} to ${destination}`;
+            
+            return origin.includes(query) || 
+                   destination.includes(query) || 
+                   combinedText.includes(query);
+        });
+        
+        setFilteredRides(filtered);
+    };
+
     return (
     <>
         <div className="page-container">
@@ -135,11 +166,19 @@ export default function Postings() {
                 <h1>Posts</h1>
                 {isAuthenticated && <button className='add-post' onClick={() => setShowModal(!showModal)}><a>+</a></button>}
             </section>
+            
+            <div style={{ marginBottom: '24px', width: '60%', maxWidth: '1200px', margin: '0 auto 24px auto' }}>
+                <SearchBar onSearch={handleSearch} />
+            </div>
+
             {loading && <p>Loading rides...</p>}
             {error && <p className="error-message">{error}</p>}
             {!loading && rides.length === 0 && <p>No rides available.</p>}
+            {!loading && rides.length > 0 && filteredRides.length === 0 && (
+                <p>No rides match your search.</p>
+            )}
             <div className='card-grid'> 
-                {rides.map(ride => (
+                {filteredRides.map(ride => (
                     <Card key={ride.id}
                         rideId={ride.id}
                         ownerId={ride.owner_id}
@@ -151,6 +190,11 @@ export default function Postings() {
                         notes={ride.notes}
                         createdAt={ride.created_at}
                         content={ride.notes || 'Looking for riders'}
+                        onDelete={removeRideFromState}
+                        onTransferOwnership={async (joinedRideId, newOwnerId) => {
+                            // re-fetch all rides
+                            await fetchRides();
+                        }}
                         rideDetails={{
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
@@ -159,8 +203,11 @@ export default function Postings() {
                             membership_status: ride.membership_status  // null, 'PENDING', or 'CONFIRMED JOINING'
                         }}
                         onJoin={async (joinedRideId) => {
-                        // re-fetch all rides
-                        await fetchRides();
+                            // re-fetch all rides
+                            await fetchRides();
+                        }}
+                        onEdit={ async (editedRideId) => {
+                            await fetchRides();
                         }}
                     /> 
                 ))}
