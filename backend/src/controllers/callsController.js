@@ -127,7 +127,48 @@ export async function sendOffer(req, res, next) {
 // POST /api/calls/:rideId/answer/:targetUserId - create and send WebRTC answer
 export async function sendAnswer(req, res, next) {
     try {
+        const { rideId, targetUserId } = req.params;
+        const { answer } = req.body;
+        const fromUserId = req.user.id;
 
+        if (!answer) {
+            return res.status(400).json({ error: 'Answer is required' });
+        }
+
+        // get the call state
+        const call = activeCalls.get(rideId);
+        if (!call || !call.participants.has(fromUserId)) {
+            return res.status(404).json({
+                error: 'Call not found or user not in call'
+            });
+        }
+
+        // verify the target user is a confirmed member of the ride
+        const isTargetMember = await verifyRideMembership(rideId, targetUserId);
+        if (!isTargetMember) {
+            return res.status(403).json({
+                error: 'Target user is not a confirmed member of this ride'
+            });
+        }
+
+        // store answer in target's user peer connection state
+        if (!call.peerConnections.has(targetUserId)) {
+            call.peerConnections.set(targetUserId, {
+                offers: new Map(),
+                answers: new Map(),
+                iceCandidates: new Map()
+            });
+        }
+
+        const targetState = call.peerConnections.get(targetUserId);
+        targetState.answers.set(fromUserId, {
+            from: fromUserId,
+            answer,
+            timestamp: Date.now()
+        });
+
+        res.json({ success: true });
+        
     } catch (error) {
         next(error);
     }
