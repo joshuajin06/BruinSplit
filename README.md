@@ -2,24 +2,24 @@
 With the expensive and rising costs of Uber/Lyft/Waymo rides, we wanted to design an app called BruinSplit which helps UCLA students find other students to split the cost of a ride somewhere. This app will let users log in with their UCLA email, post or join ride requests based on time and destination. 
 
 # Tech Stack:
-Frontend:
-React
-Vite 
-Material UI
+## Frontend:
+ - ** React
+ - ** Vite 
+ - ** Material UI
 
-Backend: 
-Express
-Supabase 
+## Backend: 
+- ** Express
+- ** Supabase 
 
-Tooling:
-Jest
-ESLint
-Babel
+## Tooling:
+ - ** Jest
+ - ** ESLint
+ - ** Babel
 
 # Installation Instructions:
 Clone the following link: https://github.com/joshuajin06/BruinSplit.git 
 
-Before running the aoo, make sure you have installed the following. 
+Before running the app, make sure you have installed the following. 
 
 Install [node.js](https://nodejs.org/en/download):
 
