@@ -87,6 +87,8 @@ class CallManager {
         }
     }
 
+    
+
     async createPeerConnection(remoteUserId) {
         try {
             if (this.peerConnections.has(remoteUserId)) {
@@ -99,38 +101,70 @@ class CallManager {
                 iceServers: STUN_SERVERS
             });
 
-            // Add local audio tracks
-            const audioTracks = this.localStream.getAudioTracks();
-            console.log(`Adding ${audioTracks.length} audio tracks to peer connection`);
+            // add local tracks
             this.localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, this.localStream);
             });
 
-            // Handle incoming remote audio
+            // handle incoming remote tracks
             peerConnection.ontrack = (event) => {
                 console.log('Received remote track from', remoteUserId, 'streams:', event.streams.length);
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
-            };
+            }
 
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
                     console.log(`ICE candidate from ${remoteUserId}:`, event.candidate.candidate.substring(0, 50));
                     this.sendIceCandidate(remoteUserId, event.candidate);
+                } else {
+                    console.log(`ICE candidate gathering completed for ${remoteUserId}`);
                 }
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                console.log(`Connection state with ${remoteUserId}:`, peerConnection.connectionState);
-                if (peerConnection.connectionState === 'failed') {
+                const state = peerConnection.connectionState;
+                console.log(`Connection state with ${remoteUserId}:`, state);
+
+                if (state === 'failed') {
                     console.error(`Connection failed with ${remoteUserId}`);
-                    this.peerConnections.delete(remoteUserId);
+                    // attempt to restart ICE
+                    try {
+                        peerConnection.restartIce();
+                    } catch (error) {
+                        console.error(`Error restarting ICE:`, error);
+                    }
+                } else if (state === 'disconnected') {
+                    console.warn(`Connection disconnected with ${remoteUserId}`);
+                } else if (state === 'connected') {
+                    console.log(`Connection established with ${remoteUserId}`);
                 }
             };
 
             // Add signaling state logging
+            peerConnection.onsignalingstatechange = () => {
+                console.log(`Signaling state with ${remoteUserId}:`, peerConnection.signalingState);
+            };
+
+            // handle ICE connection state
+            peerConnection.oniceconnectionstatechange = () => {
+                const state = peerConnection.iceConnectionState;
+                console.log(`ICE connection state with ${remoteUserId}:`, state);
+                
+                if (state === 'failed') {
+                    console.error(`ICE connection failed with ${remoteUserId}`);
+                    // Try to restart ICE
+                    try {
+                        peerConnection.restartIce();
+                    } catch (error) {
+                        console.error(`Error restarting ICE:`, error);
+                    }
+                }
+            };
+
+            // add signaling state logging
             peerConnection.onsignalingstatechange = () => {
                 console.log(`Signaling state with ${remoteUserId}:`, peerConnection.signalingState);
             };
@@ -145,6 +179,7 @@ class CallManager {
             await sendOffer(this.rideId, remoteUserId, offer);
 
             return peerConnection;
+            
         } catch (error) {
             console.error(`Error creating peer connection with ${remoteUserId}:`, error);
             this.onError?.(`Failed to connect with participant: ${error.message}`);
@@ -470,7 +505,7 @@ class CallManager {
 
             this.isCallActive = false;
             this.participants.clear();
-            
+
         } catch (error) {
             console.error('Error stopping call:', error);
             this.onError?.(`Error stopping call: ${error.message}`);
