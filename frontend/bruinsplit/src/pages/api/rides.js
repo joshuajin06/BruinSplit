@@ -25,6 +25,18 @@ export const getMyPendingRides = async () => {
   }
 };
 
+export const getPendingRequests = async (rideId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.get(`${url}/rides/${rideId}/pending`, { headers });
+    return res.data;
+  } catch (err) {
+    console.error('Error fetching pending requests:', err.response?.data || err.message);
+    throw err;
+  }
+}
+
 export const createRide = async (rideData) => {
     try {
         const token = localStorage.getItem('token');
