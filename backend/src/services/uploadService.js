@@ -30,15 +30,15 @@ export async function uploadProfilePhotoService(userId, fileBuffer, mimeType) {
     const finalMimeType = 'image/jpeg';
 
     try {
-        // convert any image to JPEG
+        // convert any image to JPEG with resize
         processedBuffer = await sharp(fileBuffer)
-            .jpeg({
-                quality: 85, // balance quality and file size
-                mozjpeg: true // beter compression
+            .resize(800, 800, {
+                fit: 'inside',
+                withoutEnlargement: true
             })
-            .resize(800, 800, { // resize to 800x800 for PFPs
-                fit: 'inside', // maintain aspect ratio
-                withoutEnlargement: true // don't upscale small images
+            .jpeg({
+                quality: 85,
+                mozjpeg: true
             })
             .toBuffer();
     } catch (conversionError) {
