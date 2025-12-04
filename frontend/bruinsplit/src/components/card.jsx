@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./card.css"
-import { getTimeAgo, formatDatetimeLocal, hashString} from './utils/cardUtils';
-import { useMemo } from "react";
+import { getTimeAgo, formatDatetimeLocal, hashString } from './utils/cardUtils';
+import { 
+    getRideById, 
+    joinRide, 
+    leaveRide, 
+    deleteRide, 
+    updateRide,
+    manageRequest,     
+    kickMember,        
+    transferOwnership  
+} from '../pages/api/rides';
+
 const gradients = [
   "gradient-blue",
   "gradient-purple",
@@ -37,8 +47,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [joining, setJoining] = useState(false);
     const [joinError, setJoinError] = useState(null);
 
-    // MembershipStatus state: null (not member), 'PENDING' (request pending owner approval), 'CONFIRMED JOINING' (joined)
-    // Initialize from parent's rideDetails.membership_status; undefined becomes null
+    // MembershipStatus state
     const [membershipStatus, setMembershipStatus] = useState(
         rideDetails?.membership_status || null
     );
@@ -51,7 +60,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [loadingRiders, setLoadingRiders] = useState(false);
     const [ridersError, setRidersError] = useState(null);
 
-    // State for details modal (separate from join modal)
+    // State for details modal
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [rideDetailsFull, setRideDetailsFull] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
@@ -62,37 +71,25 @@ export default function Card({ title, origin, destination, content, image, rideD
         if (!rideId) return;
         setLoadingRiders(true);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (!res.ok) throw new Error('Failed to load riders');
-            
-            const data = await res.json();
+            const data = await getRideById(rideId);
             setAllMembers(data?.ride?.members || []);
         } catch (err) {
-            setRidersError(err.message);
+            setRidersError(err.response?.data?.message || err.message);
         } finally {
             setLoadingRiders(false);
         }
     };
 
-    // Fetch full ride details for details modal
+    // Fetch full ride details
     const fetchRideDetails = async () => {
         if (!rideId) return;
         setLoadingDetails(true);
         setDetailsError(null);
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (!res.ok) throw new Error('Failed to load ride details');
-            
-            const data = await res.json();
+            const data = await getRideById(rideId);
             setRideDetailsFull(data.ride);
         } catch (err) {
-            setDetailsError(err.message);
+            setDetailsError(err.response?.data?.message || err.message);
         } finally {
             setLoadingDetails(false);
         }
@@ -111,35 +108,24 @@ export default function Card({ title, origin, destination, content, image, rideD
         navigate(`/profile/${userId}`);
     };
 
+    // Handle Approve/Reject - UPDATED
     const handleRequestAction = async (memberId, action) => {
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/${action}/${memberId}`, {
-                method: 'POST', 
-                headers: {
-                    'content-type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }   
-            });
-        
-            if (!res.ok) throw new Error(`Failed to ${action} member`);
-
+            await manageRequest(rideId, memberId, action);
             await fetchRiders(); // refresh members list
         } catch (err) {
             console.error(`Error during ${action} member:`, err);
+            alert(`Failed to ${action} member`);
         }
     };
 
     useEffect(() => {
-        // Only update membershipStatus if parent provides a value
-        // This prevents overwriting local state changes (join/leave) with stale parent data
         if (rideDetails?.membership_status !== undefined) {
             setMembershipStatus(rideDetails.membership_status);
         }
     }, [rideDetails?.membership_status]);
 
-    const handleCancel = () =>
-    {
+    const handleCancel = () => {
         setShowModal(false);
         setJoinError(null);
         setActiveTab('details');
@@ -151,30 +137,17 @@ export default function Card({ title, origin, destination, content, image, rideD
         setJoinError(null);
 
         try {
-            const token = localStorage.getItem('token');
-            if (!token) throw new Error('User not authenticated');
-
             if (!rideId) throw new Error('Ride id is missing');
 
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/join`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            await joinRide(rideId);
 
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error?.message || data?.error || data?.message || 'Failed to join ride');
-
-            // update local state to PENDING and notify parent to refresh
             setMembershipStatus('PENDING');
             if (onJoin) await onJoin(rideId);
 
             alert(`Request sent to join: ${displayTitle}`);
             setShowModal(false);
         } catch (err) {
-            setJoinError(err.message || 'Error joining ride');
+            setJoinError(err.response?.data?.error || err.message || 'Error joining ride');
         } finally {
             setJoining(false);
         }
@@ -190,33 +163,21 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
 
         try {
-            const token = localStorage.getItem('token');
-            if (!token) throw new Error('User not authenticated');
             if (!rideId) throw new Error('Ride id is missing');
 
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}/leave`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            await leaveRide(rideId);
 
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error || data?.message || 'Failed to leave ride');
-
-            // update local state to not a member and notify parent to refresh
             setMembershipStatus(null);
             if (onLeave) {
-            await onLeave(rideId);
-        } else if (onJoin) {
-            await onJoin(rideId);
-        }
+                await onLeave(rideId);
+            } else if (onJoin) {
+                await onJoin(rideId);
+            }
 
             alert('Left ride');
             setShowModal(false);
         } catch (err) {
-            setJoinError(err.message || 'Error leaving ride');
+            setJoinError(err.response?.data?.error || err.message || 'Error leaving ride');
         } finally {
             setJoining(false);
         }
@@ -226,6 +187,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    
     const handleDeleteConfirm = (e) => {
         e.stopPropagation();
         setShowDeleteConfirm(true);
@@ -235,36 +197,23 @@ export default function Card({ title, origin, destination, content, image, rideD
         setDeleteLoading(true);
         setDeleteError(null);
 
-        try{
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}`, {
-                method: 'DELETE',
-                headers: {
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                }
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || 'Failed to delete ride');
-            }
-
+        try {
+            await deleteRide(rideId);
             if (onDelete) onDelete(rideId);
         } catch (err){
             console.error("Delete error:", err);
-            setDeleteError(err.message || 'Error deleting ride');
+            setDeleteError(err.response?.data?.error || err.message || 'Error deleting ride');
         } finally {
             setDeleteLoading(false);
         }
     };
-
-
 
     // Calculate available seats
     const totalSeats = maxRiders || rideDetails?.seats || 3;
     const takenSeats = rideDetails?.current_members || 0;
     const availableSeats = totalSeats - takenSeats;
 
-    // Parse departureDatetime (ISO format: "2025-11-29T10:30:00")
+    // Parse departureDatetime
     const departureObj = departureDatetime ? new Date(departureDatetime) : null;
     const formattedDatetime = departureObj ? departureObj.toLocaleString('en-US', {
         month: '2-digit',
@@ -273,7 +222,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         hour: '2-digit',
         minute: '2-digit',
         hour12: true
-    }).replace(/\//g, '/') : 'Not specified';                                                                     
+    }).replace(/\//g, '/') : 'Not specified';                                                                          
     const departureDate = departureObj ? departureObj.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit',
@@ -288,27 +237,15 @@ export default function Card({ title, origin, destination, content, image, rideD
 
         await fetchRiders(); // gets riders who have joined
 
-        // If server didn't include membership_status, try to fetch it for this user
+        // Check membership status if undefined
         if (rideDetails?.membership_status === undefined && rideId) {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return; // can't check membership without token
-
-                const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) return;
-                const data = await res.json().catch(() => ({}));
+                const data = await getRideById(rideId);
                 const members = data?.ride?.members || [];
                 const user = JSON.parse(localStorage.getItem('user') || 'null');
                 const userMember = user && members.find(m => m.user_id === user.id);
                 setMembershipStatus(userMember?.status || null);
             } catch (err) {
-                // ignore membership fetch errors — leave membershipStatus as null
                 console.debug('Could not fetch membership status', err);
             }
         } else if (rideDetails?.membership_status !== undefined) {
@@ -316,43 +253,22 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
+    // Implemented via api call - UPDATED
     const handleKickMember = async (memberId) => {
-        try{
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}/kick/${memberId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                    }
-                });
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    throw new Error(data.error || 'Failed to kick member');
-                }
-
-                await fetchRiders(); // refresh members list after kick
-            } catch (err){
-                console.error("Kick error:", err);
-                //alert(err.message);
+        try {
+            await kickMember(rideId, memberId);
+            await fetchRiders(); // refresh members list after kick
+        } catch (err){
+            console.error("Kick error:", err);
         }
     };
 
-
+    // Implemented via api call - UPDATED
     const handleTransferOnwership = async (newOwnerId) => {
         if (!isOwner) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}/transfer-ownership/${newOwnerId}`, {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            if (!res.ok) throw new Error('Failed to transfer ownership');
-            //setShowModal(false);
+            await transferOwnership(rideId, newOwnerId);
             if (onTransferOwnership) onTransferOwnership(rideId, newOwnerId);
             await fetchRiders(); //refresh members list
 
@@ -382,23 +298,8 @@ export default function Card({ title, origin, destination, content, image, rideD
         if (!isOwner) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/api/rides/${rideId}`, {
-                method: 'PUT',
-                headers: {
-                    'content-type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(form)
-            });
-            if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || 'Failed to update ride');
-            }
+            await updateRide(rideId, form);
             if (onEdit) onEdit(rideId);
-
-            const data = await res.json();
-
             setEditModalOpen(false);
         } catch (err) {
             console.error("Edit ride error:", err);
@@ -408,27 +309,21 @@ export default function Card({ title, origin, destination, content, image, rideD
     // Use origin/destination for title, fallback to title prop
     const displayTitle = origin && destination ? `${origin} ➡ ${destination}` : title;
 
-    //filter members into confirmed riders and pending requests
+    // Filter members
     const confirmedRiders = allMembers.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
     const pendingRequests = allMembers.filter(m => m.status === 'PENDING');
    
-   const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
 
     // Memoize confirmed members for card display to prevent re-renders
-const [cardMembers, setCardMembers] = useState([]);
+    const [cardMembers, setCardMembers] = useState([]);
 
-//fetch members on mount
-useEffect(() => {
+    // Fetch members on mount for the card face
+    useEffect(() => {
     const fetchCardMembers = async () => {
         if (!rideId) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:8080/api/rides/${rideId}`, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-            if (!res.ok) return;
-            
-            const data = await res.json();
+            const data = await getRideById(rideId);
             const members = data?.ride?.members || [];
             // Only show confirmed members
             const confirmed = members.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');

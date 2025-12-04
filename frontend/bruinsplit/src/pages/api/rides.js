@@ -120,3 +120,45 @@ export const updateRide = async (rideId, updateData) => {
     throw err;
   }
 };
+
+//////////
+
+// POST /api/rides/:id/:action/:memberId
+export const manageRequest = async (rideId, memberId, action) => {
+    try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        // action should be 'approve' or 'reject'
+        const res = await axios.post(`${url}/rides/${rideId}/${action}/${memberId}`, {}, { headers });
+        return res.data;
+    } catch (err) {
+        console.error(`Error processing request (${action}):`, err.response?.data || err.message);
+        throw err;
+    }
+};
+
+// DELETE /api/rides/:id/kick/:memberId
+export const kickMember = async (rideId, memberId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.delete(`${url}/rides/${rideId}/kick/${memberId}`, { headers });
+        return res.data;
+    } catch (err) {
+        console.error('Error kicking member:', err.response?.data || err.message);
+        throw err;
+    }
+};
+
+// POST /api/rides/:id/transfer-ownership/:newOwnerId
+export const transferOwnership = async (rideId, newOwnerId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await axios.post(`${url}/rides/${rideId}/transfer-ownership/${newOwnerId}`, {}, { headers });
+        return res.data;
+    } catch (err) {
+        console.error('Error transferring ownership:', err.response?.data || err.message);
+        throw err;
+    }
+};
