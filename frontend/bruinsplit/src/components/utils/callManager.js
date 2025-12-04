@@ -189,6 +189,52 @@ class CallManager {
             // Don't stop call on polling error, just log it
         }
     }
+
+    async handleOffer(fromUserId, offerObj) {
+        try {
+            if (!offerObj.offer) return;
+
+            let peerConnection = this.peerConnections.get(fromUserId);
+            if (!peerConnection) {
+                peerConnection = await this.createPeerConnection(fromUserId);
+            }
+
+            // Set remote description and create answer
+            await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(offerObj.offer)
+            );
+
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            // Send answer back
+            await sendAnswer(this.rideId, fromUserId, answer);
+        } catch (error) {
+            console.error(`Error handling offer from ${fromUserId}:`, error);
+        }
+    }
+
+    /**
+     * Handle incoming SDP answer
+     */
+    async handleAnswer(fromUserId, answerObj) {
+        try {
+            if (!answerObj.answer) return;
+
+            const peerConnection = this.peerConnections.get(fromUserId);
+            if (!peerConnection) {
+                console.warn(`No peer connection found for ${fromUserId}`);
+                return;
+            }
+
+            // Set remote description
+            await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(answerObj.answer)
+            );
+        } catch (error) {
+            console.error(`Error handling answer from ${fromUserId}:`, error);
+        }
+    }
 }
 
 export default CallManager;
