@@ -187,7 +187,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         navigate(`/profile/${userId}`);
     };
 
-    // Handle Approve/Reject - UPDATED
+    // Handle Approve/Reject 
     const handleRequestAction = async (memberId, action) => {
         try {
             await manageRequest(rideId, memberId, action);
@@ -721,7 +721,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                                         return (
                                             <div key={rider.id} className="rider-card">
                                                 <div className="rider-avatar">
-                                                    {fullName.charAt(0).toUpperCase()}
+                                                    {profile?.profile_photo_url ? (
+                                                        <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+                                                    ) : 
+                                                    (
+                                                        <div className="navbar-profile-placeholder">
+                                                            {profile?.first_name?.charAt(0)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="rider-info">
                                                     <div className="rider-name">
@@ -768,6 +775,16 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 ) : (
                                     pendingRequestsList.map((request) => (
                                         <div key={request.user_id} className="request-card">
+                                            <div className="rider-avatar">
+                                                {request.profile?.profile_photo_url ? (
+                                                    <img src={request.profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+                                                ) : 
+                                                (
+                                                    <div className="navbar-profile-placeholder">
+                                                        {request.profile?.first_name?.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="rider-info">
                                                 <strong>{request.profile?.first_name} {request.profile?.last_name}</strong>
                                                 <div className="rider-username">@{request.profile?.username}</div>
@@ -884,7 +901,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                                         <h3>Ride Owner</h3>
                                         <div className="rider-card">
                                             <div className="rider-avatar">
-                                                {rideDetailsFull.owner.first_name ? rideDetailsFull.owner.first_name.charAt(0).toUpperCase() : 'U'}
+                                                {rideDetailsFull.owner.profile_photo_url ? (
+                                                    <img src={rideDetailsFull.owner.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+                                                ) : 
+                                                (
+                                                    <div className="navbar-profile-placeholder">
+                                                        {rideDetailsFull.owner.first_name?.charAt(0)}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="rider-info">
                                                 <div className="rider-name">
@@ -949,7 +973,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                     return (
                                                         <div key={member.id} className="rider-card">
                                                             <div className="rider-avatar">
-                                                                {fullName.charAt(0).toUpperCase()}
+                                                                {profile?.profile_photo_url ? (
+                                                                    <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
+                                                                ) : 
+                                                                (
+                                                                    <div className="navbar-profile-placeholder">
+                                                                        {profile?.first_name?.charAt(0)}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="rider-info">
                                                                 <div className="rider-name">
