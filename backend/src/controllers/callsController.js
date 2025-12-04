@@ -290,8 +290,37 @@ export async function getCallStatus(req, res, next) {
 export async function getCallInfo(req, res, next) {
     try {
 
-    } catch (error) {
+        const { rideId } = req.params;
+        const userId = req.user.id;
 
+        // verify user is a confirmed member
+        const isMember = await verifyRideMembership(rideId, userId);
+        if (!isMember) {
+            return res.status(403).json({
+                error: 'You must be a confirmed member of this ride to view call info'
+            });
+        }
+
+        const call = activeCalls.get(rideId);
+        if (!call) {
+            return res.json({
+                active: false,
+                participants: []
+            });
+        }
+
+        // get all confirmed members
+        const allMembers = await getConfirmedMembers(rideId);
+
+        res.json({
+            active: true,
+            participants: Array.from(call.participants),
+            allMembers: allMembers,
+            createdAt: call.createdAt
+        });
+
+    } catch (error) {
+        next(error);
     }
 }
 
@@ -300,8 +329,34 @@ export async function getCallInfo(req, res, next) {
 export async function leaveCall(req, res, next) {
     try {
 
-    } catch (error) {
+        const { rideId } = req.params;
+        const userId = req.user.id;
 
+        const call = activeCalls.get(rideId);
+        if (call) {
+            // remove user from participants
+            call.participants.delete(userId);
+
+            // remove user's peer connection state
+            call.peerConnections.delete(userId);
+
+            // clean up references to this user in other peer connections
+            call.peerConnections.forEach((state, targetUserId) => {
+                state.offers.delete(userId);
+                state.answers.delete(userId);
+                state.iceCandidates.delete(userId);
+            });
+
+            // if no participants left, remove call entirely
+            if (call.participants.size === 0) {
+                activeCalls.delete(rideId);
+            }
+        }
+
+        res.json({ success: true });
+
+    } catch (error) {
+        next(error);
     }
 }
 
