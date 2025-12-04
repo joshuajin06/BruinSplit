@@ -235,6 +235,35 @@ class CallManager {
             console.error(`Error handling answer from ${fromUserId}:`, error);
         }
     }
+
+    async handleIceCandidate(fromUserId, candidateObj) {
+        try {
+            if (!candidateObj.candidate) return;
+
+            const peerConnection = this.peerConnections.get(fromUserId);
+            if (!peerConnection) {
+                console.warn(`No peer connection found for ${fromUserId} to add ICE candidate`);
+                return;
+            }
+
+            await peerConnection.addIceCandidate(
+                new RTCIceCandidate(candidateObj.candidate)
+            );
+        } catch (error) {
+            console.error(`Error handling ICE candidate from ${fromUserId}:`, error);
+        }
+    }
+
+    /**
+     * Send ICE candidate to peer
+     */
+    async sendIceCandidate(remoteUserId, candidate) {
+        try {
+            await sendIceCandidate(this.rideId, remoteUserId, candidate);
+        } catch (error) {
+            console.error(`Error sending ICE candidate to ${remoteUserId}:`, error);
+        }
+    }
 }
 
 export default CallManager;
