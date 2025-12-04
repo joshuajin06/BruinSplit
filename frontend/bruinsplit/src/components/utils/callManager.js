@@ -71,21 +71,25 @@ class CallManager {
     async createPeerConnection(remoteUserId) {
         try {
             if (this.peerConnections.has(remoteUserId)) {
+                console.log(`Peer connection already exists for ${remoteUserId}`);
                 return this.peerConnections.get(remoteUserId);
             }
 
+            console.log(`Creating peer connection to ${remoteUserId}`);
             const peerConnection = new RTCPeerConnection({
                 iceServers: STUN_SERVERS
             });
 
             // Add local audio tracks
+            const audioTracks = this.localStream.getAudioTracks();
+            console.log(`Adding ${audioTracks.length} audio tracks to peer connection`);
             this.localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, this.localStream);
             });
 
             // Handle incoming remote audio
             peerConnection.ontrack = (event) => {
-                console.log('Received remote track from', remoteUserId);
+                console.log('Received remote track from', remoteUserId, 'streams:', event.streams.length);
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
             };
@@ -93,6 +97,7 @@ class CallManager {
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
+                    console.log(`ICE candidate from ${remoteUserId}:`, event.candidate.candidate.substring(0, 50));
                     this.sendIceCandidate(remoteUserId, event.candidate);
                 }
             };
@@ -106,11 +111,18 @@ class CallManager {
                 }
             };
 
+            // Add signaling state logging
+            peerConnection.onsignalingstatechange = () => {
+                console.log(`Signaling state with ${remoteUserId}:`, peerConnection.signalingState);
+            };
+
             this.peerConnections.set(remoteUserId, peerConnection);
 
             // Create and send offer
+            console.log(`Creating offer for ${remoteUserId}`);
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
+            console.log(`Sending offer to ${remoteUserId}`);
             await sendOffer(this.rideId, remoteUserId, offer);
 
             return peerConnection;
@@ -139,8 +151,11 @@ class CallManager {
 
             // Handle new participants
             const currentParticipants = new Set(response.participants || []);
+            console.log(`Poll: Current participants: ${Array.from(currentParticipants).join(', ')}, My ID: ${this.userId}`);
+
             for (const participantId of currentParticipants) {
                 if (!this.participants.has(participantId) && participantId !== this.userId) {
+                    console.log(`New participant detected: ${participantId}`);
                     this.participants.add(participantId);
                     await this.createPeerConnection(participantId);
                     this.onParticipantJoined?.(participantId);
@@ -150,6 +165,7 @@ class CallManager {
             // Check for removed participants
             for (const participantId of this.participants) {
                 if (!currentParticipants.has(participantId) && participantId !== this.userId) {
+                    console.log(`Participant left: ${participantId}`);
                     this.closePeerConnection(participantId);
                     this.onParticipantLeft?.(participantId);
                 }
@@ -157,27 +173,33 @@ class CallManager {
             this.participants = currentParticipants;
 
             // Handle incoming offers
-            if (response.offers) {
+            if (response.offers && Object.keys(response.offers).length > 0) {
+                console.log(`Received offers: ${Object.keys(response.offers).join(', ')}`);
                 for (const [fromUserId, offerObj] of Object.entries(response.offers)) {
                     if (offerObj) {
+                        console.log(`Handling offer from ${fromUserId}`);
                         await this.handleOffer(fromUserId, offerObj);
                     }
                 }
             }
 
             // Handle incoming answers
-            if (response.answers) {
+            if (response.answers && Object.keys(response.answers).length > 0) {
+                console.log(`Received answers: ${Object.keys(response.answers).join(', ')}`);
                 for (const [fromUserId, answerObj] of Object.entries(response.answers)) {
                     if (answerObj) {
+                        console.log(`Handling answer from ${fromUserId}`);
                         await this.handleAnswer(fromUserId, answerObj);
                     }
                 }
             }
 
             // Handle incoming ICE candidates
-            if (response.iceCandidates) {
+            if (response.iceCandidates && Object.keys(response.iceCandidates).length > 0) {
+                console.log(`Received ICE candidates from: ${Object.keys(response.iceCandidates).join(', ')}`);
                 for (const [fromUserId, candidates] of Object.entries(response.iceCandidates)) {
                     if (Array.isArray(candidates)) {
+                        console.log(`Adding ${candidates.length} ICE candidates from ${fromUserId}`);
                         for (const candidateObj of candidates) {
                             await this.handleIceCandidate(fromUserId, candidateObj);
                         }
@@ -192,21 +214,29 @@ class CallManager {
 
     async handleOffer(fromUserId, offerObj) {
         try {
-            if (!offerObj.offer) return;
+            if (!offerObj.offer) {
+                console.warn(`No offer content from ${fromUserId}`);
+                return;
+            }
 
+            console.log(`Handling offer from ${fromUserId}`);
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
+                console.log(`No existing peer connection for ${fromUserId}, creating one`);
                 peerConnection = await this.createPeerConnection(fromUserId);
             }
 
             // Set remote description and create answer
+            console.log(`Setting remote description for ${fromUserId}`);
             await peerConnection.setRemoteDescription(
                 new RTCSessionDescription(offerObj.offer)
             );
 
+            console.log(`Creating answer for ${fromUserId}`);
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
 
+            console.log(`Sending answer back to ${fromUserId}`);
             // Send answer back
             await sendAnswer(this.rideId, fromUserId, answer);
         } catch (error) {
