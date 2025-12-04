@@ -7,9 +7,9 @@
 
 .card-grid, .event-grid{
   display: grid;
-  
+
   grid-template-columns: repeat(auto-fit, 25rem);
-  
+
   gap: 1rem;
   justify-content: center;
 }   
