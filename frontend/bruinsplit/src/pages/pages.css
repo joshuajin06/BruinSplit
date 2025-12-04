@@ -267,7 +267,7 @@ p {
 .add-post {
   position: fixed;
   right: 24px;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(104px + env(safe-area-inset-bottom));
   width: 56px;
   height: 56px;
   display: inline-flex;
