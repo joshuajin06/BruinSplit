@@ -155,9 +155,9 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
         <div className={`messages-sidebar ${isOpen ? 'open' : ''}`}>
           <div className="conversation-header">
-            <button className="back-btn" onClick={handleBack}>← Back</button>
-            <button className="close-btn" onClick={onClose}>✕</button>
+            <button className="back-btn" onClick={handleBack}>←</button>
             <AudioCall userId={user?.id} rideId={conversation.ride_id} />
+            <button className="close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="conversation-title">
             <h2>{groupName}</h2>
