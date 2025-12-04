@@ -45,14 +45,18 @@ export default function MyRides() {
     }
 
     async function handleDeleteRide(rideId) {
-        if (!window.confirm('Are you sure you want to delete this ride?')) {
-            return;
-        }
         try {
-            await deleteRide(rideId);
-            await loadMyRides(); // Refresh
+            // Remove from UI immediately
+            setCreatedRides(prev => prev.filter(ride => ride.id !== rideId));
+            setJoinedRides(prev => prev.filter(ride => ride.id !== rideId));
+            setPendingRides(prev => prev.filter(ride => ride.id !== rideId));
+            
+            // Then refresh from server to ensure consistency
+            await loadMyRides();
         } catch (err) {
-            alert('Failed to delete ride: ' + (err.message || 'Unknown error'));
+            console.error('Error in handleDeleteRide:', err);
+            // Refresh anyway to restore accurate state
+            await loadMyRides();
         }
     }
 
@@ -80,7 +84,17 @@ export default function MyRides() {
         }
     }
 
-    function renderRideCard(ride, showActions = true) {
+    
+
+    function renderRideCard(ride, showActions = true, section = 'created') {
+        let membershipStatus = ride.membership_status;
+        
+        if (section === 'joined') {
+            membershipStatus = 'CONFIRMED JOINING';
+        } else if (section === 'pending') {
+            membershipStatus = 'PENDING';
+        }
+
         return (
             <Card
                 key={ride.id}
@@ -102,9 +116,10 @@ export default function MyRides() {
                     membership_status: ride.membership_status,
                     owner: ride.owner
                 }}
-                onJoin={loadMyRides}
+                onJoin={async () => loadMyRides}
                 showActions={showActions}
-                onDelete={showActions ? () => handleDeleteRide(ride.id) : null}
+                onDelete={handleDeleteRide}
+                onEdit={loadMyRides}
                 onLeave={showActions ? () => handleLeaveRide(ride.id) : null}
             />
         );
@@ -155,7 +170,17 @@ export default function MyRides() {
                             <p className="empty-message">No rides joined yet.</p>
                         ) : (
                             <div className="column-grid">
-                                {joinedRides.map(ride => renderRideCard(ride, true))}
+                                {joinedRides.map(ride => (
+                                    <div key={ride.id} className="joined-ride-wrapper">
+                                        {renderRideCard(ride, true, 'joined')}
+                                        <button
+                                            className="btn-cancel-joined"
+                                            onClick={() => handleLeaveRide(ride.id)}
+                                        >
+                                            Leave Ride
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
