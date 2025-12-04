@@ -122,11 +122,18 @@ img {
   color: white;
 }
 
+.profile-stats {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+}
+
 .friend-count {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 15px auto 0;
   gap: 4px;
   background: none;
   border: none;
@@ -158,6 +165,104 @@ img {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+
+.requests-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.requests-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.requests-btn:active {
+  transform: scale(0.98);
+}
+
+.requests-icon {
+  font-size: 28px;
+}
+
+.requests-label {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.requests-section {
+  margin-bottom: 20px;
+}
+
+.request-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.accept-btn,
+.reject-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.accept-btn {
+  background: #10b981;
+  color: white;
+}
+
+.accept-btn:hover:not(:disabled) {
+  background: #059669;
+  transform: scale(1.1);
+}
+
+.reject-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.reject-btn:hover:not(:disabled) {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.accept-btn:disabled,
+.reject-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pending-label {
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 
 .modal-overlay {
   position: fixed;

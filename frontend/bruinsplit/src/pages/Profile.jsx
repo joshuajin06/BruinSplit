@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 
 import { updateProfile, updatePassword, updateProfilePic } from './api/profile.js'
-import { getFriendCount, getFriends } from './api/friends.js';
+import { getFriendCount, getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest } from './api/friends.js';
 import './Profile.css';
 
 
@@ -18,6 +18,10 @@ export default function Profile() {
   const [showFriendsModal, setShowFriendsModal] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState({ sent: [], received: [] });
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [processingRequest, setProcessingRequest] = useState({});
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -59,6 +63,61 @@ export default function Profile() {
       console.error('Failed to fetch friends:', error);
     } finally {
       setLoadingFriends(false);
+    }
+  };
+
+  const handleShowRequests = async () => {
+    setShowRequestsModal(true);
+    setLoadingRequests(true);
+    try {
+      const data = await getPendingRequests();
+      setPendingRequests({
+        sent: data.sent || [],
+        received: data.received || []
+      });
+    } catch (error) {
+      console.error('Failed to fetch pending requests:', error);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requesterId) => {
+    setProcessingRequest(prev => ({ ...prev, [requesterId]: true }));
+    try {
+      await acceptFriendRequest(requesterId);
+      // Refresh pending requests
+      const data = await getPendingRequests();
+      setPendingRequests({
+        sent: data.sent || [],
+        received: data.received || []
+      });
+      // Refresh friend count
+      const countData = await getFriendCount(user.id);
+      setFriendCount(countData.friend_count);
+    } catch (error) {
+      console.error('Failed to accept friend request:', error);
+      alert('Failed to accept friend request');
+    } finally {
+      setProcessingRequest(prev => ({ ...prev, [requesterId]: false }));
+    }
+  };
+
+  const handleRejectRequest = async (requesterId) => {
+    setProcessingRequest(prev => ({ ...prev, [requesterId]: true }));
+    try {
+      await rejectFriendRequest(requesterId);
+      // Refresh pending requests
+      const data = await getPendingRequests();
+      setPendingRequests({
+        sent: data.sent || [],
+        received: data.received || []
+      });
+    } catch (error) {
+      console.error('Failed to reject friend request:', error);
+      alert('Failed to reject friend request');
+    } finally {
+      setProcessingRequest(prev => ({ ...prev, [requesterId]: false }));
     }
   };
 
@@ -203,12 +262,18 @@ export default function Profile() {
             </div>
           </div>
           <h1>My Profile</h1>
-          {friendCount !== null && (
-            <button className="friend-count" onClick={handleShowFriends}>
-              <span className="friend-count-number">{friendCount}</span>
-              <span className="friend-count-label">Friend{friendCount !== 1 ? 's' : ''}</span>
+          <div className="profile-stats">
+            {friendCount !== null && (
+              <button className="friend-count" onClick={handleShowFriends}>
+                <span className="friend-count-number">{friendCount}</span>
+                <span className="friend-count-label">Friend{friendCount !== 1 ? 's' : ''}</span>
+              </button>
+            )}
+            <button className="requests-btn" onClick={handleShowRequests}>
+              <span className="requests-icon">👥</span>
+              <span className="requests-label">Requests</span>
             </button>
-          )}
+          </div>
         </div>
 
         {showFriendsModal && (
@@ -244,6 +309,104 @@ export default function Profile() {
                       </li>
                     ))}
                   </ul>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {showRequestsModal && (
+          <>
+            <div className="modal-overlay" onClick={() => setShowRequestsModal(false)} />
+            <div className="friends-modal">
+              <div className="friends-modal-header">
+                <h2>Friend Requests</h2>
+                <button className="close-modal-btn" onClick={() => setShowRequestsModal(false)}>✕</button>
+              </div>
+              <div className="friends-modal-content">
+                {loadingRequests ? (
+                  <p className="loading-text">Loading requests...</p>
+                ) : (
+                  <>
+                    <div className="requests-section">
+                      <h3 style={{ color: '#333', marginBottom: '15px' }}>Received ({pendingRequests.received.length})</h3>
+                      {pendingRequests.received.length === 0 ? (
+                        <p className="no-friends-text">No pending requests</p>
+                      ) : (
+                        <ul className="friends-list">
+                          {pendingRequests.received.map((request) => (
+                            <li key={request.id} className="friend-item">
+                              <div className="friend-info">
+                                {request.profile_photo_url ? (
+                                  <img src={request.profile_photo_url} alt={request.first_name} className="friend-avatar" />
+                                ) : (
+                                  <div className="friend-avatar-placeholder">
+                                    {request.first_name?.charAt(0)}{request.last_name?.charAt(0)}
+                                  </div>
+                                )}
+                                <div className="friend-details">
+                                  <span className="friend-name">{request.first_name} {request.last_name}</span>
+                                  <span className="friend-username">@{request.username}</span>
+                                </div>
+                              </div>
+                              <div className="request-actions">
+                                <button 
+                                  className="accept-btn"
+                                  onClick={() => handleAcceptRequest(request.id)}
+                                  disabled={processingRequest[request.id]}
+                                >
+                                  {processingRequest[request.id] ? '...' : '✓'}
+                                </button>
+                                <button 
+                                  className="reject-btn"
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  disabled={processingRequest[request.id]}
+                                >
+                                  {processingRequest[request.id] ? '...' : '✕'}
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="requests-section" style={{ marginTop: '30px' }}>
+                      <h3 style={{ color: '#333', marginBottom: '15px' }}>Sent ({pendingRequests.sent.length})</h3>
+                      {pendingRequests.sent.length === 0 ? (
+                        <p className="no-friends-text">No pending requests</p>
+                      ) : (
+                        <ul className="friends-list">
+                          {pendingRequests.sent.map((request) => {
+                            const firstName = request.first_name || '';
+                            const lastName = request.last_name || '';
+                            const username = request.username || 'Unknown';
+                            const initials = `${firstName.charAt(0) || '?'}${lastName.charAt(0) || '?'}`;
+                            
+                            return (
+                              <li key={request.id} className="friend-item">
+                                <div className="friend-info">
+                                  {request.profile_photo_url ? (
+                                    <img src={request.profile_photo_url} alt={firstName} className="friend-avatar" />
+                                  ) : (
+                                    <div className="friend-avatar-placeholder">
+                                      {initials}
+                                    </div>
+                                  )}
+                                  <div className="friend-details">
+                                    <span className="friend-name">
+                                      {firstName && lastName ? `${firstName} ${lastName}` : username}
+                                    </span>
+                                    <span className="friend-username">@{username}</span>
+                                    <span className="pending-label">Pending</span>
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
