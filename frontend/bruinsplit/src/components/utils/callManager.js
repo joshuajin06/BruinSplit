@@ -421,10 +421,17 @@ class CallManager {
     closePeerConnection(userId) {
         const peerConnection = this.peerConnections.get(userId);
         if (peerConnection) {
+            // close all tracks first
+            peerConnection.getSenders().forEach(sender => {
+                if (sender.track) {
+                    sender.track.stop();
+                }
+            });
             peerConnection.close();
             this.peerConnections.delete(userId);
         }
         this.remoteStreams.delete(userId);
+        this.pendingIceCandidates.delete(userId);
     }
 
     async stopCall() {
@@ -435,14 +442,22 @@ class CallManager {
                 this.signalingInterval = null;
             }
 
-            // Close all peer connections
-            for (const peerConnection of this.peerConnections.values()) {
+            // close all peer connections
+            for (const [userId, peerConnection] of this.peerConnections.entries()) {
+                peerConnection.getSenders().forEach(sender => {
+                    if (sender.track) {
+                        sender.track.stop();
+                    }
+                });
                 peerConnection.close();
             }
             this.peerConnections.clear();
             this.remoteStreams.clear();
+            this.pendingIceCandidates.clear();
+            this.processedOffers.clear();
+            this.processedAnswers.clear();
 
-            // Stop local audio tracks
+            // Stop local media tracks
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => track.stop());
                 this.localStream = null;
@@ -455,6 +470,7 @@ class CallManager {
 
             this.isCallActive = false;
             this.participants.clear();
+            
         } catch (error) {
             console.error('Error stopping call:', error);
             this.onError?.(`Error stopping call: ${error.message}`);
