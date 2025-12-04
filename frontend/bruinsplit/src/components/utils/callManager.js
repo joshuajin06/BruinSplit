@@ -299,6 +299,31 @@ class CallManager {
         }
     }
 
+    // add method to flush pending ICE candidates
+    async flushPendingIceCandidates(userId) {
+        const peerConnection = this.peerConnections.get(userId);
+        if (!peerConnection || !this.pendingIceCandidates.has(userId)) {
+            return;
+        }
+
+        const candidates = this.pendingIceCandidates.get(userId);
+        if (candidates.length === 0) return;
+
+        // only flush if remote description is set
+        if (peerConnection.remoteDescription) {
+            for (const candidateObj of candidates) {
+                try {
+                    await peerConnection.addIceCandidate(
+                        new RTCIceCandidate(candidateObj.candidate)
+                    );
+                } catch (error) {
+                    console.error('Error adding queued ICE candidates:', error);
+                }
+            }
+            this.pendingIceCandidates.delete(userId);
+        }
+    }
+
     async sendIceCandidate(remoteUserId, candidate) {
         try {
             await sendIceCandidate(this.rideId, remoteUserId, candidate);
