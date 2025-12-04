@@ -121,7 +121,74 @@ class CallManager {
         }
     }
 
-    
+    startSignalingLoop() {
+        // Poll every 500ms for signaling messages
+        this.signalingInterval = setInterval(() => {
+            this.pollSignalingMessages();
+        }, 500);
+    }
+    async pollSignalingMessages() {
+        try {
+            const response = await getCallStatus(this.rideId);
+
+            if (!response.active) {
+                console.log('Call is no longer active');
+                this.stopCall();
+                return;
+            }
+
+            // Handle new participants
+            const currentParticipants = new Set(response.participants || []);
+            for (const participantId of currentParticipants) {
+                if (!this.participants.has(participantId) && participantId !== this.userId) {
+                    this.participants.add(participantId);
+                    await this.createPeerConnection(participantId);
+                    this.onParticipantJoined?.(participantId);
+                }
+            }
+
+            // Check for removed participants
+            for (const participantId of this.participants) {
+                if (!currentParticipants.has(participantId) && participantId !== this.userId) {
+                    this.closePeerConnection(participantId);
+                    this.onParticipantLeft?.(participantId);
+                }
+            }
+            this.participants = currentParticipants;
+
+            // Handle incoming offers
+            if (response.offers) {
+                for (const [fromUserId, offerObj] of Object.entries(response.offers)) {
+                    if (offerObj) {
+                        await this.handleOffer(fromUserId, offerObj);
+                    }
+                }
+            }
+
+            // Handle incoming answers
+            if (response.answers) {
+                for (const [fromUserId, answerObj] of Object.entries(response.answers)) {
+                    if (answerObj) {
+                        await this.handleAnswer(fromUserId, answerObj);
+                    }
+                }
+            }
+
+            // Handle incoming ICE candidates
+            if (response.iceCandidates) {
+                for (const [fromUserId, candidates] of Object.entries(response.iceCandidates)) {
+                    if (Array.isArray(candidates)) {
+                        for (const candidateObj of candidates) {
+                            await this.handleIceCandidate(fromUserId, candidateObj);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error polling signaling messages:', error);
+            // Don't stop call on polling error, just log it
+        }
+    }
 }
 
 export default CallManager;
