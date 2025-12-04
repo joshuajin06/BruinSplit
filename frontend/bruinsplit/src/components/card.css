@@ -741,6 +741,14 @@
     font-size: 0.7rem;
 }
 
+.member-avatar-small .navbar-profile-placeholder {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 0.65rem;
+}
+
 .member-count-text {
     font-size: 0.85rem;
     color: #666;
