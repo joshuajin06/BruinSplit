@@ -27,6 +27,8 @@ class CallManager {
         this.onParticipantLeft = null;
         this.onError = null;
         this.pendingIceCandidates = new Map(); // userId -> [candidates]
+        this.processedOffers = new Set(); // track processed offers
+        this.processedAnswers = new Set(); // track processed answers
     }
     async startCall(onRemoteStream, onParticipantJoined, onParticipantLeft, onError) {
         try {
@@ -220,6 +222,14 @@ class CallManager {
                 return;
             }
 
+            // check if we've already processed this offer 
+            const offerKey = `${fromUserId}-${offerObj.timestamp || Date.now()}`;
+            if (this.processedOffers.has(offerKey)) {
+                console.log(`Already processed offer from ${fromUserId}`);
+                return;
+            }
+            this.processedOffers.add(offerKey);
+
             console.log(`Handling offer from ${fromUserId}`);
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
@@ -254,6 +264,14 @@ class CallManager {
     async handleAnswer(fromUserId, answerObj) {
         try {
             if (!answerObj.answer) return;
+
+            // check if we've already processed this answer
+            const answerKey = `${fromUserId}-${answerObj.timestamp || Date.now()}`;
+            if (this.processedAnswers.has(answerKey)) {
+                console.log(`Already processed answer from ${fromUserId}`);
+                return;
+            }
+            this.processedAnswers.add(answerKey);
 
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
