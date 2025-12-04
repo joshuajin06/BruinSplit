@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { postMessage, getMessages, getConversations } from '../pages/api/messages';
 import { useAuth } from '../context/AuthContext';
+import AudioCall from './audioCall.jsx' 
 
 import './MessagesSidebar.css';
 
@@ -156,6 +157,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
           <div className="conversation-header">
             <button className="back-btn" onClick={handleBack}>← Back</button>
             <button className="close-btn" onClick={onClose}>✕</button>
+            <AudioCall userId={user?.id} rideId={conversation.ride_id} />
           </div>
           <div className="conversation-title">
             <h2>{groupName}</h2>
