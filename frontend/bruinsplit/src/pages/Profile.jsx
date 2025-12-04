@@ -1,8 +1,9 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 import { updateProfile, updatePassword, updateProfilePic } from './api/profile.js'
+import { getFriendCount } from './api/friends.js';
 import './Profile.css';
 
 
@@ -13,6 +14,7 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [photoError, setPhotoError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [friendCount, setFriendCount] = useState(null);
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -28,6 +30,21 @@ export default function Profile() {
     newPassword: '',
     confirmNewPassword: ''
   });
+
+  // Fetch friend count on component mount
+  useEffect(() => {
+    const fetchFriendCount = async () => {
+      if (user?.id) {
+        try {
+          const data = await getFriendCount(user.id);
+          setFriendCount(data.friend_count);
+        } catch (error) {
+          console.error('Failed to fetch friend count:', error);
+        }
+      }
+    };
+    fetchFriendCount();
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -170,6 +187,12 @@ export default function Profile() {
             </div>
           </div>
           <h1>My Profile</h1>
+          {friendCount !== null && (
+            <div className="friend-count">
+              <span className="friend-count-number">{friendCount}</span>
+              <span className="friend-count-label">Friend{friendCount !== 1 ? 's' : ''}</span>
+            </div>
+          )}
         </div>
 
         <div className="profile-content">
