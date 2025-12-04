@@ -233,6 +233,9 @@ class CallManager {
                 new RTCSessionDescription(offerObj.offer)
             );
 
+            // flush any pending ICE candidates
+            await this.flushPendingIceCandidates(fromUserId);
+
             console.log(`Creating answer for ${fromUserId}`);
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
@@ -262,6 +265,10 @@ class CallManager {
             await peerConnection.setRemoteDescription(
                 new RTCSessionDescription(answerObj.answer)
             );
+
+            // flush any pending ICE candidates
+            await this.flushPendingIceCandidates(fromUserId);
+
         } catch (error) {
             console.error(`Error handling answer from ${fromUserId}:`, error);
         }
