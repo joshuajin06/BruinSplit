@@ -39,5 +39,36 @@ export async function verifyRideMembership(rideId, userId) {
 
 
 export async function getConfirmedMembers(rideId) {
+    // get ride owner
+    const { data: ride, error: rideError } = await supabase
+        .from('rides')
+        .select('owner_id')
+        .eq('id', rideId)
+        .single();
+
+    if(rideError || !ride) {
+        const error = new Error('Ride not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    // get all confirmed member
+    const { data: members, error: membersError } = await supabase 
+        .from('ride_members')
+        .select('user_id')
+        .eq('ride_id', rideId)
+        .eq('status', 'CONFIRMED JOINING');
     
+    if (membersError) {
+        membersError.statusCode = 500;
+        throw membersError;
+    }
+
+    // combine owner and confirmed members
+    const memberIds = new Set([ride.owner_id]);
+    if (members) {
+        members.forEach(member => memberIds.add(member.user_id));
+    }
+
+    return Array.from(memberIds);
 }
