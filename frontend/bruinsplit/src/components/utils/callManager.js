@@ -30,7 +30,7 @@ class CallManager {
         this.processedOffers = new Set(); // track processed offers
         this.processedAnswers = new Set(); // track processed answers
     }
-    async startCall(onRemoteStream, onParticipantJoined, onParticipantLeft, onError) {
+    async startCall(onRemoteStream, onParticipantJoined, onParticipantLeft, onError, enableVideo = false) {
         try {
             this.onRemoteStream = onRemoteStream;
             this.onParticipantJoined = onParticipantJoined;
@@ -53,15 +53,6 @@ class CallManager {
 
             this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-            // Get local audio stream
-            this.localStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                },
-                video: false
-            });
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
@@ -111,7 +102,7 @@ class CallManager {
                 console.log('Received remote track from', remoteUserId, 'streams:', event.streams.length);
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
-            }
+            };
 
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
@@ -164,10 +155,6 @@ class CallManager {
                 }
             };
 
-            // add signaling state logging
-            peerConnection.onsignalingstatechange = () => {
-                console.log(`Signaling state with ${remoteUserId}:`, peerConnection.signalingState);
-            };
 
             this.peerConnections.set(remoteUserId, peerConnection);
 
@@ -179,7 +166,7 @@ class CallManager {
             await sendOffer(this.rideId, remoteUserId, offer);
 
             return peerConnection;
-            
+
         } catch (error) {
             console.error(`Error creating peer connection with ${remoteUserId}:`, error);
             this.onError?.(`Failed to connect with participant: ${error.message}`);
@@ -363,7 +350,7 @@ class CallManager {
                 if (!this.pendingIceCandidates.has(fromUserId)) {
                     this.pendingIceCandidates.set(fromUserId, []);
                 }
-                this.pendingIceCandidates.get(fromUserId);
+                this.pendingIceCandidates.get(fromUserId).push(candidateObj);
                 return;
             }
 
@@ -438,7 +425,7 @@ class CallManager {
                 this.localStream.addTrack(videoTrack);
 
                 // add video track to all existing peer connections
-                this.peerConnections.forEach((peerConnections) => {
+                this.peerConnections.forEach((peerConnection) => {
                     peerConnections.addTrack(videoTrack, this.localStream);
                 });
 
