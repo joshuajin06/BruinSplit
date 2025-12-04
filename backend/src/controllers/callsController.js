@@ -21,6 +21,8 @@ We will be going through three phases :
 
 *** our app will temporarily store offers/answers/ICE -> signal messages b/t peers -> verify permissions ***
 
+*** NOTE backend does NOT handle media streams, P2P will do this via WebRTC via frontend ***
+
 */
 
 
