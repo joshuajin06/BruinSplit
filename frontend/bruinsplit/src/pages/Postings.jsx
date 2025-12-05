@@ -10,6 +10,7 @@ import { getMyRides } from '../pages/api/rides';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
+    const [availableRides, setAvailableRides] = useState([]);
     const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -125,10 +126,11 @@ export default function Postings() {
             ridesArray = data.rides || data || [];
             const myRidesResponse = await getMyRides();
             const myRidesArray = myRidesResponse.rides || [];
-            const filteredArr = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
+            const availableRidesArray = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
 
             setRides(ridesArray);
-            setFilteredRides(filteredArr);
+            setAvailableRides(availableRidesArray);
+            setFilteredRides(availableRidesArray);
         } catch (err) {
             console.error('fetchRides error:', err);
             setError(err.message || 'Failed to load rides');
@@ -144,15 +146,16 @@ export default function Postings() {
     await fetchRides();
     };
     
-    const handleSearch = (searchQuery, rideList = rides) => {
+    const handleSearch = (searchQuery) => {
         // Only filter the rides, don't update URL on every keystroke
+        // Always search from availableRides (which excludes user's own rides)
         if (!searchQuery.trim()) {
-            setFilteredRides(rideList);
+            setFilteredRides(availableRides);
             return;
         }
 
         const query = searchQuery.toLowerCase();
-        const filtered = rideList.filter(ride => {
+        const filtered = availableRides.filter(ride => {
             const origin = ride.origin_text?.toLowerCase() || '';
             const destination = ride.destination_text?.toLowerCase() || '';
             const combinedText = `${origin} to ${destination}`;
@@ -170,7 +173,7 @@ export default function Postings() {
         async function loadAndFilter() {
             const allRides = await fetchRides();
             if (allRides && initialSearchQuery) {
-                handleSearch(initialSearchQuery, allRides);
+                handleSearch(initialSearchQuery);
             }
         }
         loadAndFilter();
