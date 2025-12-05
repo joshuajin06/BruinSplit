@@ -166,8 +166,8 @@ export default function Postings() {
 
         if (showFriendsOnly) {
             currentRides = currentRides.filter(ride => {
-                // Check if the ride owner is a friend
-                if (friends.includes(ride.owner_id)) {
+                // Check if the ride owner is a friend (convert to string for comparison)
+                if (friends.includes(String(ride.owner_id))) {
                     return true;
                 }
 
