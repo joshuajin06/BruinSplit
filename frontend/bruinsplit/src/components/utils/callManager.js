@@ -68,9 +68,6 @@ class CallManager {
 
             const peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
 
-            console.log(`🔗 Creating peer connection to ${remoteUserId} with STUN/TURN servers`);
-            console.log('ICE servers configured:', RTC_CONFIGURATION.iceServers.length);
-
             // Add local audio tracks
             this.localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, this.localStream);
@@ -82,50 +79,24 @@ class CallManager {
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
             };
 
-            // Handle ICE candidates with detailed logging
+            // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    console.log(`🧊 ICE candidate for ${remoteUserId}:`, {
-                        type: event.candidate.type,
-                        protocol: event.candidate.protocol,
-                        address: event.candidate.address,
-                        port: event.candidate.port
-                    });
                     this.sendIceCandidate(remoteUserId, event.candidate);
-                } else {
-                    console.log(`✅ ICE gathering completed for ${remoteUserId}`);
                 }
-            };
-
-            // Handle ICE gathering state changes
-            peerConnection.onicegatheringstatechange = () => {
-                console.log(`ICE gathering state for ${remoteUserId}:`, peerConnection.iceGatheringState);
             };
 
             // Handle ICE connection state changes
             peerConnection.oniceconnectionstatechange = () => {
-                console.log(`ICE connection state for ${remoteUserId}:`, peerConnection.iceConnectionState);
-
                 if (peerConnection.iceConnectionState === 'failed') {
-                    console.warn(`❌ ICE connection failed for ${remoteUserId}, attempting ICE restart...`);
-                    // Automatically restart ICE when it fails
                     peerConnection.restartIce();
-                } else if (peerConnection.iceConnectionState === 'connected') {
-                    console.log(`✅ ICE connection established with ${remoteUserId}`);
                 }
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                console.log(`Connection state for ${remoteUserId}:`, peerConnection.connectionState);
-
-                if (peerConnection.connectionState === 'connected') {
-                    console.log(`✅ Peer connection established with ${remoteUserId}`);
-                } else if (peerConnection.connectionState === 'failed') {
-                    console.error(`❌ Connection failed with ${remoteUserId}`);
+                if (peerConnection.connectionState === 'failed') {
                     this.onError?.(`Connection failed with user ${remoteUserId}`);
-                } else if (peerConnection.connectionState === 'disconnected') {
-                    console.warn(`⚠️ Connection disconnected with ${remoteUserId}`);
                 }
             };
 
@@ -225,8 +196,6 @@ class CallManager {
                 // Create peer connection WITHOUT sending an offer back (avoid race condition)
                 peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
 
-                console.log(`🔗 Creating peer connection for incoming offer from ${fromUserId}`);
-
                 // Add local audio tracks
                 this.localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, this.localStream);
@@ -238,39 +207,23 @@ class CallManager {
                     this.onRemoteStream?.(fromUserId, event.streams[0]);
                 };
 
-                // Handle ICE candidates with detailed logging
+                // Handle ICE candidates
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        console.log(`🧊 ICE candidate for ${fromUserId}:`, {
-                            type: event.candidate.type,
-                            protocol: event.candidate.protocol
-                        });
                         this.sendIceCandidate(fromUserId, event.candidate);
-                    } else {
-                        console.log(`✅ ICE gathering completed for ${fromUserId}`);
                     }
                 };
 
                 // Handle ICE connection state changes
                 peerConnection.oniceconnectionstatechange = () => {
-                    console.log(`ICE connection state for ${fromUserId}:`, peerConnection.iceConnectionState);
-
                     if (peerConnection.iceConnectionState === 'failed') {
-                        console.warn(`❌ ICE connection failed for ${fromUserId}, attempting ICE restart...`);
                         peerConnection.restartIce();
-                    } else if (peerConnection.iceConnectionState === 'connected') {
-                        console.log(`✅ ICE connection established with ${fromUserId}`);
                     }
                 };
 
                 // Handle connection state changes
                 peerConnection.onconnectionstatechange = () => {
-                    console.log(`Connection state for ${fromUserId}:`, peerConnection.connectionState);
-
-                    if (peerConnection.connectionState === 'connected') {
-                        console.log(`✅ Peer connection established with ${fromUserId}`);
-                    } else if (peerConnection.connectionState === 'failed') {
-                        console.error(`❌ Connection failed with ${fromUserId}`);
+                    if (peerConnection.connectionState === 'failed') {
                         this.onError?.(`Connection failed with user ${fromUserId}`);
                     }
                 };
