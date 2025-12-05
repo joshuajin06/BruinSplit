@@ -3,6 +3,7 @@ import Person from '../assets/person.png';
 import './loginsignup.css';
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { getProfile } from '../pages/api/profile';
 
 export default function LoginSignup() {
     const [loggedIn, setLoggedIn] = useState(true); // true for login, false for signup
@@ -18,7 +19,7 @@ export default function LoginSignup() {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, updateUser } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -76,6 +77,8 @@ export default function LoginSignup() {
 
                 navigate('/');
             }
+            const response = await getProfile();
+            updateUser(response.profile);
         } catch(error) {
             setError(error.message);
         } finally {
