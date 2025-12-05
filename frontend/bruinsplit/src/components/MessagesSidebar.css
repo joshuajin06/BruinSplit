@@ -104,10 +104,21 @@
 
 .conversation-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
+  gap: 10px;
+  padding: 10px;
   border-bottom: 1px solid #e0e0e0;
+}
+
+.conversation-header .audio-call-button {
+  margin-left: auto;
+}
+
+.conversation-header .conversation-title {
+  flex: 1;
+  padding: 0;
+  background-color: transparent;
+  border-bottom: none;
 }
 
 .back-btn {
@@ -116,7 +127,7 @@
   font-size: 24px;
   cursor: pointer;
   color: #007bff;
-  padding: 8px 12px;
+  padding: 8px;
   margin: 0;
   font-weight: bold;
   transition: all 0.2s;
@@ -149,17 +160,17 @@
   gap: 10px;
 }
 
-.chat-message {
+.message-group {
   display: flex;
   flex-direction: column;
   margin-bottom: 10px;
 }
 
-.chat-message.sent {
+.message-group.sent {
   align-items: flex-end;
 }
 
-.chat-message.received {
+.message-group.received {
   align-items: flex-start;
 }
 
@@ -171,23 +182,29 @@
 }
 
 .chat-text {
-  margin: 0;
-  padding: 10px 12px;
+  margin: 0 0 4px 0;
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
   line-height: 1.4;
-  max-width: 85%;
+  max-width: 90%;
   word-wrap: break-word;
 }
 
-.chat-message.sent .chat-text {
+.message-group.sent .chat-text {
   background-color: #007bff;
   color: white;
+  text-align: left;
 }
 
-.chat-message.received .chat-text {
+.message-group.received .chat-text {
   background-color: #f0f0f0;
   color: #333;
+  text-align: left;
+}
+
+.message-group .chat-text:last-of-type {
+  margin-bottom: 0;
 }
 
 .chat-time {
