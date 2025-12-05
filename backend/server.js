@@ -13,7 +13,6 @@ console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY 
 // import routes
 import authRoutes from './src/routes/authRoute.js';
 import ridesRoutes from './src/routes/ridesRoute.js';
-import eventsRoutes from './src/routes/eventsRoute.js';
 import messagesRoutes from './src/routes/messagesRoute.js';
 import profileRoutes from './src/routes/profileRoute.js';
 import friendsRoutes from './src/routes/friendsRoute.js';
@@ -37,7 +36,6 @@ app.use(logger); // log every request
 app.use('/api/auth', authRoutes);
 app.use('/api/rides', ridesRoutes);
 app.use('/api/messages', messagesRoutes);
-app.use('/api/events', eventsRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/calls', callsRoutes); 

@@ -497,7 +497,7 @@ export async function enrichRide(ride, userId = null) {
     }
 
     return {
-        ...ride,
+        ...ride, // spread original ride fields
         available_seats: availableSeats,
         current_members: memberCount,
         owner: owner || null,

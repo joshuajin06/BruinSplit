@@ -29,17 +29,11 @@ html, body {
     background-color: var(--bg-page);
 }
 
-.card-grid, .event-grid {
+.card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, 25rem);
   gap: 1rem;
   justify-content: center;
-}   
-
-/* Events Page */
-.event-item {
-  color: var(--text-main);
-  list-style: none;
 }
 
 .title-section {
@@ -60,40 +54,7 @@ html, body {
   letter-spacing: -0.02em;
 }
 
-.add-event {
-  position: fixed;
-  right: 24px;
-  bottom: calc(24px + env(safe-area-inset-bottom));
-  width: 56px;
-  height: 56px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
-  border-radius: 50%;
-  font-size: 28px;
-  line-height: 1;
-  border: none;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  color: #fff;
-  box-shadow: 0 8px 26px rgba(79,70,229,0.20), 0 2px 6px rgba(0,0,0,0.12);
-  padding: 0;
-  z-index: 900;
-}
-
-.add-event:hover {
-  transform: scale(1.06);
-  box-shadow: 0 14px 38px rgba(79,70,229,0.26), 0 4px 10px rgba(0,0,0,0.14);
-}
-
-.add-event a {
-  padding-bottom: 6px;
-  color: white;
-  text-decoration: none;
-}
-
-.events-form, .ride-form {
+.ride-form {
   position: fixed;
   top: 0;
   left: 0;
