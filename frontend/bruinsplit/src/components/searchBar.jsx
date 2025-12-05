@@ -19,7 +19,9 @@ export default function SearchBar({ onSearch, initialValue = '' }) {
         onSearch(value);
     };
 
-    const handleClear = () => {
+    const handleClear = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         setSearchQuery('');
         onSearch('');
     };

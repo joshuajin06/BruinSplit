@@ -16,20 +16,9 @@ export default function Postings() {
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const token = localStorage.getItem('token');
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const initialSearchQuery = searchParams.get('q') || '';
     const { isAuthenticated } = useAuth();
-
-    //fetches rides when component loads
-    useEffect(() => {
-        async function loadAndFilter() {
-            const allRides = await fetchRides();
-            if (allRides && initialSearchQuery) {
-                handleSearch(initialSearchQuery, allRides);
-            }
-        }
-        loadAndFilter();
-    }, []);
 
     const [form, setForm] = useState({
         origin_text: '',
@@ -109,6 +98,7 @@ export default function Postings() {
     }
 
     async function fetchRides() {
+        let ridesArray = [];
         setLoading(true);
         setError(null);
         try {
@@ -131,8 +121,8 @@ export default function Postings() {
             }
             const data = await res.json();
             // Extract rides array from response (controller returns { message, rides })
-            
-            const ridesArray = data.rides || data || [];
+
+            ridesArray = data.rides || data || [];
             const myRidesResponse = await getMyRides();
             const myRidesArray = myRidesResponse.rides || [];
             const filteredArr = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
@@ -155,13 +145,7 @@ export default function Postings() {
     };
     
     const handleSearch = (searchQuery, rideList = rides) => {
-        // Update URL search param as user types
-        if (searchQuery.trim()) {
-            setSearchParams({ q: searchQuery }, { replace: true });
-        } else {
-            setSearchParams({}, { replace: true });
-        }
-
+        // Only filter the rides, don't update URL on every keystroke
         if (!searchQuery.trim()) {
             setFilteredRides(rideList);
             return;
@@ -172,14 +156,25 @@ export default function Postings() {
             const origin = ride.origin_text?.toLowerCase() || '';
             const destination = ride.destination_text?.toLowerCase() || '';
             const combinedText = `${origin} to ${destination}`;
-            
-            return origin.includes(query) || 
-                   destination.includes(query) || 
+
+            return origin.includes(query) ||
+                   destination.includes(query) ||
                    combinedText.includes(query);
         });
-        
+
         setFilteredRides(filtered);
     };
+
+    // Fetch rides on component mount and when initialSearchQuery changes
+    useEffect(() => {
+        async function loadAndFilter() {
+            const allRides = await fetchRides();
+            if (allRides && initialSearchQuery) {
+                handleSearch(initialSearchQuery, allRides);
+            }
+        }
+        loadAndFilter();
+    }, [initialSearchQuery]);
 
     return (
     <>
