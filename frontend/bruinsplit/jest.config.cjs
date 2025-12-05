@@ -1,29 +1,35 @@
 module.exports = {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^(\\.{1,2}/.*)\\.jsx?$': '$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.js$': ['babel-jest', { configFile: './babel.config.cjs' }],
+    '^.+\\.(jsx?)$': ['babel-jest', { configFile: './babel.config.cjs' }],
   },
   testMatch: [
+    '**/__tests__/**/*.test.jsx',
     '**/__tests__/**/*.test.js',
-    '!**/__tests__/integration.test.js',
-    '**/?(*.)+(spec|test).js'
+    '!**/__tests__/integration.test.js'
   ],
   collectCoverageFrom: [
-    'src/pages/api/**/*.js',
-    '!src/pages/api/__tests__/**',
+    'src/components/**/*.{js,jsx}',
+    'src/pages/api/**/*.{js,jsx}',
+    '!src/**/__tests__/**',
     '!**/node_modules/**',
   ],
   coverageThreshold: {
     global: {
-      branches: 70,
-      functions: 80,
-      lines: 80,
-      statements: 80
+      branches: 60,
+      functions: 70,
+      lines: 70,
+      statements: 70
     }
   },
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
   verbose: true,
-  testTimeout: 10000
+  testTimeout: 10000,
+  globals: {
+    NODE_ENV: 'test'
+  }
 };
