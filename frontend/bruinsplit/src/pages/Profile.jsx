@@ -512,7 +512,7 @@ export default function Profile() {
             </div>
           </div>
           {photoError && <div className="error-message">{photoError}</div>}
-          <div className="error-message">{error}</div>
+          {error && <div className="error-message">{error}</div>}
 
           <div className="profile-actions">
             {(isEditing || isChangingPassword) ? (
