@@ -6,9 +6,9 @@ import {
     getCallStatus,
     leaveCall
 } from '../../pages/api/calls';
-import { RTC_CONFIGURATION, AUDIO_CONSTRAINTS } from '../../config/webrtcConfig';
+import { RTC_CONFIGURATION, VIDEO_CONSTRAINTS } from '../../config/webrtcConfig';
 
-class CallManager {
+class VideoCallManager {
     constructor(rideId, userId) {
         this.rideId = rideId;
         this.userId = userId;
@@ -18,11 +18,12 @@ class CallManager {
         this.participants = new Set();
         this.signalingInterval = null;
         this.isCallActive = false;
-        this.onRemoteStream = null; // callback when remote audio arrives
+        this.onRemoteStream = null;
         this.onParticipantJoined = null;
         this.onParticipantLeft = null;
         this.onError = null;
     }
+
     async startCall(onRemoteStream, onParticipantJoined, onParticipantLeft, onError) {
         try {
             this.onRemoteStream = onRemoteStream;
@@ -30,8 +31,8 @@ class CallManager {
             this.onParticipantLeft = onParticipantLeft;
             this.onError = onError;
 
-            // Get local audio stream with optimized constraints
-            this.localStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+            // Get local video/audio stream with optimized constraints
+            this.localStream = await navigator.mediaDevices.getUserMedia(VIDEO_CONSTRAINTS);
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
@@ -39,8 +40,7 @@ class CallManager {
             this.participants = new Set(existingParticipants);
             this.isCallActive = true;
 
-            // IMPORTANT: Only create offers to users ALREADY in the call
-            // New joiners will create offers to us (prevents race condition)
+            // Create connections to existing participants
             const othersInCall = existingParticipants.filter(id => id !== this.userId);
             if (othersInCall.length > 0) {
                 for (const participantId of othersInCall) {
@@ -51,10 +51,10 @@ class CallManager {
             // Start polling for signaling messages
             this.startSignalingLoop();
 
-            return { success: true, participants: Array.from(this.participants) };
+            return { success: true, participants: Array.from(this.participants), localStream: this.localStream };
         } catch (error) {
-            console.error('Error starting call:', error);
-            const errorMsg = error.response?.data?.error || error.message || 'Failed to start call';
+            console.error('Error starting video call:', error);
+            const errorMsg = error.response?.data?.error || error.message || 'Failed to start video call';
             this.onError?.(errorMsg);
             throw error;
         }
@@ -68,12 +68,12 @@ class CallManager {
 
             const peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
 
-            // Add local audio tracks
+            // Add local video/audio tracks
             this.localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, this.localStream);
             });
 
-            // Handle incoming remote audio
+            // Handle incoming remote video/audio
             peerConnection.ontrack = (event) => {
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
@@ -96,7 +96,7 @@ class CallManager {
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
                 if (peerConnection.connectionState === 'failed') {
-                    this.onError?.(`Connection failed with user ${remoteUserId}`);
+                    this.onError?.(`Video connection failed with user ${remoteUserId}`);
                 }
             };
 
@@ -109,18 +109,17 @@ class CallManager {
 
             return peerConnection;
         } catch (error) {
-            console.error(`Error creating peer connection with ${remoteUserId}:`, error);
             this.onError?.(`Failed to connect with participant: ${error.message}`);
             throw error;
         }
     }
 
     startSignalingLoop() {
-        // Poll every 500ms for signaling messages
         this.signalingInterval = setInterval(() => {
             this.pollSignalingMessages();
         }, 500);
     }
+
     async pollSignalingMessages() {
         try {
             const response = await getCallStatus(this.rideId);
@@ -135,8 +134,6 @@ class CallManager {
             for (const participantId of currentParticipants) {
                 if (!this.participants.has(participantId) && participantId !== this.userId) {
                     this.participants.add(participantId);
-                    // CREATE peer connection and send offer to new joiner
-                    // (the existing user initiates the connection)
                     await this.createPeerConnection(participantId);
                     this.onParticipantJoined?.(participantId);
                 }
@@ -150,7 +147,6 @@ class CallManager {
                 }
             }
 
-            // Update the participants list
             this.participants = currentParticipants;
 
             // Handle incoming offers
@@ -183,7 +179,6 @@ class CallManager {
             }
         } catch (error) {
             console.error('Error polling signaling messages:', error);
-            // Don't stop call on polling error, just log it
         }
     }
 
@@ -193,15 +188,14 @@ class CallManager {
 
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                // Create peer connection WITHOUT sending an offer back (avoid race condition)
                 peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
 
-                // Add local audio tracks
+                // Add local tracks
                 this.localStream.getTracks().forEach(track => {
                     peerConnection.addTrack(track, this.localStream);
                 });
 
-                // Handle incoming remote audio
+                // Handle incoming remote video/audio
                 peerConnection.ontrack = (event) => {
                     this.remoteStreams.set(fromUserId, event.streams[0]);
                     this.onRemoteStream?.(fromUserId, event.streams[0]);
@@ -214,17 +208,17 @@ class CallManager {
                     }
                 };
 
-                // Handle ICE connection state changes
+                // Handle ICE connection state
                 peerConnection.oniceconnectionstatechange = () => {
                     if (peerConnection.iceConnectionState === 'failed') {
                         peerConnection.restartIce();
                     }
                 };
 
-                // Handle connection state changes
+                // Handle connection state
                 peerConnection.onconnectionstatechange = () => {
                     if (peerConnection.connectionState === 'failed') {
-                        this.onError?.(`Connection failed with user ${fromUserId}`);
+                        this.onError?.(`Video connection failed with user ${fromUserId}`);
                     }
                 };
 
@@ -232,41 +226,29 @@ class CallManager {
             }
 
             // Set remote description and create answer
-            await peerConnection.setRemoteDescription(
-                new RTCSessionDescription(offerObj.offer)
-            );
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offerObj.offer));
 
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
 
-            // Send answer back
             await sendAnswer(this.rideId, fromUserId, answer);
         } catch (error) {
-            console.error(`Error handling offer from ${fromUserId}:`, error);
-            this.onError?.(`Failed to handle offer: ${error.message}`);
+            this.onError?.(`Failed to handle video offer: ${error.message}`);
         }
     }
 
-    /**
-     * Handle incoming SDP answer
-     */
     async handleAnswer(fromUserId, answerObj) {
         try {
             if (!answerObj.answer) return;
 
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId}`);
                 return;
             }
 
-            // Set remote description
-            await peerConnection.setRemoteDescription(
-                new RTCSessionDescription(answerObj.answer)
-            );
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj.answer));
         } catch (error) {
-            console.error(`Error handling answer from ${fromUserId}:`, error);
-            this.onError?.(`Failed to handle answer: ${error.message}`);
+            this.onError?.(`Failed to handle video answer: ${error.message}`);
         }
     }
 
@@ -276,15 +258,12 @@ class CallManager {
 
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId} to add ICE candidate`);
                 return;
             }
 
-            await peerConnection.addIceCandidate(
-                new RTCIceCandidate(candidateObj.candidate)
-            );
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidateObj.candidate));
         } catch (error) {
-            console.error(`Error handling ICE candidate from ${fromUserId}:`, error);
+            // Silently handle ICE candidate errors
         }
     }
 
@@ -292,14 +271,22 @@ class CallManager {
         try {
             await sendIceCandidate(this.rideId, remoteUserId, candidate);
         } catch (error) {
-            console.error(`Error sending ICE candidate to ${remoteUserId}:`, error);
+            // Silently handle sending errors
         }
     }
 
-    toggleMute(isMuted) {
+    toggleCamera(isCameraOn) {
+        if (this.localStream) {
+            this.localStream.getVideoTracks().forEach(track => {
+                track.enabled = isCameraOn;
+            });
+        }
+    }
+
+    toggleMic(isMicOn) {
         if (this.localStream) {
             this.localStream.getAudioTracks().forEach(track => {
-                track.enabled = !isMuted;
+                track.enabled = isMicOn;
             });
         }
     }
@@ -328,9 +315,11 @@ class CallManager {
             this.peerConnections.clear();
             this.remoteStreams.clear();
 
-            // Stop local audio tracks
+            // Stop local video/audio tracks
             if (this.localStream) {
-                this.localStream.getTracks().forEach(track => track.stop());
+                this.localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
                 this.localStream = null;
             }
 
@@ -342,8 +331,7 @@ class CallManager {
             this.isCallActive = false;
             this.participants.clear();
         } catch (error) {
-            console.error('Error stopping call:', error);
-            this.onError?.(`Error stopping call: ${error.message}`);
+            this.onError?.(`Error stopping video call: ${error.message}`);
         }
     }
 
@@ -355,9 +343,13 @@ class CallManager {
         return this.remoteStreams.get(userId);
     }
 
+    getLocalStream() {
+        return this.localStream;
+    }
+
     isActive() {
         return this.isCallActive;
     }
 }
 
-export default CallManager;
+export default VideoCallManager;

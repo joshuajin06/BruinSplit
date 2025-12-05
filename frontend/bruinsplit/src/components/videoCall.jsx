@@ -1,170 +1,311 @@
 import { useState, useEffect, useRef } from 'react';
+import { Videocam, CallEnd, Mic, MicOff, VideocamOff } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
+import VideoCallManager from './utils/videoCallManager';
 import './videoCall.css';
 
-export default function VideoCall ({userId, rideId})
-{
+export default function VideoCall({ userId, rideId }) {
     const [isCallActive, setIsCallActive] = useState(false);
     const [isCameraOn, setIsCameraOn] = useState(true);
     const [isMicOn, setIsMicOn] = useState(true);
     const [error, setError] = useState(null);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [participants, setParticipants] = useState([]);
+    const [remoteStreams, setRemoteStreams] = useState(new Map());
 
+    const videoCallManagerRef = useRef(null);
     const localVideoRef = useRef(null);
-    const streamRef = useRef(null);
+    const remoteVideoRefsRef = useRef(new Map());
 
-    // Start Call
     const startCall = async () => {
         try {
-        setError(null);
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
-        
-        streamRef.current = stream;
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
-        }
-        
-        setIsCallActive(true);
-        
+            if (!rideId) {
+                setError('Ride ID is required to start a video call.');
+                return;
+            }
+
+            setError(null);
+
+            // Initialize VideoCallManager
+            videoCallManagerRef.current = new VideoCallManager(rideId, userId);
+
+            // Set up callbacks
+            const onRemoteStream = (remoteUserId, stream) => {
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.set(remoteUserId, stream);
+                    return newStreams;
+                });
+            };
+
+            const onParticipantJoined = (participantId) => {
+                setParticipants(prevParticipants => {
+                    if (!prevParticipants.includes(participantId)) {
+                        return [...prevParticipants, participantId];
+                    }
+                    return prevParticipants;
+                });
+            };
+
+            const onParticipantLeft = (participantId) => {
+                setParticipants(prevParticipants =>
+                    prevParticipants.filter(id => id !== participantId)
+                );
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.delete(participantId);
+                    return newStreams;
+                });
+            };
+
+            const onError = (errorMessage) => {
+                setError(errorMessage);
+            };
+
+            // Start the video call
+            const result = await videoCallManagerRef.current.startCall(
+                onRemoteStream,
+                onParticipantJoined,
+                onParticipantLeft,
+                onError
+            );
+
+            // Set local video stream and play it
+            if (localVideoRef.current && result.localStream) {
+                localVideoRef.current.srcObject = result.localStream;
+                try {
+                    await localVideoRef.current.play();
+                } catch (playError) {
+                    setError('Failed to play local video. Please check browser permissions.');
+                }
+            }
+
+            setIsCallActive(true);
+            setIsCameraOn(true);
+            setIsMicOn(true);
+            setError(null);
+            setParticipants(result.participants.filter(id => id !== userId));
         } catch (err) {
-        console.error('Error accessing media devices:', err);
-        setError('Failed to access camera/microphone. Please check permissions.');
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to start video call';
+            setError(errorMessage);
+            setIsCallActive(false);
         }
     };
 
-    useEffect(() => {
-    if (localVideoRef.current && streamRef.current) {
-      localVideoRef.current.srcObject = streamRef.current;
-    }
-  }, [isCallActive]);
+    const endCall = async () => {
+        try {
+            if (videoCallManagerRef.current) {
+                await videoCallManagerRef.current.stopCall();
+                videoCallManagerRef.current = null;
+            }
 
-  // End video call
-  const endCall = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCallActive(false);
-    setIsCameraOn(true);
-    setIsMicOn(true);
-    setIsMinimized(false);
-  };
+            // Clear local video
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = null;
+            }
 
-  // Toggle camera
-  const toggleCamera = () => {
-    if (streamRef.current) {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsCameraOn(videoTrack.enabled);
-      }
-    }
-  };
+            // Clear remote videos
+            remoteVideoRefsRef.current.forEach(video => {
+                video.srcObject = null;
+            });
+            remoteVideoRefsRef.current.clear();
 
-  // Toggle microphone
-  const toggleMic = () => {
-    if (streamRef.current) {
-      const audioTrack = streamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMicOn(audioTrack.enabled);
-      }
-    }
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+            setIsCallActive(false);
+            setIsCameraOn(true);
+            setIsMicOn(true);
+            setIsMinimized(false);
+            setParticipants([]);
+            setRemoteStreams(new Map());
+            setError(null);
+        } catch (err) {
+            setError('Error ending call. Please try again.');
+        }
     };
-  }, []);
 
-  if (!isCallActive) {
-    return (
-      <button 
-        className="video-call-btn"
-        onClick={startCall}
-        title="Start video call"
-      >
-        📹
-      </button>
-    );
-  }
+    const toggleCamera = () => {
+        if (videoCallManagerRef.current) {
+            const newCameraState = !isCameraOn;
+            videoCallManagerRef.current.toggleCamera(newCameraState);
+            setIsCameraOn(newCameraState);
+        }
+    };
+
+    const toggleMic = () => {
+        if (videoCallManagerRef.current) {
+            const newMicState = !isMicOn;
+            videoCallManagerRef.current.toggleMic(newMicState);
+            setIsMicOn(newMicState);
+        }
+    };
+
+    // Attach local video stream when call becomes active
+    useEffect(() => {
+        if (isCallActive && localVideoRef.current && videoCallManagerRef.current) {
+            const localStream = videoCallManagerRef.current.getLocalStream();
+            if (localStream && localVideoRef.current.srcObject !== localStream) {
+                localVideoRef.current.srcObject = localStream;
+                localVideoRef.current.play().catch(() => {});
+            }
+        }
+    }, [isCallActive]);
+
+    // Attach remote video streams when they update
+    useEffect(() => {
+        remoteStreams.forEach((stream, participantId) => {
+            const videoElement = remoteVideoRefsRef.current.get(participantId);
+
+            if (videoElement) {
+                if (videoElement.srcObject !== stream) {
+                    videoElement.srcObject = stream;
+                    videoElement.muted = false;
+                    videoElement.play().catch(() => {});
+                } else if (videoElement.paused) {
+                    videoElement.play().catch(() => {});
+                }
+            }
+        });
+    }, [remoteStreams]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (videoCallManagerRef.current && isCallActive) {
+                videoCallManagerRef.current.stopCall().catch(() => {});
+            }
+        };
+    }, [isCallActive]);
+
+    if (!isCallActive) {
+        return (
+            <Tooltip title="Start video call">
+                <IconButton
+                    onClick={startCall}
+                    color="primary"
+                    size="large"
+                    aria-label="start video call"
+                >
+                    <Videocam />
+                </IconButton>
+            </Tooltip>
+        );
+    }
 
     return (
-    <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
-      <div className="video-call-header">
-        <span className="video-call-title">Video Call</span>
-        <div className="video-call-header-controls">
-          <button 
-            className="minimize-btn"
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? "Expand" : "Minimize"}
-          >
-            {isMinimized ? '□' : '_'}
-          </button>
-          <button 
-            className="video-close-btn"
-            onClick={endCall}
-            title="End call"
-          >
-            ✕
-          </button>
+        <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
+            <div className="video-call-header">
+                <span className="video-call-title">
+                    Video Call {participants.length > 0 && `(${participants.length + 1})`}
+                </span>
+                <div className="video-call-header-controls">
+                    <button
+                        className="minimize-btn"
+                        onClick={() => setIsMinimized(!isMinimized)}
+                        title={isMinimized ? "Expand" : "Minimize"}
+                    >
+                        {isMinimized ? '□' : '_'}
+                    </button>
+                    <button
+                        className="video-close-btn"
+                        onClick={endCall}
+                        title="End call"
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            {!isMinimized && (
+                <>
+                    {error && (
+                        <div className="video-error">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="video-display">
+                        {/* Remote video streams */}
+                        <div className="remote-videos-grid">
+                            {Array.from(remoteStreams.entries()).map(([participantId]) => (
+                                <div key={`video-${participantId}`} className="remote-video-wrapper">
+                                    <video
+                                        ref={(ref) => {
+                                            if (ref) {
+                                                remoteVideoRefsRef.current.set(participantId, ref);
+                                            }
+                                        }}
+                                        autoPlay
+                                        playsInline
+                                        className="remote-video"
+                                    />
+                                    <div className="participant-label">
+                                        Participant {participantId.substring(0, 8)}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {remoteStreams.size === 0 && (
+                                <div className="waiting-message">
+                                    Waiting for others to join...
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Local video stream (picture-in-picture) */}
+                        <div className="local-video-pip">
+                            {!isCameraOn ? (
+                                <div className="camera-off-overlay">
+                                    <span className="camera-off-icon">📷</span>
+                                    <p>Camera is off</p>
+                                </div>
+                            ) : (
+                                <video
+                                    ref={localVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
+                                    className="local-video"
+                                />
+                            )}
+                            <div className="local-label">You</div>
+                        </div>
+                    </div>
+
+                    <div className="video-controls">
+                        <Tooltip title={isMicOn ? "Mute microphone" : "Unmute microphone"}>
+                            <IconButton
+                                onClick={toggleMic}
+                                color={isMicOn ? "default" : "warning"}
+                                size="large"
+                                aria-label="toggle microphone"
+                            >
+                                {isMicOn ? <Mic /> : <MicOff />}
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title={isCameraOn ? "Turn off camera" : "Turn on camera"}>
+                            <IconButton
+                                onClick={toggleCamera}
+                                color={isCameraOn ? "default" : "warning"}
+                                size="large"
+                                aria-label="toggle camera"
+                            >
+                                {isCameraOn ? <Videocam /> : <VideocamOff />}
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="End call">
+                            <IconButton
+                                onClick={endCall}
+                                color="error"
+                                size="large"
+                                aria-label="end video call"
+                            >
+                                <CallEnd />
+                            </IconButton>
+                        </Tooltip>
+                    </div>
+                </>
+            )}
         </div>
-      </div>
-
-      {!isMinimized && (
-        <>
-          <div className="video-display">
-            {error && (
-              <div className="video-error">
-                {error}
-              </div>
-            )}
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="local-video"
-            />
-            {!isCameraOn && (
-              <div className="camera-off-overlay">
-                <span className="camera-off-icon">📷</span>
-                <p>Camera is off</p>
-              </div>
-            )}
-          </div>
-
-          <div className="video-controls">
-            <button
-              className={`control-btn ${!isMicOn ? 'off' : ''}`}
-              onClick={toggleMic}
-              title={isMicOn ? "Mute microphone" : "Unmute microphone"}
-            >
-              {isMicOn ? '🎤' : '🔇'}
-            </button>
-            <button
-              className={`control-btn ${!isCameraOn ? 'off' : ''}`}
-              onClick={toggleCamera}
-              title={isCameraOn ? "Turn off camera" : "Turn on camera"}
-            >
-              {isCameraOn ? '📹' : '📷'}
-            </button>
-            <button
-              className="control-btn end-call-btn"
-              onClick={endCall}
-              title="End call"
-            >
-              📞
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+    );
 }
