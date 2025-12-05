@@ -63,14 +63,20 @@ class CallManager {
             this.isCallActive = true;
 
             console.log('✅ Joined call. Existing participants:', existingParticipants.filter(id => id !== this.userId));
+            console.log('   My user ID:', this.userId);
+            console.log('   All participants in call:', existingParticipants);
 
             // IMPORTANT: Only create offers to users ALREADY in the call
             // New joiners will create offers to us (prevents race condition)
-            for (const participantId of existingParticipants) {
-                if (participantId !== this.userId) {
+            const othersInCall = existingParticipants.filter(id => id !== this.userId);
+            if (othersInCall.length > 0) {
+                console.log(`📞 Will send offers to ${othersInCall.length} existing participant(s)`);
+                for (const participantId of othersInCall) {
                     console.log(`📞 Sending offer to existing participant: ${participantId}`);
                     await this.createPeerConnection(participantId);
                 }
+            } else {
+                console.log('👤 No other participants yet. Waiting for others to join...');
             }
 
             // Start polling for signaling messages
@@ -195,7 +201,10 @@ class CallManager {
                 if (!this.participants.has(participantId) && participantId !== this.userId) {
                     console.log(`👤 New participant joined: ${participantId}`);
                     this.participants.add(participantId);
-                    // Don't create peer connection here - wait for their offer
+                    // CREATE peer connection and send offer to new joiner
+                    // (the existing user initiates the connection)
+                    console.log(`📞 Sending offer to new participant: ${participantId}`);
+                    await this.createPeerConnection(participantId);
                     this.onParticipantJoined?.(participantId);
                 }
             }
