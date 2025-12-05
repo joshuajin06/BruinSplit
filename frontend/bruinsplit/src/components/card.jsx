@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom'; // Import createPortal
 import "./card.css"
 import { useAuth } from '../context/AuthContext'
 import { getTimeAgo, formatDatetimeLocal, hashString } from './utils/cardUtils';
-import { 
-    getRideById, 
-    joinRide, 
-    leaveRide, 
-    deleteRide, 
+import {
+    getRideById,
+    joinRide,
+    leaveRide,
+    deleteRide,
     updateRide,
-    manageRequest,     
-    kickMember,        
+    manageRequest,
+    kickMember,
     transferOwnership,
     getPendingRequests
 } from '../pages/api/rides';
@@ -30,7 +31,7 @@ export default function Card({ title, origin, destination, content, image, rideD
 
     // Random gradient for title
     const gradientClass = gradients[hashString(rideId || title) % gradients.length];
-    
+
     // Get who is accessing the ride
     const [currentUser, setCurrentUser] = useState(null);
 
@@ -42,9 +43,9 @@ export default function Card({ title, origin, destination, content, image, rideD
             console.error("Error parsing user", e);
         }
     }, []);
-    
+
     const isOwner = currentUser && ownerId && (currentUser.id === ownerId);
-    
+
     // Initial modal states
     const [showModal, setShowModal] = useState(false);
     const [joining, setJoining] = useState(false);
@@ -56,8 +57,8 @@ export default function Card({ title, origin, destination, content, image, rideD
     );
 
     // Tabs for modal
-    const [activeTab, setActiveTab] = useState('details'); 
-   
+    const [activeTab, setActiveTab] = useState('details');
+
     // Consts for riders tab
     const [allMembers, setAllMembers] = useState([]);
     const [loadingRiders, setLoadingRiders] = useState(false);
@@ -85,7 +86,7 @@ export default function Card({ title, origin, destination, content, image, rideD
             try {
                 const friendsData = await getFriends();
                 setFriendsList(friendsData.friends || []);
-                
+
                 // Also fetch pending requests to know who we've sent requests to
                 const { getPendingRequests } = await import('../pages/api/friends');
                 const requestsData = await getPendingRequests();
@@ -112,14 +113,14 @@ export default function Card({ title, origin, destination, content, image, rideD
     // Handle add friend
     const handleAddFriend = async (userId) => {
         if (sendingRequest[userId]) return;
-        
+
         setSendingRequest(prev => ({ ...prev, [userId]: true }));
         try {
             await sendFriendRequest(userId);
             // Refresh friends list and pending requests
             const friendsData = await getFriends();
             setFriendsList(friendsData.friends || []);
-            
+
             const { getPendingRequests } = await import('../pages/api/friends');
             const requestsData = await getPendingRequests();
             setSentRequests(requestsData.sent || []);
@@ -187,7 +188,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         navigate(`/profile/${userId}`);
     };
 
-    // Handle Approve/Reject 
+    // Handle Approve/Reject
     const handleRequestAction = async (memberId, action) => {
         try {
             await manageRequest(rideId, memberId, action);
@@ -267,7 +268,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [deleteError, setDeleteError] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    
+
     const handleDeleteConfirm = (e) => {
         e.stopPropagation();
         setShowDeleteConfirm(true);
@@ -302,13 +303,13 @@ export default function Card({ title, origin, destination, content, image, rideD
         hour: '2-digit',
         minute: '2-digit',
         hour12: true
-    }).replace(/\//g, '/') : 'Not specified';                                                                          
+    }).replace(/\//g, '/') : 'Not specified';
     const departureDate = departureObj ? departureObj.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit',
         year: 'numeric'
     }).replace(/\//g, '/') : 'Not specified';
-    
+
     const departureTime = departureObj ? departureObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Not specified';
 
 
@@ -374,7 +375,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
     }
-    
+
     const handleEdit = async(e) => {
         e.preventDefault();
 
@@ -394,7 +395,7 @@ export default function Card({ title, origin, destination, content, image, rideD
 
     // Filter members
     const confirmedRiders = allMembers.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
-   
+
     const [editModalOpen, setEditModalOpen] = useState(false);
 
     // Memoize confirmed members for card display to prevent re-renders
@@ -414,20 +415,20 @@ export default function Card({ title, origin, destination, content, image, rideD
             console.debug('Could not fetch members for card', err);
         }
     };
-    
+
     fetchCardMembers();
     }, [rideId]);
-   
 
-    // Rendering 
+
+    // Rendering
     return (
         <>
 {/*Main Card*/}
             <div className={`card-container ${gradientClass}`}>
                 {isOwner && (
                     <div className='owner-utilities'>
-                        <button 
-                            className='deleteButton' 
+                        <button
+                            className='deleteButton'
                             onClick={handleDeleteConfirm} // Calls the function that opens the modal
                             type="button"
                             title="Delete Ride"
@@ -516,14 +517,14 @@ export default function Card({ title, origin, destination, content, image, rideD
 {/*Main Card*/}
 
 
-            {/* EDIT RIDE MODAL */} 
-            {editModalOpen && isOwner && (
+            {/* EDIT RIDE MODAL */}
+            {editModalOpen && isOwner && createPortal(
                 <section className="ride-form" onClick={() => setEditModalOpen(false)}>
                     <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleEdit}>
-                        <button 
-                            className="modal-close" 
+                        <button
+                            className="modal-close"
                             onClick={() => setEditModalOpen(false)}
-                            aria-label="Close modal" 
+                            aria-label="Close modal"
                             type="button">
                         ×
                         </button>
@@ -576,13 +577,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                             Reset</button>
                         </div>
                     </form>
-                </section>
+                </section>,
+                document.getElementById('modal-root')
             )}
 
             {/* DELETE CONFIRMATION MODAL */}
-                {showDeleteConfirm && (
+                {showDeleteConfirm && createPortal(
                     <div className="modal-overlay delete-modal-overlay">
-                        <div 
+                        <div
                             className="delete-modal-content"
                             onClick={(e) => e.stopPropagation()}
                         >
@@ -596,7 +598,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                             {deleteError && <p className="error delete-modal-error">{deleteError}</p>}
 
                             <div className="delete-modal-actions">
-                                <button 
+                                <button
                                     className="btn-secondary"
                                     onClick={() => setShowDeleteConfirm(false)}
                                     disabled={deleteLoading}
@@ -615,35 +617,36 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div>,
+                    document.getElementById('modal-root')
                 )}
 
 
             {/* Ride Details */}
             {/* Join/Manage Modal */}
-            {showModal && (
+            {showModal && createPortal(
                 <div className="modal-overlay" onClick={() => setShowModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button 
-                            className="modal-close" 
+                        <button
+                            className="modal-close"
                             onClick={() => setShowModal(false)}
                             aria-label="Close modal"
                         >
                             ×
                         </button>
-                        
+
                         <h2 className="modal-title">{displayTitle}</h2>
-                        
+
                         {/* Tab Navigation */}
                         <div className="modal-tabs">
-                            <button 
+                            <button
                                 className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('details')}
                                 type="button"
                             >
                                 Ride Details
                             </button>
-                            <button 
+                            <button
                                 className={`tab-button ${activeTab === 'riders' ? 'active' : ''}`}
                                 onClick={() => setActiveTab('riders')}
                                 type="button"
@@ -709,7 +712,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                     </div>
                                 )}
                             </div>
-                        )}       
+                        )}
 
                         {activeTab === 'riders' && (
                             <div className="riders-list">
@@ -722,19 +725,19 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 ) : (
                                     confirmedRiders.map((rider) => {
                                         const profile = rider.profile || {};
-                                        const fullName = profile.first_name && profile.last_name 
-                                            ? `${profile.first_name} ${profile.last_name}` 
+                                        const fullName = profile.first_name && profile.last_name
+                                            ? `${profile.first_name} ${profile.last_name}`
                                             : profile.username || 'Unknown User';
                                         const isRiderOwner = rider.user_id === rideDetails?.owner_id;
                                         const joinedDate = new Date(rider.joined_at);
                                         const timeAgo = getTimeAgo(joinedDate);
-                                        
+
                                         return (
                                             <div key={rider.id} className="rider-card">
                                                 <div className="rider-avatar">
                                                     {profile?.profile_photo_url ? (
                                                         <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
-                                                    ) : 
+                                                    ) :
                                                     (
                                                         <div className="navbar-profile-placeholder">
                                                             {profile?.first_name?.charAt(0)}
@@ -743,8 +746,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                 </div>
                                                 <div className="rider-info">
                                                     <div className="rider-name">
-                                                        <a 
-                                                            href="#" 
+                                                        <a
+                                                            href="#"
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 handleViewProfile(rider.user_id);
@@ -789,7 +792,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                             <div className="rider-avatar">
                                                 {request.profile?.profile_photo_url ? (
                                                     <img src={request.profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
-                                                ) : 
+                                                ) :
                                                 (
                                                     <div className="navbar-profile-placeholder">
                                                         {request.profile?.first_name?.charAt(0)}
@@ -801,14 +804,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                 <div className="rider-username">@{request.profile?.username}</div>
                                             </div>
                                             <div className="request-actions">
-                                                <button 
-                                                    className="btn-approve" 
+                                                <button
+                                                    className="btn-approve"
                                                     onClick={() => handleRequestAction(request.user_id, 'approve')}
                                                 >
                                                     Approve
                                                 </button>
-                                                <button 
-                                                    className="btn-reject" 
+                                                <button
+                                                    className="btn-reject"
                                                     onClick={() => handleRequestAction(request.user_id, 'reject')}
                                                 >
                                                     Reject
@@ -825,16 +828,16 @@ export default function Card({ title, origin, destination, content, image, rideD
                         {joinError && <p className="error">{joinError}</p>}
 
                         <div className="modal-actions">
-                            <button 
-                                className="btn-secondary" 
+                            <button
+                                className="btn-secondary"
                                 onClick={handleCancel}
                                 type="button"
                             >
                                 Cancel
                             </button>
-                            {!isOwner && (<button 
-                                className="btn-primary" 
-                                onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin} 
+                            {!isOwner && (<button
+                                className="btn-primary"
+                                onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin}
                                 disabled={joining}
                                 type="button"
                             >
@@ -842,23 +845,24 @@ export default function Card({ title, origin, destination, content, image, rideD
                             </button>)}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.getElementById('modal-root')
             )}
 
             {/* Details Modal */}
-            {showDetailsModal && (
+            {showDetailsModal && createPortal(
                 <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <button 
-                            className="modal-close" 
+                        <button
+                            className="modal-close"
                             onClick={() => setShowDetailsModal(false)}
                             aria-label="Close modal"
                         >
                             ×
                         </button>
-                        
+
                         <h2 className="modal-title">{displayTitle}</h2>
-                        
+
                         {loadingDetails ? (
                             <p>Loading ride details...</p>
                         ) : detailsError ? (
@@ -914,7 +918,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                             <div className="rider-avatar">
                                                 {rideDetailsFull.owner.profile_photo_url ? (
                                                     <img src={rideDetailsFull.owner.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
-                                                ) : 
+                                                ) :
                                                 (
                                                     <div className="navbar-profile-placeholder">
                                                         {rideDetailsFull.owner.first_name?.charAt(0)}
@@ -923,8 +927,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                             </div>
                                             <div className="rider-info">
                                                 <div className="rider-name">
-                                                    <a 
-                                                        href="#" 
+                                                    <a
+                                                        href="#"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             handleViewProfile(rideDetailsFull.owner.id);
@@ -951,7 +955,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                         ) : hasRequestSent(rideDetailsFull.owner.id) ? (
                                                             <span className="request-sent-badge">Friend Req. Sent</span>
                                                         ) : (
-                                                            <button 
+                                                            <button
                                                                 className="add-friend-btn"
                                                                 onClick={() => handleAddFriend(rideDetailsFull.owner.id)}
                                                                 disabled={sendingRequest[rideDetailsFull.owner.id]}
@@ -977,16 +981,16 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                 .filter(m => m.status === 'CONFIRMED JOINING')
                                                 .map((member) => {
                                                     const profile = member.profile || {};
-                                                    const fullName = profile.first_name && profile.last_name 
-                                                        ? `${profile.first_name} ${profile.last_name}` 
+                                                    const fullName = profile.first_name && profile.last_name
+                                                        ? `${profile.first_name} ${profile.last_name}`
                                                         : profile.username || 'Unknown User';
-                                                    
+
                                                     return (
                                                         <div key={member.id} className="rider-card">
                                                             <div className="rider-avatar">
                                                                 {profile?.profile_photo_url ? (
                                                                     <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
-                                                                ) : 
+                                                                ) :
                                                                 (
                                                                     <div className="navbar-profile-placeholder">
                                                                         {profile?.first_name?.charAt(0)}
@@ -995,8 +999,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                             </div>
                                                             <div className="rider-info">
                                                                 <div className="rider-name">
-                                                                    <a 
-                                                                        href="#" 
+                                                                    <a
+                                                                        href="#"
                                                                         onClick={(e) => {
                                                                             e.preventDefault();
                                                                             handleViewProfile(member.user_id);
@@ -1019,7 +1023,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                                                         ) : hasRequestSent(member.user_id) ? (
                                                                             <span className="request-sent-badge">Friend Req. Sent</span>
                                                                         ) : (
-                                                                            <button 
+                                                                            <button
                                                                                 className="add-friend-btn"
                                                                                 onClick={() => handleAddFriend(member.user_id)}
                                                                                 disabled={sendingRequest[member.user_id]}
@@ -1040,10 +1044,10 @@ export default function Card({ title, origin, destination, content, image, rideD
                         ) : (
                             <p>No ride details available.</p>
                         )}
-                        
+
                         <div className="modal-actions" style={{ marginTop: '20px' }}>
-                            <button 
-                                className="btn-secondary" 
+                            <button
+                                className="btn-secondary"
                                 onClick={() => setShowDetailsModal(false)}
                                 type="button"
                             >
@@ -1051,7 +1055,8 @@ export default function Card({ title, origin, destination, content, image, rideD
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.getElementById('modal-root')
             )}
         </>
     );
