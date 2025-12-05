@@ -26,21 +26,12 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
 
             // Set up callbacks
             const onRemoteStream = (remoteUserId, stream) => {
-                console.log(`Received audio stream from user ${remoteUserId}`);
+                console.log(`🎵 Received audio stream from user ${remoteUserId}`);
                 setRemoteStreams(prevStreams => {
                     const newStreams = new Map(prevStreams);
                     newStreams.set(remoteUserId, stream);
                     return newStreams;
                 });
-
-                // Attach stream to audio element (may not exist yet, will retry after render)
-                setTimeout(() => {
-                    const audioElement = remoteAudioRefsRef.current.get(remoteUserId);
-                    if (audioElement) {
-                        audioElement.srcObject = stream;
-                        console.log(`Attached audio stream for user ${remoteUserId}`);
-                    }
-                }, 100);
             };
 
             const onParticipantJoined = (participantId) => {
@@ -128,6 +119,23 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
             setIsMuted(!isMuted);
         }
     };
+
+    // Attach audio streams to audio elements when they update
+    useEffect(() => {
+        remoteStreams.forEach((stream, participantId) => {
+            const audioElement = remoteAudioRefsRef.current.get(participantId);
+            if (audioElement && audioElement.srcObject !== stream) {
+                console.log(`🔊 Attaching audio stream for user ${participantId}`);
+                audioElement.srcObject = stream;
+                // Explicitly play the audio (autoPlay might be blocked)
+                audioElement.play().then(() => {
+                    console.log(`✅ Playing audio from user ${participantId}`);
+                }).catch(err => {
+                    console.error(`❌ Failed to play audio for ${participantId}:`, err);
+                });
+            }
+        });
+    }, [remoteStreams]);
 
     // Cleanup on unmount
     useEffect(() => {

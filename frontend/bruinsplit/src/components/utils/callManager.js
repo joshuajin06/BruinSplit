@@ -46,12 +46,17 @@ class CallManager {
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
-            this.participants = new Set(response.participants || []);
+            const existingParticipants = response.participants || [];
+            this.participants = new Set(existingParticipants);
             this.isCallActive = true;
 
-            // Setup peer connections for each existing participant
-            for (const participantId of this.participants) {
+            console.log('✅ Joined call. Existing participants:', existingParticipants.filter(id => id !== this.userId));
+
+            // IMPORTANT: Only create offers to users ALREADY in the call
+            // New joiners will create offers to us (prevents race condition)
+            for (const participantId of existingParticipants) {
                 if (participantId !== this.userId) {
+                    console.log(`📞 Sending offer to existing participant: ${participantId}`);
                     await this.createPeerConnection(participantId);
                 }
             }
@@ -93,15 +98,26 @@ class CallManager {
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
+                    console.log(`🧊 Sending ICE candidate to ${remoteUserId}:`, event.candidate.type);
                     this.sendIceCandidate(remoteUserId, event.candidate);
+                } else {
+                    console.log(`✅ ICE gathering complete for ${remoteUserId}`);
                 }
+            };
+
+            // Handle ICE connection state
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log(`🧊 ICE connection state with ${remoteUserId}:`, peerConnection.iceConnectionState);
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                console.log(`Connection state with ${remoteUserId}:`, peerConnection.connectionState);
-                if (peerConnection.connectionState === 'failed') {
-                    console.error(`Connection failed with ${remoteUserId}`);
+                console.log(`🔌 Connection state with ${remoteUserId}:`, peerConnection.connectionState);
+                if (peerConnection.connectionState === 'connected') {
+                    console.log(`✅ Successfully connected to ${remoteUserId}`);
+                } else if (peerConnection.connectionState === 'failed') {
+                    console.error(`❌ Connection failed with ${remoteUserId}`);
+                    this.onError?.(`Connection failed with user ${remoteUserId}`);
                     this.peerConnections.delete(remoteUserId);
                 }
             };
@@ -141,8 +157,9 @@ class CallManager {
             const currentParticipants = new Set(response.participants || []);
             for (const participantId of currentParticipants) {
                 if (!this.participants.has(participantId) && participantId !== this.userId) {
+                    console.log(`👤 New participant joined: ${participantId}`);
                     this.participants.add(participantId);
-                    await this.createPeerConnection(participantId);
+                    // Don't create peer connection here - wait for their offer
                     this.onParticipantJoined?.(participantId);
                 }
             }
@@ -194,9 +211,53 @@ class CallManager {
         try {
             if (!offerObj.offer) return;
 
+            console.log(`📨 Received offer from ${fromUserId}`);
+
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                peerConnection = await this.createPeerConnection(fromUserId);
+                // Create peer connection WITHOUT sending an offer back (avoid race condition)
+                console.log(`Creating peer connection for ${fromUserId} to answer offer`);
+                peerConnection = new RTCPeerConnection({
+                    iceServers: STUN_SERVERS
+                });
+
+                // Add local audio tracks
+                this.localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, this.localStream);
+                });
+
+                // Handle incoming remote audio
+                peerConnection.ontrack = (event) => {
+                    console.log('🎵 Received remote track from', fromUserId);
+                    this.remoteStreams.set(fromUserId, event.streams[0]);
+                    this.onRemoteStream?.(fromUserId, event.streams[0]);
+                };
+
+                // Handle ICE candidates
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        console.log(`🧊 Sending ICE candidate to ${fromUserId}:`, event.candidate.type);
+                        this.sendIceCandidate(fromUserId, event.candidate);
+                    }
+                };
+
+                // Handle ICE connection state
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log(`🧊 ICE connection state with ${fromUserId}:`, peerConnection.iceConnectionState);
+                };
+
+                // Handle connection state changes
+                peerConnection.onconnectionstatechange = () => {
+                    console.log(`🔌 Connection state with ${fromUserId}:`, peerConnection.connectionState);
+                    if (peerConnection.connectionState === 'connected') {
+                        console.log(`✅ Successfully connected to ${fromUserId}`);
+                    } else if (peerConnection.connectionState === 'failed') {
+                        console.error(`❌ Connection failed with ${fromUserId}`);
+                        this.onError?.(`Connection failed with user ${fromUserId}`);
+                    }
+                };
+
+                this.peerConnections.set(fromUserId, peerConnection);
             }
 
             // Set remote description and create answer
@@ -207,10 +268,12 @@ class CallManager {
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
 
+            console.log(`📤 Sending answer to ${fromUserId}`);
             // Send answer back
             await sendAnswer(this.rideId, fromUserId, answer);
         } catch (error) {
-            console.error(`Error handling offer from ${fromUserId}:`, error);
+            console.error(`❌ Error handling offer from ${fromUserId}:`, error);
+            this.onError?.(`Failed to handle offer: ${error.message}`);
         }
     }
 
@@ -221,9 +284,11 @@ class CallManager {
         try {
             if (!answerObj.answer) return;
 
+            console.log(`📨 Received answer from ${fromUserId}`);
+
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId}`);
+                console.warn(`⚠️ No peer connection found for ${fromUserId}`);
                 return;
             }
 
@@ -231,8 +296,10 @@ class CallManager {
             await peerConnection.setRemoteDescription(
                 new RTCSessionDescription(answerObj.answer)
             );
+            console.log(`✅ Set remote description from ${fromUserId}`);
         } catch (error) {
-            console.error(`Error handling answer from ${fromUserId}:`, error);
+            console.error(`❌ Error handling answer from ${fromUserId}:`, error);
+            this.onError?.(`Failed to handle answer: ${error.message}`);
         }
     }
 
@@ -242,15 +309,16 @@ class CallManager {
 
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId} to add ICE candidate`);
+                console.warn(`⚠️ No peer connection found for ${fromUserId} to add ICE candidate`);
                 return;
             }
 
+            console.log(`🧊 Adding ICE candidate from ${fromUserId}`);
             await peerConnection.addIceCandidate(
                 new RTCIceCandidate(candidateObj.candidate)
             );
         } catch (error) {
-            console.error(`Error handling ICE candidate from ${fromUserId}:`, error);
+            console.error(`❌ Error handling ICE candidate from ${fromUserId}:`, error);
         }
     }
 
