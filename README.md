@@ -74,6 +74,30 @@ These two diagrams display the system architecture and database schema for Bruin
   <img src="frontend/bruinsplit/public/REdbdiagram.png" alt="Database Schema Diagram" width="800">
 </div>
 
+# API Documentation:
+
+After running the backend server (see [Running the Server](#running-the-server) section above), you can access the interactive API documentation.
+
+**Access the documentation:**
+- **Interactive API Documentation:** [http://localhost:8080/api/docs](http://localhost:8080/api/docs)
+- **Raw JSON Specification:** [http://localhost:8080/api/docs-json](http://localhost:8080/api/docs-json)
+
+The interactive documentation allows you to explore endpoints, view schemas, and test API calls directly from your browser.
+
+## Interactive Documentation Interface
+
+The Swagger UI interface for exploring all available endpoints and testing API calls.
+<div align="center">
+  <img src="frontend/bruinsplit/public/apiDocu.png" alt="API Documentation Interface" width="800">
+</div>
+
+## Endpoint Details and Testing
+
+View detailed endpoint documentation including request parameters, response schemas, and authentication requirements.
+<div align="center">
+  <img src="frontend/bruinsplit/public/apiDocu2.png" alt="API Endpoint Details" width="800">
+</div>
+
 # Main Features:
 
 ## Account Creation & Authentication
