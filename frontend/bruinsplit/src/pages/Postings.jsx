@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './pages.css';
 import Card from '../components/card.jsx';
 import SearchBar from '../components/searchBar.jsx';
@@ -12,14 +12,13 @@ import { getFriends } from '../pages/api/friends.js';
 export default function Postings() {
     const [rides, setRides] = useState([]);
     const [availableRides, setAvailableRides] = useState([]);
-    const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const token = localStorage.getItem('token');
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const initialSearchQuery = searchParams.get('q') || '';
     const { user, isAuthenticated } = useAuth();
 
@@ -39,7 +38,7 @@ export default function Postings() {
         if (isAuthenticated) {
             getFriends()
                 .then(friendsData => {
-                    const friendIds = friendsData.friends.map(f => f.user_id);
+                    const friendIds = friendsData.friends.map(f => String(f.user_id));
                     setFriends(friendIds);
                 })
                 .catch(err => console.error('Failed to fetch friends:', err));
@@ -162,8 +161,8 @@ export default function Postings() {
     await fetchRides();
     };
     
-    const applyFilters = useCallback((ridesToFilter) => {
-        let currentRides = [...ridesToFilter];
+    const filteredRides = useMemo(() => {
+        let currentRides = [...availableRides];
 
         if (showFriendsOnly) {
             currentRides = currentRides.filter(ride => friends.includes(ride.owner_id));
@@ -183,29 +182,20 @@ export default function Postings() {
             });
         }
         
-        setFilteredRides(currentRides);
-    }, [showFriendsOnly, friends, searchParams]);
-
-    useEffect(() => {
-        applyFilters(availableRides);
-    }, [availableRides, applyFilters]);
+        return currentRides;
+    }, [availableRides, showFriendsOnly, friends, searchParams]);
 
     const handleSearch = (searchQuery) => {
-        const params = new URLSearchParams(window.location.search);
         if (searchQuery.trim()) {
-            params.set('q', searchQuery);
+            setSearchParams({ q: searchQuery });
         } else {
-            params.delete('q');
+            setSearchParams({});
         }
-        window.history.pushState({}, '', `${window.location.pathname}?${params}`);
-        // applyFilters will be called by the effect that watches searchParams
-        // To provide instant feedback, we can call it directly
-        applyFilters(availableRides);
     };
 
     // Fetch rides on component mount and when initialSearchQuery changes
     useEffect(() => {
-        async function loadAndFilter() {
+        async function loadRides() {
             setLoading(true);
             setInitialLoading(true);
             try {
@@ -218,8 +208,6 @@ export default function Postings() {
                 setRides(ridesArray);
                 setAvailableRides(availableRidesArray);
 
-                applyFilters(availableRidesArray);
-
             } catch (err) {
                 console.error('fetchRides error:', err);
                 setError(err.message || 'Failed to load rides');
@@ -228,8 +216,8 @@ export default function Postings() {
                 setInitialLoading(false);
             }
         }
-        loadAndFilter();
-    }, [initialSearchQuery, user, applyFilters]);
+        loadRides();
+    }, [initialSearchQuery, user]);
 
     return (
     <>
