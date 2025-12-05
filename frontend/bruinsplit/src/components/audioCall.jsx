@@ -122,17 +122,46 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
 
     // Attach audio streams to audio elements when they update
     useEffect(() => {
+        console.log('🔄 useEffect triggered. Remote streams count:', remoteStreams.size);
         remoteStreams.forEach((stream, participantId) => {
             const audioElement = remoteAudioRefsRef.current.get(participantId);
-            if (audioElement && audioElement.srcObject !== stream) {
-                console.log(`🔊 Attaching audio stream for user ${participantId}`);
-                audioElement.srcObject = stream;
-                // Explicitly play the audio (autoPlay might be blocked)
-                audioElement.play().then(() => {
-                    console.log(`✅ Playing audio from user ${participantId}`);
-                }).catch(err => {
-                    console.error(`❌ Failed to play audio for ${participantId}:`, err);
-                });
+            console.log(`📍 Processing stream for participant ${participantId}:`);
+            console.log('  - Audio element exists:', !!audioElement);
+            console.log('  - Stream:', stream);
+            console.log('  - Stream active:', stream?.active);
+            console.log('  - Audio tracks:', stream?.getAudioTracks().length);
+            
+            if (audioElement) {
+                console.log('  - Current srcObject:', audioElement.srcObject);
+                console.log('  - Volume:', audioElement.volume);
+                console.log('  - Muted:', audioElement.muted);
+                console.log('  - Paused:', audioElement.paused);
+                
+                if (audioElement.srcObject !== stream) {
+                    console.log(`🔊 Attaching audio stream for user ${participantId}`);
+                    audioElement.srcObject = stream;
+                    audioElement.volume = 1.0; // Ensure volume is at max
+                    audioElement.muted = false; // Ensure not muted
+                    
+                    // Explicitly play the audio (autoPlay might be blocked)
+                    audioElement.play().then(() => {
+                        console.log(`✅ Playing audio from user ${participantId}`);
+                        console.log('  - Volume after play:', audioElement.volume);
+                        console.log('  - Paused after play:', audioElement.paused);
+                    }).catch(err => {
+                        console.error(`❌ Failed to play audio for ${participantId}:`, err);
+                        console.error('  - Error name:', err.name);
+                        console.error('  - Error message:', err.message);
+                    });
+                } else {
+                    console.log('  - Stream already attached, checking playback state...');
+                    if (audioElement.paused) {
+                        console.log('  - Audio is paused, attempting to play...');
+                        audioElement.play().catch(err => console.error('Failed to resume:', err));
+                    }
+                }
+            } else {
+                console.warn(`⚠️ No audio element found for participant ${participantId}`);
             }
         });
     }, [remoteStreams]);
