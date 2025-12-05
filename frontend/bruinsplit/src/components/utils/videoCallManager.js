@@ -186,13 +186,9 @@ class VideoCallManager {
         try {
             if (!offerObj.offer) return;
 
-            console.log(`📥 Received video offer from ${fromUserId}`);
-
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
                 peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
-
-                console.log(`🔗 Creating video peer connection for incoming offer from ${fromUserId}`);
 
                 // Add local tracks
                 this.localStream.getTracks().forEach(track => {
@@ -201,7 +197,6 @@ class VideoCallManager {
 
                 // Handle incoming remote video/audio
                 peerConnection.ontrack = (event) => {
-                    console.log(`📥 Received ${event.track.kind} track from ${fromUserId}`);
                     this.remoteStreams.set(fromUserId, event.streams[0]);
                     this.onRemoteStream?.(fromUserId, event.streams[0]);
                 };
@@ -209,36 +204,20 @@ class VideoCallManager {
                 // Handle ICE candidates
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
-                        console.log(`🧊 Video ICE candidate for ${fromUserId}:`, {
-                            type: event.candidate.type,
-                            protocol: event.candidate.protocol
-                        });
                         this.sendIceCandidate(fromUserId, event.candidate);
-                    } else {
-                        console.log(`✅ Video ICE gathering completed for ${fromUserId}`);
                     }
                 };
 
                 // Handle ICE connection state
                 peerConnection.oniceconnectionstatechange = () => {
-                    console.log(`Video ICE connection state for ${fromUserId}:`, peerConnection.iceConnectionState);
-
                     if (peerConnection.iceConnectionState === 'failed') {
-                        console.warn(`❌ Video ICE connection failed for ${fromUserId}, attempting restart...`);
                         peerConnection.restartIce();
-                    } else if (peerConnection.iceConnectionState === 'connected') {
-                        console.log(`✅ Video ICE connection established with ${fromUserId}`);
                     }
                 };
 
                 // Handle connection state
                 peerConnection.onconnectionstatechange = () => {
-                    console.log(`Video connection state for ${fromUserId}:`, peerConnection.connectionState);
-
-                    if (peerConnection.connectionState === 'connected') {
-                        console.log(`✅ Video peer connection established with ${fromUserId}`);
-                    } else if (peerConnection.connectionState === 'failed') {
-                        console.error(`❌ Video connection failed with ${fromUserId}`);
+                    if (peerConnection.connectionState === 'failed') {
                         this.onError?.(`Video connection failed with user ${fromUserId}`);
                     }
                 };
@@ -253,10 +232,7 @@ class VideoCallManager {
             await peerConnection.setLocalDescription(answer);
 
             await sendAnswer(this.rideId, fromUserId, answer);
-
-            console.log(`📤 Sent video answer to ${fromUserId}`);
         } catch (error) {
-            console.error(`Error handling video offer from ${fromUserId}:`, error);
             this.onError?.(`Failed to handle video offer: ${error.message}`);
         }
     }
@@ -265,18 +241,13 @@ class VideoCallManager {
         try {
             if (!answerObj.answer) return;
 
-            console.log(`📥 Received video answer from ${fromUserId}`);
-
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId}`);
                 return;
             }
 
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answerObj.answer));
-            console.log(`✅ Set remote description for ${fromUserId}`);
         } catch (error) {
-            console.error(`Error handling video answer from ${fromUserId}:`, error);
             this.onError?.(`Failed to handle video answer: ${error.message}`);
         }
     }
@@ -287,13 +258,12 @@ class VideoCallManager {
 
             const peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
-                console.warn(`No peer connection found for ${fromUserId} to add ICE candidate`);
                 return;
             }
 
             await peerConnection.addIceCandidate(new RTCIceCandidate(candidateObj.candidate));
         } catch (error) {
-            console.error(`Error handling video ICE candidate from ${fromUserId}:`, error);
+            // Silently handle ICE candidate errors
         }
     }
 
@@ -301,7 +271,7 @@ class VideoCallManager {
         try {
             await sendIceCandidate(this.rideId, remoteUserId, candidate);
         } catch (error) {
-            console.error(`Error sending video ICE candidate to ${remoteUserId}:`, error);
+            // Silently handle sending errors
         }
     }
 
@@ -332,8 +302,6 @@ class VideoCallManager {
 
     async stopCall() {
         try {
-            console.log('📹 Stopping video call...');
-
             // Stop polling
             if (this.signalingInterval) {
                 clearInterval(this.signalingInterval);
@@ -351,7 +319,6 @@ class VideoCallManager {
             if (this.localStream) {
                 this.localStream.getTracks().forEach(track => {
                     track.stop();
-                    console.log(`🛑 Stopped ${track.kind} track`);
                 });
                 this.localStream = null;
             }
@@ -363,10 +330,7 @@ class VideoCallManager {
 
             this.isCallActive = false;
             this.participants.clear();
-
-            console.log('✅ Video call stopped');
         } catch (error) {
-            console.error('Error stopping video call:', error);
             this.onError?.(`Error stopping video call: ${error.message}`);
         }
     }
