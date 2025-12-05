@@ -374,32 +374,47 @@ export async function getFriendRidesService(userId, friendId) {
         throw error;
     }
 
-    // get rides where friend is a confirmed member
+    // Get rides where friend is a confirmed or joined member
     const { data: memberRecords, error: memberError } = await supabase
         .from('ride_members')
         .select('ride_id')
         .eq('user_id', friendId)
-        .eq('status', 'CONFIRMED JOINING');
+        .in('status', ['CONFIRMED JOINING', 'JOINED']);
 
     if (memberError) {
         memberError.statusCode = 500;
         throw memberError;
     }
 
-    const rideIds = (memberRecords || []).map(r => r.ride_id);
+    let rideIds = (memberRecords || []).map(r => r.ride_id);
+
+    // Additionally, check if the friend is the owner of any rides
+    const { data: ownedRides, error: ownedRidesError } = await supabase
+        .from('rides')
+        .select('id')
+        .eq('owner_id', friendId);
+
+    if (ownedRidesError) {
+        ownedRidesError.statusCode = 500;
+        throw ownedRidesError;
+    }
+
+    const ownedRideIds = (ownedRides || []).map(r => r.id);
+
+    // Combine and deduplicate all relevant ride IDs
+    rideIds = [...new Set([...rideIds, ...ownedRideIds])];
+
 
     if (rideIds.length === 0) {
         return [];
     }
 
-    // get rides that are upcoming (depart_at > now)
-    const now = new Date();
+    // get rides
     const { data: rides, error: ridesError } = await supabase
         .from('rides')
         .select('*')
         .in('id', rideIds)
-        .gte('depart_at', now.toISOString())
-        .order('depart_at', { ascending: true });
+        .order('depart_at', { ascending: true }); // Removed gte filter
     
     if (ridesError) {
         ridesError.statusCode = 500;
@@ -414,7 +429,6 @@ export async function getFriendRidesService(userId, friendId) {
 
     return enrichedRides;
 }
-
 
 // get upcomign rides from all friends (next few days)
 export async function getFriendsUpcomingRidesService(userId, daysAhead = 7) {

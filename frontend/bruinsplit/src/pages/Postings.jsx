@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './pages.css';
 import Card from '../components/card.jsx';
 import SearchBar from '../components/searchBar.jsx';
@@ -7,20 +7,23 @@ import SkeletonCard from '../components/SkeletonCard.jsx';
 
 import { useAuth } from '../context/AuthContext';
 import { getMyRides, getRides } from '../pages/api/rides';
+import { getFriends } from '../pages/api/friends.js';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
     const [availableRides, setAvailableRides] = useState([]);
-    const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const token = localStorage.getItem('token');
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const initialSearchQuery = searchParams.get('q') || '';
-    const { isAuthenticated } = useAuth();
+    const { user, isAuthenticated } = useAuth();
+
+    const [showFriendsOnly, setShowFriendsOnly] = useState(false);
+    const [friends, setFriends] = useState([]);
 
     const [form, setForm] = useState({
         origin_text: '',
@@ -30,6 +33,17 @@ export default function Postings() {
         max_seats: 2,
         notes: ''
     });
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            getFriends()
+                .then(friendsData => {
+                    const friendIds = (friendsData.friends || []).map(f => String(f.id));
+                    setFriends(friendIds);
+                })
+                .catch(err => console.error('Failed to fetch friends:', err));
+        }
+    }, [isAuthenticated]);
 
     function handleChange(e) {
         const { name, value } = e.target;
@@ -131,7 +145,7 @@ export default function Postings() {
 
             setRides(ridesArray);
             setAvailableRides(availableRidesArray);
-            setFilteredRides(availableRidesArray);
+            // setFilteredRides(availableRidesArray);
         } catch (err) {
             console.error('fetchRides error:', err);
             setError(err.message || 'Failed to load rides');
@@ -147,31 +161,54 @@ export default function Postings() {
     await fetchRides();
     };
     
-    const handleSearch = (searchQuery, ridesListToFilter = availableRides) => {
-        // Only filter the rides, don't update URL on every keystroke
-        // Always search from the provided rides list (which excludes user's own rides)
-        if (!searchQuery.trim()) {
-            setFilteredRides(ridesListToFilter);
-            return;
+    const filteredRides = useMemo(() => {
+        let currentRides = [...availableRides];
+
+        if (showFriendsOnly) {
+            currentRides = currentRides.filter(ride => {
+                // Check if the ride owner is a friend
+                if (friends.includes(ride.owner_id)) {
+                    return true;
+                }
+
+                // Check if any member of the ride is a friend
+                // This assumes `ride.current_members` is an array of user objects with an `id` property.
+                if (ride.current_members && Array.isArray(ride.current_members)) {
+                    return ride.current_members.some(member => friends.includes(String(member.id)));
+                }
+
+                return false;
+            });
         }
 
-        const query = searchQuery.toLowerCase();
-        const filtered = ridesListToFilter.filter(ride => {
-            const origin = ride.origin_text?.toLowerCase() || '';
-            const destination = ride.destination_text?.toLowerCase() || '';
-            const combinedText = `${origin} to ${destination}`;
+        const query = searchParams.get('q') || '';
+        if (query.trim()) {
+            const lowerCaseQuery = query.toLowerCase();
+            currentRides = currentRides.filter(ride => {
+                const origin = ride.origin_text?.toLowerCase() || '';
+                const destination = ride.destination_text?.toLowerCase() || '';
+                const combinedText = `${origin} to ${destination}`;
 
-            return origin.includes(query) ||
-                   destination.includes(query) ||
-                   combinedText.includes(query);
-        });
+                return origin.includes(lowerCaseQuery) ||
+                    destination.includes(lowerCaseQuery) ||
+                    combinedText.includes(lowerCaseQuery);
+            });
+        }
+        
+        return currentRides;
+    }, [availableRides, showFriendsOnly, friends, searchParams]);
 
-        setFilteredRides(filtered);
+    const handleSearch = (searchQuery) => {
+        if (searchQuery.trim()) {
+            setSearchParams({ q: searchQuery });
+        } else {
+            setSearchParams({});
+        }
     };
 
     // Fetch rides on component mount and when initialSearchQuery changes
     useEffect(() => {
-        async function loadAndFilter() {
+        async function loadRides() {
             setLoading(true);
             setInitialLoading(true);
             try {
@@ -179,17 +216,11 @@ export default function Postings() {
                 const ridesArray = data.rides || data || [];
                 const myRidesResponse = await getMyRides();
                 const myRidesArray = myRidesResponse.rides || [];
-                const availableRidesArray = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id));
+                const availableRidesArray = ridesArray.filter(ride => !myRidesArray.some(myRide => myRide.id === ride.id) && ride.owner_id !== user?.id);
 
                 setRides(ridesArray);
                 setAvailableRides(availableRidesArray);
 
-                // Apply search immediately with the fetched rides
-                if (initialSearchQuery) {
-                    handleSearch(initialSearchQuery, availableRidesArray);
-                } else {
-                    setFilteredRides(availableRidesArray);
-                }
             } catch (err) {
                 console.error('fetchRides error:', err);
                 setError(err.message || 'Failed to load rides');
@@ -198,8 +229,8 @@ export default function Postings() {
                 setInitialLoading(false);
             }
         }
-        loadAndFilter();
-    }, [initialSearchQuery]);
+        loadRides();
+    }, [initialSearchQuery, user]);
 
     return (
     <>
@@ -211,6 +242,16 @@ export default function Postings() {
             
             <div style={{ marginBottom: '24px', width: '60%', maxWidth: '1200px', margin: '0 auto 24px auto' }}>
                 <SearchBar onSearch={handleSearch} initialValue={initialSearchQuery} />
+                {isAuthenticated && (
+                    <div style={{ marginTop: '10px' }}>
+                        <button
+                            className="friends-filter-button"
+                            onClick={() => setShowFriendsOnly(prev => !prev)}
+                        >
+                            {showFriendsOnly ? 'See all rides' : 'See what your friends are up to...'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {error && <p className="error-message">{error}</p>}
@@ -221,11 +262,18 @@ export default function Postings() {
                 </div>
             )}
 
+            {!initialLoading && rides.length > 0 && availableRides.length === 0 && (
+                 <div className="empty-message" style={{marginTop: '2rem'}}>
+                    <p>No new rides are available. Check out My Rides to see the rides you own and are a member of.</p>
+                </div>
+            )}
+
             {!initialLoading && rides.length === 0 && (
                 <div className="empty-message" style={{marginTop: '2rem'}}>
                     <p>No rides have been posted yet. Be the first to create one!</p>
                 </div>
             )}
+
 
             <div className='card-grid'>
                 {!initialLoading && filteredRides.map(ride => (
@@ -248,7 +296,7 @@ export default function Postings() {
                         rideDetails={{
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
-                            current_members: ride.current_members,  // number currently joined
+                            current_members: ride.current_members,  // array of user objects for members
                             owner_id: ride.owner_id,                // needed for riders tab to show owner badge
                             membership_status: ride.membership_status  // null, 'PENDING', or 'CONFIRMED JOINING'
                         }}
@@ -266,9 +314,9 @@ export default function Postings() {
                     />
                 ))}
 
-                {!initialLoading && rides.length > 0 && filteredRides.length === 0 && (
+                {!initialLoading && availableRides.length > 0 && filteredRides.length === 0 && (
                     <div className="empty-message" style={{gridColumn: '1 / -1'}}>
-                        <p>No rides match your search.</p>
+                        <p>No rides match your search or filter.</p>
                     </div>
                 )}
           </div>

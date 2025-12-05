@@ -1,14 +1,17 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
+import Card from '../components/card.jsx'; // Import the Card component
 
-import { updateProfile, updatePassword, updateProfilePic } from './api/profile.js'
-import { getFriendCount, getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest } from './api/friends.js';
+import { updateProfile, updatePassword, updateProfilePic, getProfileById } from './api/profile.js';
+import { getFriendCount, getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest, getFriendRides, sendFriendRequest, getUserFriends } from './api/friends.js';
 import './Profile.css';
 
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
+  const { userId } = useParams();
+  const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [error, setError] = useState('');
@@ -22,14 +25,19 @@ export default function Profile() {
   const [pendingRequests, setPendingRequests] = useState({ sent: [], received: [] });
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [processingRequest, setProcessingRequest] = useState({});
+  const [joinedRides, setJoinedRides] = useState([]);
+
+  const [friendshipStatus, setFriendshipStatus] = useState(null); // 'friends', 'pending', 'not_friends'
 
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  const isOwnProfile = !userId || (user && userId === user.id);
+
   const [formData, setFormData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    username: user?.username || ''
+    first_name: '',
+    last_name: '',
+    username: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -38,26 +46,103 @@ export default function Profile() {
     confirmNewPassword: ''
   });
 
-  // Fetch friend count on component mount
   useEffect(() => {
-    const fetchFriendCount = async () => {
-      if (user?.id) {
-        try {
-          const data = await getFriendCount(user.id);
-          setFriendCount(data.friend_count);
-        } catch (error) {
-          console.error('Failed to fetch friend count:', error);
-        }
-      }
-    };
-    fetchFriendCount();
-  }, [user?.id]);
+        const fetchProfileData = async () => {
+            try {
+                setError('');
+                setProfile(null);
+                setJoinedRides([]);
+                setFriendshipStatus(null);
+                const targetId = userId || user?.id;
+                if (!targetId) return;
+
+                let profileData;
+                if (userId) {
+                    try {
+                        profileData = await getProfileById(userId);
+                    } catch (error) {
+                        console.error('Failed to fetch profile by ID:', error);
+                        setError('Failed to fetch profile data. Please try again later.');
+                        return;
+                    }
+                } else {
+                    profileData = user;
+                }
+
+                if (!profileData) {
+                    setError('Profile not found.');
+                    return;
+                }
+
+                setProfile(profileData);
+                setFormData({
+                    first_name: profileData?.first_name || '',
+                    last_name: profileData?.last_name || '',
+                    username: profileData?.username || ''
+                });
+
+                try {
+                    const friendCountData = await getFriendCount(targetId);
+                    setFriendCount(friendCountData.friend_count);
+                } catch (error) {
+                    console.error('Failed to fetch friend count:', error);
+                    setError('Failed to fetch friend count. Please try again later.');
+                }
+
+                try {
+                    const ridesData = await getFriendRides(targetId);
+                    setJoinedRides(ridesData.rides || []);
+                } catch (error) {
+                    console.error('Failed to fetch friend rides:', error);
+                    setError('Failed to fetch friend rides. Please try again later.');
+                }
+
+                // If viewing another user's profile, determine friendship status
+                if (userId && user.id !== userId) {
+                    try {
+                        const [myFriendsData, myPendingData] = await Promise.all([
+                            getFriends(),
+                            getPendingRequests()
+                        ]);
+
+                        const isFriend = (myFriendsData.friends || []).some(f => f.id === userId);
+                        const isRequestSent = (myPendingData.sent || []).some(r => r.id === userId);
+
+                        if (isFriend) setFriendshipStatus('friends');
+                        else if (isRequestSent) setFriendshipStatus('pending');
+                        else setFriendshipStatus('not_friends');
+
+                    } catch (error) {
+                        console.error("Failed to determine friendship status:", error);
+                    }
+                }
+            } catch (error) {
+                console.error('An unexpected error occurred:', error);
+                setError('An unexpected error occurred. Please try again later.');
+            }
+        };
+
+    if (user) {
+        fetchProfileData();
+    }
+  }, [userId, user]);
+
+  const handleSendFriendRequest = async () => {
+    if (!userId) return;
+    try {
+        await sendFriendRequest(userId);
+        setFriendshipStatus('pending'); // Optimistically update UI
+    } catch (error) {
+        console.error("Failed to send friend request:", error);
+        alert(error.message || "Could not send friend request.");
+    }
+  };
 
   const handleShowFriends = async () => {
     setShowFriendsModal(true);
     setLoadingFriends(true);
     try {
-      const data = await getFriends();
+      const data = isOwnProfile ? await getFriends() : await getUserFriends(userId);
       setFriends(data.friends || []);
     } catch (error) {
       console.error('Failed to fetch friends:', error);
@@ -171,14 +256,14 @@ export default function Profile() {
     catch (error) {
       console.error("Failed to updated profile: ", error);
       setError(error.message);
-    } 
+    }
   };
 
   const handleCancel = () => {
     setFormData({
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      username: user?.username || ''
+      first_name: profile?.first_name || '',
+      last_name: profile?.last_name || '',
+      username: profile?.username || ''
     });
     setPasswordData({
       currentPassword: '',
@@ -221,7 +306,7 @@ export default function Profile() {
     }
   }
 
-  if (!user) {
+  if (!profile) {
     return (
       <div className="profile-container">
         <div className="profile-card">
@@ -232,36 +317,36 @@ export default function Profile() {
   }
 
   return (
-    <div className="profile-container">
+    <div className="profile-page-layout" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '2rem', padding: '2rem' }}>
       <div className="profile-card">
-        <input
+        {isOwnProfile && <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           onChange={handlePhotoSelect}
           style={{ display: 'none' }}
-        />
+        />}
         <div className="profile-header">
           <div className="profile-picture-section">
             <div className="profile-picture-wrapper">
-              {user?.profile_photo_url ? (
-                <img src={user.profile_photo_url} alt="Profile" className="profile-picture" />
+              {profile?.profile_photo_url ? (
+                <img src={profile.profile_photo_url} alt="Profile" className="profile-picture" />
               ) : (
                 <div className="profile-picture-placeholder">
-                  <span>{user?.first_name?.charAt(0)}{user?.last_name?.charAt(0)}</span>
+                  <span>{profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}</span>
                 </div>
               )}
-              <button
+              {isOwnProfile && <button
                 className="profile-edit-btn"
                 title="Edit profile picture"
                 onClick={handleEditPhotoClick}
                 disabled={uploading}
               >
                 {uploading ? '⏳' : '📷'}
-              </button>
+              </button>}
             </div>
           </div>
-          <h1>My Profile</h1>
+          <h1>{isOwnProfile ? "My Profile" : `${profile.first_name}'s Profile`}</h1>
           <div className="profile-stats">
             {friendCount !== null && (
               <button className="friend-count" onClick={handleShowFriends}>
@@ -269,10 +354,20 @@ export default function Profile() {
                 <span className="friend-count-label">Friend{friendCount !== 1 ? 's' : ''}</span>
               </button>
             )}
-            <button className="requests-btn" onClick={handleShowRequests}>
+            {isOwnProfile && <button className="requests-btn" onClick={handleShowRequests}>
               <span className="requests-icon">👥</span>
               <span className="requests-label">Requests</span>
-            </button>
+            </button>}
+            {!isOwnProfile && friendshipStatus === 'not_friends' && (
+                <button className="btn-edit" onClick={handleSendFriendRequest}>
+                    Send Friend Request
+                </button>
+            )}
+            {!isOwnProfile && friendshipStatus === 'pending' && (
+                <button className="btn-change-password pending" disabled>
+                    Request Sent
+                </button>
+            )}
           </div>
         </div>
 
@@ -281,7 +376,7 @@ export default function Profile() {
             <div className="modal-overlay" onClick={() => setShowFriendsModal(false)} />
             <div className="friends-modal">
               <div className="friends-modal-header">
-                <h2>My Friends</h2>
+                <h2>{isOwnProfile ? "My Friends" : `${profile.first_name}'s Friends`}</h2>
                 <button className="close-modal-btn" onClick={() => setShowFriendsModal(false)}>✕</button>
               </div>
               <div className="friends-modal-content">
@@ -293,6 +388,7 @@ export default function Profile() {
                   <ul className="friends-list">
                     {friends.map((friend) => (
                       <li key={friend.id} className="friend-item">
+                        <Link to={`/profile/${friend.id}`} className="friend-info-link" onClick={() => setShowFriendsModal(false)}>
                         <div className="friend-info">
                           {friend.profile_photo_url ? (
                             <img src={friend.profile_photo_url} alt={friend.first_name} className="friend-avatar" />
@@ -306,6 +402,7 @@ export default function Profile() {
                             <span className="friend-username">@{friend.username}</span>
                           </div>
                         </div>
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -315,7 +412,7 @@ export default function Profile() {
           </>
         )}
 
-        {showRequestsModal && (
+        {isOwnProfile && showRequestsModal && (
           <>
             <div className="modal-overlay" onClick={() => setShowRequestsModal(false)} />
             <div className="friends-modal">
@@ -350,14 +447,14 @@ export default function Profile() {
                                 </div>
                               </div>
                               <div className="request-actions">
-                                <button 
+                                <button
                                   className="accept-btn"
                                   onClick={() => handleAcceptRequest(request.id)}
                                   disabled={processingRequest[request.id]}
                                 >
                                   {processingRequest[request.id] ? '...' : '✓'}
                                 </button>
-                                <button 
+                                <button
                                   className="reject-btn"
                                   onClick={() => handleRejectRequest(request.id)}
                                   disabled={processingRequest[request.id]}
@@ -381,7 +478,7 @@ export default function Profile() {
                             const lastName = request.last_name || '';
                             const username = request.username || 'Unknown';
                             const initials = `${firstName.charAt(0) || '?'}${lastName.charAt(0) || '?'}`;
-                            
+
                             return (
                               <li key={request.id} className="friend-item">
                                 <div className="friend-info">
@@ -419,7 +516,7 @@ export default function Profile() {
             <div className="profile-grid">
               <div className="profile-field">
                 <label>First Name</label>
-                {isEditing ? (
+                {isEditing && isOwnProfile ? (
                   <input
                     type="text"
                     name="first_name"
@@ -434,7 +531,7 @@ export default function Profile() {
 
               <div className="profile-field">
                 <label>Last Name</label>
-                {isEditing ? (
+                {isEditing && isOwnProfile ? (
                   <input
                     type="text"
                     name="last_name"
@@ -449,7 +546,7 @@ export default function Profile() {
 
               <div className="profile-field">
                 <label>Username</label>
-                {isEditing ? (
+                {isEditing && isOwnProfile ? (
                   <input
                     type="text"
                     name="username"
@@ -464,10 +561,10 @@ export default function Profile() {
 
               <div className="profile-field">
                 <label>Email</label>
-                <p>{user.email}</p>
+                <p>{profile.email}</p>
               </div>
 
-              {isChangingPassword && (
+              {isChangingPassword && isOwnProfile && (
                 <>
                   <div className="profile-field">
                     <label>Old Password</label>
@@ -503,10 +600,10 @@ export default function Profile() {
                 </>
               )}
 
-              {user.created_at && (
+              {profile.created_at && (
                 <div className="profile-field">
                   <label>Member Since</label>
-                  <p>{new Date(user.created_at).toLocaleDateString()}</p>
+                  <p>{new Date(profile.created_at).toLocaleDateString()}</p>
                 </div>
               )}
             </div>
@@ -514,7 +611,7 @@ export default function Profile() {
           {photoError && <div className="error-message">{photoError}</div>}
           {error && <div className="error-message">{error}</div>}
 
-          <div className="profile-actions">
+          {isOwnProfile && <div className="profile-actions">
             {(isEditing || isChangingPassword) ? (
               <>
                 <button className="btn-save" onClick={handleSave}>
@@ -536,12 +633,41 @@ export default function Profile() {
                 </button>
               </>
             )}
-          </div>
-          <button className="btn-logout" onClick={handleLogout}>
+          </div>}
+          {isOwnProfile && <button className="btn-logout" onClick={handleLogout}>
             Logout
-          </button>
+          </button>}
         </div>
       </div>
+      {!isOwnProfile && <div className="profile-rides-sidebar">
+          <h3>Joined Rides</h3>
+          <div className="rides-list">
+              {joinedRides.length > 0 ? (
+                  joinedRides.map(ride => (
+                      <Card
+                          key={ride.id}
+                          rideId={ride.id}
+                          title={`${ride.origin_text} ➡ ${ride.destination_text}`}
+                          origin={ride.origin_text}
+                          destination={ride.destination_text}
+                          departureDatetime={ride.depart_at}
+                          platform={ride.platform}
+                          notes={ride.notes}
+                          maxRiders={ride.max_seats}
+                          createdAt={ride.created_at}
+                          ownerId={ride.owner_id}
+                          rideDetails={ride}
+                          // Since this is for display on a friend's profile, we likely don't want
+                          // interactive buttons like Join/Edit/Delete. We can omit the onJoin,
+                          // onDelete, onTransferOwnership, onEdit, onLeave props, or pass no-op functions.
+                          // The Card component will conditionally render owner-specific buttons anyway.
+                      />
+                  ))
+              ) : (
+                  <p>No joined rides to show.</p>
+              )}
+          </div>
+      </div>}
     </div>
   );
 }

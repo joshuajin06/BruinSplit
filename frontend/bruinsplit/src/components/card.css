@@ -564,6 +564,7 @@
             align-items: center;
             justify-content: center;
 
+            z-index: 2; /* Ensure button is above card content and gradient */
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
             transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
         }
@@ -588,20 +589,24 @@
         /* Strongest overlay: ABOVE main modal (1000) and any others */
         .delete-modal-overlay {
             position: fixed;
+            top: 0;         
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: rgba(0, 0, 0, 0.55);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            z-index: 10000; 
+            isolation: isolate;
         }
 
         /* Delete modal box */
         .delete-modal-content {
             background: white;
             color: #333;
-            padding: 1.9rem;
-            width: 90%;
-            max-width: 420px;
+            width: 420px;
+            max-width: 550px;
             border-radius: 0.75rem;
             text-align: center;
             box-shadow: 0 10px 35px rgba(0,0,0,0.2);
@@ -743,6 +748,7 @@
         font-weight: 600;
         font-size: 0.85rem;
         transition: 0.2s ease;
+        z-index: 2; /* Ensure button is above card content and gradient */
         }
 
         .editButton:hover {
