@@ -10,92 +10,187 @@ export default function VideoCall({ userId, rideId }) {
     const [isMicOn, setIsMicOn] = useState(true);
     const [error, setError] = useState(null);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [participants, setParticipants] = useState([]);
+    const [remoteStreams, setRemoteStreams] = useState(new Map());
 
+    const videoCallManagerRef = useRef(null);
     const localVideoRef = useRef(null);
-    const streamRef = useRef(null);
+    const remoteVideoRefsRef = useRef(new Map());
 
-    // Start Call
     const startCall = async () => {
         try {
-        setError(null);
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
-        
-        streamRef.current = stream;
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
-        }
-        
-        setIsCallActive(true);
-        
+            if (!rideId) {
+                setError('Ride ID is required to start a video call.');
+                return;
+            }
+
+            setError(null);
+            console.log('📹 Starting video call for ride:', rideId);
+
+            // Initialize VideoCallManager
+            videoCallManagerRef.current = new VideoCallManager(rideId, userId);
+
+            // Set up callbacks
+            const onRemoteStream = (remoteUserId, stream) => {
+                console.log(`📹 Received remote video stream from ${remoteUserId}`);
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.set(remoteUserId, stream);
+                    return newStreams;
+                });
+            };
+
+            const onParticipantJoined = (participantId) => {
+                console.log(`👤 Participant joined: ${participantId}`);
+                setParticipants(prevParticipants => {
+                    if (!prevParticipants.includes(participantId)) {
+                        return [...prevParticipants, participantId];
+                    }
+                    return prevParticipants;
+                });
+            };
+
+            const onParticipantLeft = (participantId) => {
+                console.log(`👋 Participant left: ${participantId}`);
+                setParticipants(prevParticipants =>
+                    prevParticipants.filter(id => id !== participantId)
+                );
+                setRemoteStreams(prevStreams => {
+                    const newStreams = new Map(prevStreams);
+                    newStreams.delete(participantId);
+                    return newStreams;
+                });
+            };
+
+            const onError = (errorMessage) => {
+                console.error('Video call error:', errorMessage);
+                setError(errorMessage);
+            };
+
+            // Start the video call
+            const result = await videoCallManagerRef.current.startCall(
+                onRemoteStream,
+                onParticipantJoined,
+                onParticipantLeft,
+                onError
+            );
+
+            // Set local video stream
+            if (localVideoRef.current && result.localStream) {
+                localVideoRef.current.srcObject = result.localStream;
+            }
+
+            setIsCallActive(true);
+            setIsCameraOn(true);
+            setIsMicOn(true);
+            setError(null);
+            setParticipants(result.participants.filter(id => id !== userId));
+
+            console.log('✅ Video call started successfully');
         } catch (err) {
-        console.error('Error accessing media devices:', err);
-        setError('Failed to access camera/microphone. Please check permissions.');
+            console.error('Error starting video call:', err);
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to start video call';
+            setError(errorMessage);
+            setIsCallActive(false);
         }
     };
 
-    useEffect(() => {
-    if (localVideoRef.current && streamRef.current) {
-      localVideoRef.current.srcObject = streamRef.current;
-    }
-  }, [isCallActive]);
+    const endCall = async () => {
+        try {
+            console.log('📹 Ending video call...');
 
-  // End video call
-  const endCall = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCallActive(false);
-    setIsCameraOn(true);
-    setIsMicOn(true);
-    setIsMinimized(false);
-  };
+            if (videoCallManagerRef.current) {
+                await videoCallManagerRef.current.stopCall();
+                videoCallManagerRef.current = null;
+            }
 
-  // Toggle camera
-  const toggleCamera = () => {
-    if (streamRef.current) {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !videoTrack.enabled;
-        setIsCameraOn(videoTrack.enabled);
-      }
-    }
-  };
+            // Clear local video
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = null;
+            }
 
-  // Toggle microphone
-  const toggleMic = () => {
-    if (streamRef.current) {
-      const audioTrack = streamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMicOn(audioTrack.enabled);
-      }
-    }
-  };
+            // Clear remote videos
+            remoteVideoRefsRef.current.forEach(video => {
+                video.srcObject = null;
+            });
+            remoteVideoRefsRef.current.clear();
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
+            setIsCallActive(false);
+            setIsCameraOn(true);
+            setIsMicOn(true);
+            setIsMinimized(false);
+            setParticipants([]);
+            setRemoteStreams(new Map());
+            setError(null);
+
+            console.log('✅ Video call ended');
+        } catch (err) {
+            console.error('Error ending video call:', err);
+            setError('Error ending call. Please try again.');
+        }
     };
-  }, []);
 
-  if (!isCallActive) {
-    return (
-      <button 
-        className="video-call-btn"
-        onClick={startCall}
-        title="Start video call"
-      >
-        📹
-      </button>
-    );
-  }
+    const toggleCamera = () => {
+        if (videoCallManagerRef.current) {
+            const newCameraState = !isCameraOn;
+            videoCallManagerRef.current.toggleCamera(newCameraState);
+            setIsCameraOn(newCameraState);
+        }
+    };
+
+    const toggleMic = () => {
+        if (videoCallManagerRef.current) {
+            const newMicState = !isMicOn;
+            videoCallManagerRef.current.toggleMic(newMicState);
+            setIsMicOn(newMicState);
+        }
+    };
+
+    // Attach remote video streams when they update
+    useEffect(() => {
+        remoteStreams.forEach((stream, participantId) => {
+            const videoElement = remoteVideoRefsRef.current.get(participantId);
+
+            if (videoElement) {
+                if (videoElement.srcObject !== stream) {
+                    videoElement.srcObject = stream;
+                    videoElement.muted = false;
+
+                    videoElement.play().catch(err => {
+                        console.error(`Failed to play video for ${participantId}:`, err);
+                    });
+                } else if (videoElement.paused) {
+                    videoElement.play().catch(err => console.error('Failed to resume video:', err));
+                }
+            }
+        });
+    }, [remoteStreams]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (videoCallManagerRef.current && isCallActive) {
+                videoCallManagerRef.current.stopCall().catch(err => {
+                    console.error('Error cleaning up video call on unmount:', err);
+                });
+            }
+        };
+    }, [isCallActive]);
+
+    if (!isCallActive) {
+        return (
+            <Tooltip title="Start video call">
+                <IconButton
+                    onClick={startCall}
+                    color="primary"
+                    size="large"
+                    aria-label="start video call"
+                >
+                    <Videocam />
+                </IconButton>
+            </Tooltip>
+        );
+    }
 
     return (
     <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
