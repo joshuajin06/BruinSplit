@@ -6,14 +6,14 @@ Built to address this, Bruinsplit is a web app that helps UCLA students find oth
 # Tech Stack:
 
 <div align="center">
-  <a href="https://react.dev/" target="_blank">
-    <img src="frontend/bruinsplit/public/reactLogo.png" alt="React" width="100" height="100">
+  <a href="https://react.dev/" target="_blank" style="margin: 0 32px; display: inline-block;">
+    <img src="frontend/bruinsplit/public/reactLogo.png" alt="React" width="140">
   </a>
-  <a href="https://nodejs.org/" target="_blank">
-    <img src="frontend/bruinsplit/public/nodeJSlogo.png" alt="Node.js" width="100" height="100">
+  <a href="https://nodejs.org/" target="_blank" style="margin: 0 32px; display: inline-block;">
+    <img src="frontend/bruinsplit/public/nodeJSlogo.png" alt="Node.js" width="140">
   </a>
-  <a href="https://supabase.com/" target="_blank">
-    <img src="frontend/bruinsplit/public/supabaseLogo.webp" alt="Supabase" width="100" height="100">
+  <a href="https://supabase.com/" target="_blank" style="margin: 0 32px; display: inline-block;">
+    <img src="frontend/bruinsplit/public/supabaseLogo.png" alt="Supabase" width="140">
   </a>
 </div>
 
