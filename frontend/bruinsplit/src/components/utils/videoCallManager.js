@@ -31,20 +31,14 @@ class VideoCallManager {
             this.onParticipantLeft = onParticipantLeft;
             this.onError = onError;
 
-            console.log('📹 Starting video call...');
-
             // Get local video/audio stream with optimized constraints
             this.localStream = await navigator.mediaDevices.getUserMedia(VIDEO_CONSTRAINTS);
-
-            console.log('📹 Local video stream acquired');
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
             const existingParticipants = response.participants || [];
             this.participants = new Set(existingParticipants);
             this.isCallActive = true;
-
-            console.log('📹 Joined call, existing participants:', existingParticipants.length);
 
             // Create connections to existing participants
             const othersInCall = existingParticipants.filter(id => id !== this.userId);
@@ -74,67 +68,35 @@ class VideoCallManager {
 
             const peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
 
-            console.log(`🔗 Creating video peer connection to ${remoteUserId}`);
-            console.log('ICE servers configured:', RTC_CONFIGURATION.iceServers.length);
-
             // Add local video/audio tracks
             this.localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, this.localStream);
-                console.log(`➕ Added ${track.kind} track to peer connection`);
             });
 
             // Handle incoming remote video/audio
             peerConnection.ontrack = (event) => {
-                console.log(`📥 Received ${event.track.kind} track from ${remoteUserId}`);
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
             };
 
-            // Handle ICE candidates with detailed logging
+            // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    console.log(`🧊 Video ICE candidate for ${remoteUserId}:`, {
-                        type: event.candidate.type,
-                        protocol: event.candidate.protocol,
-                        address: event.candidate.address,
-                        port: event.candidate.port
-                    });
                     this.sendIceCandidate(remoteUserId, event.candidate);
-                } else {
-                    console.log(`✅ Video ICE gathering completed for ${remoteUserId}`);
                 }
-            };
-
-            // Handle ICE gathering state changes
-            peerConnection.onicegatheringstatechange = () => {
-                console.log(`Video ICE gathering state for ${remoteUserId}:`, peerConnection.iceGatheringState);
             };
 
             // Handle ICE connection state changes
             peerConnection.oniceconnectionstatechange = () => {
-                console.log(`Video ICE connection state for ${remoteUserId}:`, peerConnection.iceConnectionState);
-
                 if (peerConnection.iceConnectionState === 'failed') {
-                    console.warn(`❌ Video ICE connection failed for ${remoteUserId}, attempting ICE restart...`);
                     peerConnection.restartIce();
-                } else if (peerConnection.iceConnectionState === 'connected') {
-                    console.log(`✅ Video ICE connection established with ${remoteUserId}`);
-                } else if (peerConnection.iceConnectionState === 'disconnected') {
-                    console.warn(`⚠️ Video ICE disconnected from ${remoteUserId}`);
                 }
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                console.log(`Video connection state for ${remoteUserId}:`, peerConnection.connectionState);
-
-                if (peerConnection.connectionState === 'connected') {
-                    console.log(`✅ Video peer connection established with ${remoteUserId}`);
-                } else if (peerConnection.connectionState === 'failed') {
-                    console.error(`❌ Video connection failed with ${remoteUserId}`);
+                if (peerConnection.connectionState === 'failed') {
                     this.onError?.(`Video connection failed with user ${remoteUserId}`);
-                } else if (peerConnection.connectionState === 'disconnected') {
-                    console.warn(`⚠️ Video connection disconnected with ${remoteUserId}`);
                 }
             };
 
@@ -145,11 +107,8 @@ class VideoCallManager {
             await peerConnection.setLocalDescription(offer);
             await sendOffer(this.rideId, remoteUserId, offer);
 
-            console.log(`📤 Sent video offer to ${remoteUserId}`);
-
             return peerConnection;
         } catch (error) {
-            console.error(`Error creating video peer connection with ${remoteUserId}:`, error);
             this.onError?.(`Failed to connect with participant: ${error.message}`);
             throw error;
         }
