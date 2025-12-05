@@ -7,8 +7,8 @@ const router = express.Router();
 // POST /api/rides - allows user to create a rides post
 router.post('/', authenticateUser, postRide); // in progress
 
-// GET /api/rides - get all rides (public, but optionally authenticated to include is_member)
-router.get('/', authenticateUser, getRides);
+// GET /api/rides - get all rides (public, but optionally authenticated to include membership_status)
+router.get('/', maybeAuthenticateUser, getRides);
 
 // GET /api/rides/my-rides - get all rides a user has joined
 // MUST come before /:id routes to avoid being matched as an :id parameter

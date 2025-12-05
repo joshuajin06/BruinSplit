@@ -483,23 +483,34 @@ export default function Card({ title, origin, destination, content, image, rideD
 
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button 
-                        className="card-button-details" 
+                    <button
+                        className="card-button-details"
                         onClick={handleDetailsClick}
                         type="button"
                         style={{ flex: '1', minWidth: '100px' }}
                     >
                         Details
-                        
+
                     </button>
-                    <button 
-                        className="card-button-join" 
-                        onClick={handleJoinClick}
-                        type="button"
-                        style={{ flex: '1', minWidth: '100px' }}
-                    >
-                        {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
-                    </button>
+                    {isOwner ? (
+                        <button
+                            className="card-button-join"
+                            onClick={handleJoinClick}
+                            type="button"
+                            style={{ flex: '1', minWidth: '100px' }}
+                        >
+                            View Ride
+                        </button>
+                    ) : (
+                        <button
+                            className="card-button-join"
+                            onClick={handleJoinClick}
+                            type="button"
+                            style={{ flex: '1', minWidth: '100px' }}
+                        >
+                            {membershipStatus === 'CONFIRMED JOINING' ? 'Joined' : membershipStatus === 'PENDING' ? 'Pending' : 'Join Ride'}
+                        </button>
+                    )}
                 </div>
             </div>
 {/*Main Card*/}
@@ -821,14 +832,14 @@ export default function Card({ title, origin, destination, content, image, rideD
                             >
                                 Cancel
                             </button>
-                            <button 
+                            {!isOwner && (<button 
                                 className="btn-primary" 
                                 onClick={membershipStatus ? handleConfirmLeave : handleConfirmJoin} 
                                 disabled={joining}
                                 type="button"
                             >
                                 {joining ? (membershipStatus ? 'Canceling…' : 'Joining…') : (membershipStatus ? 'Cancel Request' : 'Confirm Join')}
-                            </button>
+                            </button>)}
                         </div>
                     </div>
                 </div>
