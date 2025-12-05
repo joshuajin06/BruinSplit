@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
+import Card from '../components/card.jsx'; // Import the Card component
 
 import { updateProfile, updatePassword, updateProfilePic, getProfileById } from './api/profile.js';
 import { getFriendCount, getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest, getFriendRides, sendFriendRequest, getUserFriends } from './api/friends.js';
@@ -255,7 +256,7 @@ export default function Profile() {
     catch (error) {
       console.error("Failed to updated profile: ", error);
       setError(error.message);
-    } 
+    }
   };
 
   const handleCancel = () => {
@@ -446,14 +447,14 @@ export default function Profile() {
                                 </div>
                               </div>
                               <div className="request-actions">
-                                <button 
+                                <button
                                   className="accept-btn"
                                   onClick={() => handleAcceptRequest(request.id)}
                                   disabled={processingRequest[request.id]}
                                 >
                                   {processingRequest[request.id] ? '...' : '✓'}
                                 </button>
-                                <button 
+                                <button
                                   className="reject-btn"
                                   onClick={() => handleRejectRequest(request.id)}
                                   disabled={processingRequest[request.id]}
@@ -477,7 +478,7 @@ export default function Profile() {
                             const lastName = request.last_name || '';
                             const username = request.username || 'Unknown';
                             const initials = `${firstName.charAt(0) || '?'}${lastName.charAt(0) || '?'}`;
-                            
+
                             return (
                               <li key={request.id} className="friend-item">
                                 <div className="friend-info">
@@ -643,14 +644,24 @@ export default function Profile() {
           <div className="rides-list">
               {joinedRides.length > 0 ? (
                   joinedRides.map(ride => (
-                      <div key={ride.id} className="ride-item-card">
-                          <Link to={`/postings?q=${ride.origin_text}`} className="ride-item-link">
-                              <div className="ride-item-content">
-                                  <strong>{ride.origin_text} to {ride.destination_text}</strong>
-                                  <p>{new Date(ride.depart_at).toLocaleDateString()}</p>
-                              </div>
-                          </Link>
-                      </div>
+                      <Card
+                          key={ride.id}
+                          rideId={ride.id}
+                          title={`${ride.origin_text} ➡ ${ride.destination_text}`}
+                          origin={ride.origin_text}
+                          destination={ride.destination_text}
+                          departureDatetime={ride.depart_at}
+                          platform={ride.platform}
+                          notes={ride.notes}
+                          maxRiders={ride.max_seats}
+                          createdAt={ride.created_at}
+                          ownerId={ride.owner_id}
+                          rideDetails={ride}
+                          // Since this is for display on a friend's profile, we likely don't want
+                          // interactive buttons like Join/Edit/Delete. We can omit the onJoin,
+                          // onDelete, onTransferOwnership, onEdit, onLeave props, or pass no-op functions.
+                          // The Card component will conditionally render owner-specific buttons anyway.
+                      />
                   ))
               ) : (
                   <p>No joined rides to show.</p>
