@@ -10,7 +10,12 @@ import {
   leaveRide,
   getMyRides,
   getRideById,
-  updateRide
+  updateRide,
+  getMyPendingRides,
+  getPendingRequests,
+  manageRequest,
+  kickMember,
+  transferOwnership
 } from '../rides';
 
 // Mock axios
@@ -240,6 +245,183 @@ describe('Rides API Tests', () => {
         { headers: { Authorization: 'Bearer fake-jwt-token' } }
       );
       expect(result).toEqual(mockResponse.data);
+    });
+  });
+
+  describe('getMyPendingRides', () => {
+    it('should call GET /api/rides/my-pending with auth token', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const mockResponse = {
+        data: {
+          pending_rides: [
+            { id: 'ride-1', origin_text: 'UCLA', status: 'pending' }
+          ]
+        }
+      };
+      axios.get.mockResolvedValue(mockResponse);
+
+      const result = await getMyPendingRides();
+
+      expect(axios.get).toHaveBeenCalledWith(
+        'http://localhost:8080/api/rides/my-pending',
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors when fetching pending rides', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      axios.get.mockRejectedValue({
+        response: { data: { error: 'Unauthorized' } }
+      });
+
+      await expect(getMyPendingRides()).rejects.toThrow();
+    });
+  });
+
+  describe('getPendingRequests', () => {
+    it('should call GET /api/rides/:id/pending with auth token', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const rideId = 'ride-123';
+      const mockResponse = {
+        data: {
+          pending_requests: [
+            { user_id: 'user-1', username: 'john' },
+            { user_id: 'user-2', username: 'jane' }
+          ]
+        }
+      };
+      axios.get.mockResolvedValue(mockResponse);
+
+      const result = await getPendingRequests(rideId);
+
+      expect(axios.get).toHaveBeenCalledWith(
+        `http://localhost:8080/api/rides/${rideId}/pending`,
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors when fetching pending requests', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      axios.get.mockRejectedValue({
+        response: { data: { error: 'Ride not found' } }
+      });
+
+      await expect(getPendingRequests('invalid-id')).rejects.toThrow();
+    });
+  });
+
+  describe('manageRequest', () => {
+    it('should POST to approve a join request', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const rideId = 'ride-123';
+      const memberId = 'user-456';
+      const action = 'approve';
+      const mockResponse = {
+        data: { message: 'Request approved successfully' }
+      };
+      axios.post.mockResolvedValue(mockResponse);
+
+      const result = await manageRequest(rideId, memberId, action);
+
+      expect(axios.post).toHaveBeenCalledWith(
+        `http://localhost:8080/api/rides/${rideId}/${action}/${memberId}`,
+        {},
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should POST to reject a join request', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const rideId = 'ride-123';
+      const memberId = 'user-456';
+      const action = 'reject';
+      const mockResponse = {
+        data: { message: 'Request rejected successfully' }
+      };
+      axios.post.mockResolvedValue(mockResponse);
+
+      const result = await manageRequest(rideId, memberId, action);
+
+      expect(axios.post).toHaveBeenCalledWith(
+        `http://localhost:8080/api/rides/${rideId}/${action}/${memberId}`,
+        {},
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors when managing requests', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      axios.post.mockRejectedValue({
+        response: { data: { error: 'Not authorized' } }
+      });
+
+      await expect(manageRequest('ride-1', 'user-1', 'approve')).rejects.toThrow();
+    });
+  });
+
+  describe('kickMember', () => {
+    it('should DELETE to kick member from ride', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const rideId = 'ride-123';
+      const memberId = 'user-456';
+      const mockResponse = {
+        data: { message: 'Member kicked successfully' }
+      };
+      axios.delete.mockResolvedValue(mockResponse);
+
+      const result = await kickMember(rideId, memberId);
+
+      expect(axios.delete).toHaveBeenCalledWith(
+        `http://localhost:8080/api/rides/${rideId}/kick/${memberId}`,
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors when kicking member', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      axios.delete.mockRejectedValue({
+        response: { data: { error: 'Only owner can kick members' } }
+      });
+
+      await expect(kickMember('ride-1', 'user-1')).rejects.toThrow();
+    });
+  });
+
+  describe('transferOwnership', () => {
+    it('should POST to transfer ride ownership', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      const rideId = 'ride-123';
+      const newOwnerId = 'user-456';
+      const mockResponse = {
+        data: {
+          message: 'Ownership transferred successfully',
+          ride: { id: rideId, owner_id: newOwnerId }
+        }
+      };
+      axios.post.mockResolvedValue(mockResponse);
+
+      const result = await transferOwnership(rideId, newOwnerId);
+
+      expect(axios.post).toHaveBeenCalledWith(
+        `http://localhost:8080/api/rides/${rideId}/transfer-ownership/${newOwnerId}`,
+        {},
+        { headers: { Authorization: 'Bearer fake-jwt-token' } }
+      );
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle errors when transferring ownership', async () => {
+      localStorageMock.setItem('token', 'fake-jwt-token');
+      axios.post.mockRejectedValue({
+        response: { data: { error: 'New owner must be a member' } }
+      });
+
+      await expect(transferOwnership('ride-1', 'user-1')).rejects.toThrow();
     });
   });
 });
