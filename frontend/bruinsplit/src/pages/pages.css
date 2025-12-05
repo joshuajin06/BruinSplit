@@ -31,21 +31,36 @@ html, body {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 25rem);
+  /*
+   * Use minmax to create a responsive grid that prevents overflow on small screens.
+   * Columns will be at least 18rem, and will expand to fill available space (1fr).
+  */
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
   gap: 1rem;
-  justify-content: center;
   padding: 0 2rem; /* Add some side padding */
 }
 
-.title-section {
+.card-grid > * {
+  /*
+   * Constrain the card width to a max of 25rem and center it within the grid column.
+   * This creates a consistent card size while the grid itself is responsive.
+  */
+  max-width: 25rem;
+  justify-self: center;
+  width: 100%;
+}
+
+.title-section,
+.posts-title-section {
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 2rem 0 1rem 0; /* Increased top padding slightly */
+  padding: 2rem 0 1rem 0;
 }
 
-.title-section .title {
+.title-section .title,
+.posts-title-section .title {
   margin: 0;
   flex: 1 1 auto;
   text-align: center;
@@ -218,14 +233,7 @@ p {
 }
 
 /* Posts Page */
-.posts-title-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  padding: 2rem 0 1rem 0;
-}
-
+/* .posts-title-section has been merged with .title-section for consistency */
 .add-post {
   position: fixed;
   right: 24px;
@@ -301,6 +309,17 @@ p {
   gap: 1rem;
 }
 
+.column-grid > * {
+  /* 
+   * Constrain the width of items within the My Rides columns
+   * to be consistent with the 25rem cards in the main postings grid.
+   * This prevents them from stretching too wide on larger screens.
+  */
+  max-width: 25rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .empty-message {
   text-align: center;
   color: var(--text-secondary);
@@ -308,6 +327,24 @@ p {
   font-style: italic;
   background: #f9fafb;
   border-radius: 8px;
+}
+
+.friends-filter-button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  width: 100%;
+}
+
+.friends-filter-button:hover {
+  background-color: #206294; /* A darker shade of --primary */
+  box-shadow: 0 4px 15px rgba(39, 116, 174, 0.2);
+  transform: translateY(-2px);
 }
 
 .pending-ride-wrapper {
