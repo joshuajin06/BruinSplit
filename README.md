@@ -79,10 +79,10 @@ These two diagrams display the system architecture and database schema for Bruin
 - Swagger UI: http://localhost:8080/api/docs
 - OpenAPI JSON: http://localhost:8080/api/docs-json
 
-Run locally:
-1) cd backend
-2) npm install
-3) npm run start   # or: node server.js
+Run locally before using these links:
+1) `cd backend`
+2) `npm install`
+3) `npm run start` OR `node server.js`
 
 Your Swagger UI should look like this:
 
