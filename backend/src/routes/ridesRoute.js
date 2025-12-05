@@ -7,6 +7,17 @@ const router = express.Router();
 // POST /api/rides - allows user to create a rides post
 router.post('/', authenticateUser, postRide); // in progress
 
+// GET /api/rides - get all rides (public, but optionally authenticated to include is_member)
+router.get('/', maybeAuthenticateUser, getRides);
+
+// GET /api/rides/my-rides - get all rides a user has joined
+// MUST come before /:id routes to avoid being matched as an :id parameter
+router.get('/my-rides', authenticateUser, getMyRides);
+
+// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
+// MUST come before /:id routes to avoid being matched as an :id parameter
+router.get('/my-pending', authenticateUser, getMyPendingRides);
+
 // POST /api/rides/:id/join - add a user to the ride
 router.post('/:id/join', authenticateUser, joinRide);
 
@@ -16,36 +27,24 @@ router.post('/:id/approve/:userId', authenticateUser, approveRequest);
 // POST /api/rides/:id/reject/:userId - reject request to join a ride (owner only)
 router.post('/:id/reject/:userId', authenticateUser, rejectRequest);
 
-// POST /api/rides/:id/transfer-ownership/:userId - transfer ownership of a ride to a confirmed ride member 
+// POST /api/rides/:id/transfer-ownership/:userId - transfer ownership of a ride to a confirmed ride member
 router.post('/:id/transfer-ownership/:userId', authenticateUser, transferOwnership);
-
-// DELETE /api/rides/:id - delete a ride
-router.delete('/:id', authenticateUser, deleteRide);
-
-// DELETE /api/rides/:id/leave - leave a ride 
-router.delete('/:id/leave', authenticateUser, leaveRide);
-
-// GET /api/rides - Get all rides (public). Use maybeAuthenticateUser so callers
-// that send a valid Authorization header receive per-ride `is_member` flags.
-//router.get('/', maybeAuthenticateUser, getRides);
-
-// DELETE /api/rides/:id/kick/:userId - kick a confirmed member of ride (owner only)
-router.delete('/:id/kick/:userId', authenticateUser, kickMember);
-
-// GET /api/rides - get all rides (public, but optionally authenticated to include is_member)
-router.get('/', maybeAuthenticateUser, getRides);
-
-// GET /api/rides/my-rides - get all rides a user has joined
-router.get('/my-rides', authenticateUser, getMyRides);
-
-// GET /api/rides/my-pending - get all rides where user has a 'PENDING' request
-router.get('/my-pending', authenticateUser, getMyPendingRides);
 
 // GET /api/rides/:id/pending - get pending requests to join a ride (owner only)
 router.get('/:id/pending', authenticateUser, getPendingRequests);
 
+// DELETE /api/rides/:id/leave - leave a ride
+router.delete('/:id/leave', authenticateUser, leaveRide);
+
+// DELETE /api/rides/:id/kick/:userId - kick a confirmed member of ride (owner only)
+router.delete('/:id/kick/:userId', authenticateUser, kickMember);
+
+// DELETE /api/rides/:id - delete a ride
+router.delete('/:id', authenticateUser, deleteRide);
+
 // GET /api/rides/:id - get specific ride by ID (public, we know if the user is the owner)
-router.get('/:id', maybeAuthenticateUser, getRideById); 
+// MUST come after all other /:id/* routes
+router.get('/:id', maybeAuthenticateUser, getRideById);
 
 // PUT /api/rides/:id - update a ride (owner only)
 router.put('/:id', authenticateUser, updateRide);
