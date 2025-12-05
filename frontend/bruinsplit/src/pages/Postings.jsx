@@ -38,7 +38,7 @@ export default function Postings() {
         if (isAuthenticated) {
             getFriends()
                 .then(friendsData => {
-                    const friendIds = friendsData.friends.map(f => String(f.user_id));
+                    const friendIds = (friendsData.friends || []).map(f => String(f.id));
                     setFriends(friendIds);
                 })
                 .catch(err => console.error('Failed to fetch friends:', err));
@@ -165,7 +165,20 @@ export default function Postings() {
         let currentRides = [...availableRides];
 
         if (showFriendsOnly) {
-            currentRides = currentRides.filter(ride => friends.includes(ride.owner_id));
+            currentRides = currentRides.filter(ride => {
+                // Check if the ride owner is a friend
+                if (friends.includes(ride.owner_id)) {
+                    return true;
+                }
+
+                // Check if any member of the ride is a friend
+                // This assumes `ride.current_members` is an array of user objects with an `id` property.
+                if (ride.current_members && Array.isArray(ride.current_members)) {
+                    return ride.current_members.some(member => friends.includes(String(member.id)));
+                }
+
+                return false;
+            });
         }
 
         const query = searchParams.get('q') || '';
@@ -285,7 +298,7 @@ export default function Postings() {
                         rideDetails={{
                             driver: ride.owner?.first_name ? `${ride.owner.first_name} ${ride.owner.last_name}` : 'Unknown',
                             seats: ride.available_seats,            // total available seats after enrichment (available_seats)
-                            current_members: ride.current_members,  // number currently joined
+                            current_members: ride.current_members,  // array of user objects for members
                             owner_id: ride.owner_id,                // needed for riders tab to show owner badge
                             membership_status: ride.membership_status  // null, 'PENDING', or 'CONFIRMED JOINING'
                         }}
