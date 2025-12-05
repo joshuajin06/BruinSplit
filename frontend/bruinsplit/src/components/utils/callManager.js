@@ -43,6 +43,18 @@ class CallManager {
                 },
                 video: false
             });
+            
+            console.log('🎤 Local audio stream obtained:');
+            console.log('  - Stream ID:', this.localStream.id);
+            console.log('  - Audio tracks:', this.localStream.getAudioTracks().length);
+            this.localStream.getAudioTracks().forEach((track, idx) => {
+                console.log(`  - Track ${idx}:`, {
+                    enabled: track.enabled,
+                    muted: track.muted,
+                    readyState: track.readyState,
+                    label: track.label
+                });
+            });
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
@@ -85,12 +97,36 @@ class CallManager {
 
             // Add local audio tracks
             this.localStream.getTracks().forEach(track => {
+                console.log(`➕ Adding local track to peer connection for ${remoteUserId}:`, {
+                    kind: track.kind,
+                    enabled: track.enabled,
+                    label: track.label
+                });
                 peerConnection.addTrack(track, this.localStream);
             });
 
             // Handle incoming remote audio
             peerConnection.ontrack = (event) => {
-                console.log('Received remote track from', remoteUserId);
+                console.log('🎵 Received remote track from', remoteUserId);
+                console.log('  - Track kind:', event.track.kind);
+                console.log('  - Track enabled:', event.track.enabled);
+                console.log('  - Track muted:', event.track.muted);
+                console.log('  - Track readyState:', event.track.readyState);
+                console.log('  - Stream ID:', event.streams[0]?.id);
+                console.log('  - Stream tracks:', event.streams[0]?.getTracks().length);
+                
+                // Log audio track details
+                const audioTracks = event.streams[0]?.getAudioTracks();
+                console.log('  - Audio tracks count:', audioTracks?.length);
+                audioTracks?.forEach((track, idx) => {
+                    console.log(`    Track ${idx}:`, {
+                        enabled: track.enabled,
+                        muted: track.muted,
+                        readyState: track.readyState,
+                        label: track.label
+                    });
+                });
+                
                 this.remoteStreams.set(remoteUserId, event.streams[0]);
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
             };
