@@ -7,11 +7,18 @@ import driving1 from '../assets/final.png';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  const handleNavigation = () => {
-    navigate('/postings');
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/postings?q=${encodeURIComponent(searchQuery)}`);
+    } else {
+      navigate('/postings');
+    }
   };
+
+  const handleGetStarted = () => navigate('/postings');
 
   useEffect(() => {
     setMounted(true)
@@ -37,8 +44,13 @@ export default function Home() {
               type="text" 
               placeholder="Where are you heading?" 
               className="search-input" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') handleSearch();
+              }}
             />
-            <button className="btn-search" onClick={handleNavigation}>Search</button>
+            <button className="btn-search" onClick={handleSearch}>Search</button>
           </div>
           <p className="search-hint">Trending: Wherever your heart desires</p>
         </div>
@@ -103,7 +115,7 @@ export default function Home() {
         <div className="cta-banner">
           <h2>Ready to go?</h2>
           <p>Join the community today.</p>
-          <button className="btn-large" onClick={handleNavigation}>Get Started</button>
+          <button className="btn-large" onClick={handleGetStarted}>Get Started</button>
         </div>
       </section>
     </div>

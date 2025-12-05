@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
 import IconButton from '@mui/material/IconButton';
 import ClearIcon from '@mui/icons-material/Clear';
 
-export default function SearchBar({ onSearch }) {
-    const [searchQuery, setSearchQuery] = useState('');
+export default function SearchBar({ onSearch, initialValue = '' }) {
+    const [searchQuery, setSearchQuery] = useState(initialValue);
+
+    // Sync with URL parameters if they change
+    useEffect(() => {
+        setSearchQuery(initialValue);
+    }, [initialValue]);
 
     const handleSearchChange = (e) => {
         const value = e.target.value;
