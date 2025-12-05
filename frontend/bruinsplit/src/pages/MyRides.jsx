@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import './pages.css';
 import Card from '../components/card.jsx';
+import SkeletonCard from '../components/SkeletonCard.jsx';
 import { getMyRides, getMyPendingRides, deleteRide, leaveRide } from './api/rides.js';
 
 export default function MyRides() {
@@ -130,7 +131,38 @@ export default function MyRides() {
         return (
             <div className="page-container">
                 <h1>My Rides</h1>
-                <p>Loading...</p>
+
+                <div className="three-column-layout">
+                    {/* Created Rides Column - Left */}
+                    <section className="rides-column">
+                        <h2>Created</h2>
+                        <div className="column-content">
+                            <div className="column-grid">
+                                {[...Array(3)].map((_, i) => <SkeletonCard key={i} index={i} />)}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Joined Rides Column - Middle */}
+                    <section className="rides-column">
+                        <h2>Joined</h2>
+                        <div className="column-content">
+                            <div className="column-grid">
+                                {[...Array(3)].map((_, i) => <SkeletonCard key={i} index={i} />)}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Requested Rides Column - Right */}
+                    <section className="rides-column">
+                        <h2>Requested</h2>
+                        <div className="column-content">
+                            <div className="column-grid">
+                                {[...Array(3)].map((_, i) => <SkeletonCard key={i} index={i} />)}
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </div>
         );
     }
