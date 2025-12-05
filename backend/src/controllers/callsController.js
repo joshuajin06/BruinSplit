@@ -36,31 +36,48 @@ export async function joinCall(req, res, next) {
         const { rideId } = req.params;
         const userId = req.user.id;
 
+        console.log(`\n[JOIN] User ${userId} joining call for rideId ${rideId}`);
+        console.log(`[JOIN] Calls in memory: ${activeCalls.size}`);
+
         // verify user is a confirmed member
         const isMember = await verifyRideMembership(rideId, userId);
         if (!isMember) {
+            console.log(`[JOIN] ❌ User ${userId} is NOT a member of ride ${rideId}`);
             return res.status(403).json({
                 error: 'You must be a confirmed member of this ride to join the call'
             });
         }
 
+        console.log(`[JOIN] ✅ User verified as member`);
+
         // get all confirmed members
         const allMembers = await getConfirmedMembers(rideId);
+        console.log(`[JOIN] Confirmed members: ${allMembers.join(', ')}`);
 
         // initialize or update call state
-        if (!activeCalls.has(rideId)) {
+        const callExists = activeCalls.has(rideId);
+        if (!callExists) {
+            console.log(`[JOIN] Creating NEW call for ride ${rideId}`);
             activeCalls.set(rideId, {
                 participants: new Set(),
                 peerConnections: new Map(),
                 createdAt: new Date().toISOString()
             });
+        } else {
+            console.log(`[JOIN] Call already exists for ride ${rideId}`);
         }
 
         const call = activeCalls.get(rideId);
+        const beforeSize = call.participants.size;
         call.participants.add(userId);
+        const afterSize = call.participants.size;
+
+        console.log(`[JOIN] Participants: ${beforeSize} → ${afterSize}`);
+        console.log(`[JOIN] All participants: ${Array.from(call.participants).join(', ')}`);
 
         // initialize peer connection state for this user if it doesn't exist
         if (!call.peerConnections.has(userId)) {
+            console.log(`[JOIN] Creating peer connection state for ${userId}`);
             call.peerConnections.set(userId, {
                 offers: new Map(),
                 answers: new Map(),
@@ -68,14 +85,19 @@ export async function joinCall(req, res, next) {
             });
         }
 
-        res.json({
+        const response = {
             success: true,
             callId: rideId,
             participants: Array.from(call.participants),
             allMembers: allMembers
-        });
+        };
+
+        console.log(`[JOIN] Response: ${response.participants.length} participants\n`);
+
+        res.json(response);
 
     } catch (error) {
+        console.error(`[JOIN] ❌ Error:`, error.message);
         next(error);
     }
 }

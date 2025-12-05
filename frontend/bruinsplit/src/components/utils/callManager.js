@@ -212,11 +212,15 @@ class CallManager {
             // Check for removed participants
             for (const participantId of this.participants) {
                 if (!currentParticipants.has(participantId) && participantId !== this.userId) {
+                    console.log(`👤 Participant left: ${participantId}`);
                     this.closePeerConnection(participantId);
                     this.onParticipantLeft?.(participantId);
                 }
             }
+
+            // Update the participants list
             this.participants = currentParticipants;
+            console.log(`📊 Current participants in call: ${Array.from(currentParticipants).filter(id => id !== this.userId).join(', ') || 'None (you\'re alone)'}`);
 
             // Handle incoming offers
             if (response.offers) {
