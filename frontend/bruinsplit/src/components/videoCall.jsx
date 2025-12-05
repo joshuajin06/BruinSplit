@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import './VideoCall.css';
+import './videoCall.css';
 
 export default function VideoCall ({userId, rideId})
 {
@@ -33,6 +33,67 @@ export default function VideoCall ({userId, rideId})
         setError('Failed to access camera/microphone. Please check permissions.');
         }
     };
+
+    useEffect(() => {
+    if (localVideoRef.current && streamRef.current) {
+      localVideoRef.current.srcObject = streamRef.current;
+    }
+  }, [isCallActive]);
+
+  // End video call
+  const endCall = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCallActive(false);
+    setIsCameraOn(true);
+    setIsMicOn(true);
+    setIsMinimized(false);
+  };
+
+  // Toggle camera
+  const toggleCamera = () => {
+    if (streamRef.current) {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsCameraOn(videoTrack.enabled);
+      }
+    }
+  };
+
+  // Toggle microphone
+  const toggleMic = () => {
+    if (streamRef.current) {
+      const audioTrack = streamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsMicOn(audioTrack.enabled);
+      }
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  if (!isCallActive) {
+    return (
+      <button 
+        className="video-call-btn"
+        onClick={startCall}
+        title="Start video call"
+      >
+        📹
+      </button>
+    );
+  }
 
     return (
     <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
