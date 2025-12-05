@@ -25,14 +25,12 @@ export default function VideoCall({ userId, rideId }) {
             }
 
             setError(null);
-            console.log('📹 Starting video call for ride:', rideId);
 
             // Initialize VideoCallManager
             videoCallManagerRef.current = new VideoCallManager(rideId, userId);
 
             // Set up callbacks
             const onRemoteStream = (remoteUserId, stream) => {
-                console.log(`📹 Received remote video stream from ${remoteUserId}`);
                 setRemoteStreams(prevStreams => {
                     const newStreams = new Map(prevStreams);
                     newStreams.set(remoteUserId, stream);
@@ -41,7 +39,6 @@ export default function VideoCall({ userId, rideId }) {
             };
 
             const onParticipantJoined = (participantId) => {
-                console.log(`👤 Participant joined: ${participantId}`);
                 setParticipants(prevParticipants => {
                     if (!prevParticipants.includes(participantId)) {
                         return [...prevParticipants, participantId];
@@ -51,7 +48,6 @@ export default function VideoCall({ userId, rideId }) {
             };
 
             const onParticipantLeft = (participantId) => {
-                console.log(`👋 Participant left: ${participantId}`);
                 setParticipants(prevParticipants =>
                     prevParticipants.filter(id => id !== participantId)
                 );
@@ -63,7 +59,6 @@ export default function VideoCall({ userId, rideId }) {
             };
 
             const onError = (errorMessage) => {
-                console.error('Video call error:', errorMessage);
                 setError(errorMessage);
             };
 
@@ -80,9 +75,7 @@ export default function VideoCall({ userId, rideId }) {
                 localVideoRef.current.srcObject = result.localStream;
                 try {
                     await localVideoRef.current.play();
-                    console.log('✅ Local video playing');
                 } catch (playError) {
-                    console.error('Failed to play local video:', playError);
                     setError('Failed to play local video. Please check browser permissions.');
                 }
             }
@@ -92,10 +85,7 @@ export default function VideoCall({ userId, rideId }) {
             setIsMicOn(true);
             setError(null);
             setParticipants(result.participants.filter(id => id !== userId));
-
-            console.log('✅ Video call started successfully');
         } catch (err) {
-            console.error('Error starting video call:', err);
             const errorMessage = err.response?.data?.error || err.message || 'Failed to start video call';
             setError(errorMessage);
             setIsCallActive(false);
@@ -104,8 +94,6 @@ export default function VideoCall({ userId, rideId }) {
 
     const endCall = async () => {
         try {
-            console.log('📹 Ending video call...');
-
             if (videoCallManagerRef.current) {
                 await videoCallManagerRef.current.stopCall();
                 videoCallManagerRef.current = null;
@@ -129,10 +117,7 @@ export default function VideoCall({ userId, rideId }) {
             setParticipants([]);
             setRemoteStreams(new Map());
             setError(null);
-
-            console.log('✅ Video call ended');
         } catch (err) {
-            console.error('Error ending video call:', err);
             setError('Error ending call. Please try again.');
         }
     };
@@ -159,9 +144,7 @@ export default function VideoCall({ userId, rideId }) {
             const localStream = videoCallManagerRef.current.getLocalStream();
             if (localStream && localVideoRef.current.srcObject !== localStream) {
                 localVideoRef.current.srcObject = localStream;
-                localVideoRef.current.play().catch(err => {
-                    console.error('Failed to play local video:', err);
-                });
+                localVideoRef.current.play().catch(() => {});
             }
         }
     }, [isCallActive]);
@@ -175,12 +158,9 @@ export default function VideoCall({ userId, rideId }) {
                 if (videoElement.srcObject !== stream) {
                     videoElement.srcObject = stream;
                     videoElement.muted = false;
-
-                    videoElement.play().catch(err => {
-                        console.error(`Failed to play video for ${participantId}:`, err);
-                    });
+                    videoElement.play().catch(() => {});
                 } else if (videoElement.paused) {
-                    videoElement.play().catch(err => console.error('Failed to resume video:', err));
+                    videoElement.play().catch(() => {});
                 }
             }
         });
@@ -190,9 +170,7 @@ export default function VideoCall({ userId, rideId }) {
     useEffect(() => {
         return () => {
             if (videoCallManagerRef.current && isCallActive) {
-                videoCallManagerRef.current.stopCall().catch(err => {
-                    console.error('Error cleaning up video call on unmount:', err);
-                });
+                videoCallManagerRef.current.stopCall().catch(() => {});
             }
         };
     }, [isCallActive]);
