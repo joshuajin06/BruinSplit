@@ -141,16 +141,21 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
         });
     }, [remoteStreams]);
 
-    // Cleanup on unmount
+    // Cleanup on unmount ONLY (not on every render)
     useEffect(() => {
+        const currentCallManager = callManagerRef.current;
+        const wasActive = isCallActive;
+        
         return () => {
-            if (callManagerRef.current && isCallActive) {
-                callManagerRef.current.stopCall().catch(err => {
+            // Only cleanup if we were actually in a call when unmounting
+            if (currentCallManager && wasActive) {
+                console.log('🧹 Component unmounting, cleaning up call...');
+                currentCallManager.stopCall().catch(err => {
                     console.error('Error cleaning up call on unmount:', err);
                 });
             }
         };
-    }, [isCallActive]);
+    }, []); // Empty dependency array - only run on mount/unmount
 
     return (
         <div className="audio-call-button">

@@ -57,6 +57,7 @@ class CallManager {
             });
 
             // Notify backend we're joining
+            console.log('📞 Attempting to join call for Ride ID:', this.rideId);
             const response = await joinCall(this.rideId);
             const existingParticipants = response.participants || [];
             this.participants = new Set(existingParticipants);
@@ -64,6 +65,7 @@ class CallManager {
 
             console.log('✅ Joined call. Existing participants:', existingParticipants.filter(id => id !== this.userId));
             console.log('   My user ID:', this.userId);
+            console.log('   Ride ID:', this.rideId);
             console.log('   All participants in call:', existingParticipants);
 
             // IMPORTANT: Only create offers to users ALREADY in the call
@@ -190,10 +192,14 @@ class CallManager {
             const response = await getCallStatus(this.rideId);
 
             if (!response.active) {
-                console.log('Call is no longer active');
+                console.log('⚠️ Call is no longer active');
                 this.stopCall();
                 return;
             }
+
+            console.log('🔄 Polling for Ride ID:', this.rideId);
+            console.log('   Current participants from backend:', response.participants);
+            console.log('   My participants set has:', Array.from(this.participants));
 
             // Handle new participants
             const currentParticipants = new Set(response.participants || []);
