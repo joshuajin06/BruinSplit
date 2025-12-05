@@ -193,75 +193,121 @@ export default function VideoCall({ userId, rideId }) {
     }
 
     return (
-    <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
-      <div className="video-call-header">
-        <span className="video-call-title">Video Call</span>
-        <div className="video-call-header-controls">
-          <button 
-            className="minimize-btn"
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? "Expand" : "Minimize"}
-          >
-            {isMinimized ? '□' : '_'}
-          </button>
-          <button 
-            className="video-close-btn"
-            onClick={endCall}
-            title="End call"
-          >
-            ✕
-          </button>
+        <div className={`video-call-container ${isMinimized ? 'minimized' : ''}`}>
+            <div className="video-call-header">
+                <span className="video-call-title">
+                    Video Call {participants.length > 0 && `(${participants.length + 1})`}
+                </span>
+                <div className="video-call-header-controls">
+                    <button
+                        className="minimize-btn"
+                        onClick={() => setIsMinimized(!isMinimized)}
+                        title={isMinimized ? "Expand" : "Minimize"}
+                    >
+                        {isMinimized ? '□' : '_'}
+                    </button>
+                    <button
+                        className="video-close-btn"
+                        onClick={endCall}
+                        title="End call"
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            {!isMinimized && (
+                <>
+                    {error && (
+                        <div className="video-error">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="video-display">
+                        {/* Remote video streams */}
+                        <div className="remote-videos-grid">
+                            {Array.from(remoteStreams.entries()).map(([participantId]) => (
+                                <div key={`video-${participantId}`} className="remote-video-wrapper">
+                                    <video
+                                        ref={(ref) => {
+                                            if (ref) {
+                                                remoteVideoRefsRef.current.set(participantId, ref);
+                                            }
+                                        }}
+                                        autoPlay
+                                        playsInline
+                                        className="remote-video"
+                                    />
+                                    <div className="participant-label">
+                                        Participant {participantId.substring(0, 8)}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {remoteStreams.size === 0 && (
+                                <div className="waiting-message">
+                                    Waiting for others to join...
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Local video stream (picture-in-picture) */}
+                        <div className="local-video-pip">
+                            {!isCameraOn ? (
+                                <div className="camera-off-overlay">
+                                    <span className="camera-off-icon">📷</span>
+                                    <p>Camera is off</p>
+                                </div>
+                            ) : (
+                                <video
+                                    ref={localVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
+                                    className="local-video"
+                                />
+                            )}
+                            <div className="local-label">You</div>
+                        </div>
+                    </div>
+
+                    <div className="video-controls">
+                        <Tooltip title={isMicOn ? "Mute microphone" : "Unmute microphone"}>
+                            <IconButton
+                                onClick={toggleMic}
+                                color={isMicOn ? "default" : "warning"}
+                                size="large"
+                                aria-label="toggle microphone"
+                            >
+                                {isMicOn ? <Mic /> : <MicOff />}
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title={isCameraOn ? "Turn off camera" : "Turn on camera"}>
+                            <IconButton
+                                onClick={toggleCamera}
+                                color={isCameraOn ? "default" : "warning"}
+                                size="large"
+                                aria-label="toggle camera"
+                            >
+                                {isCameraOn ? <Videocam /> : <VideocamOff />}
+                            </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="End call">
+                            <IconButton
+                                onClick={endCall}
+                                color="error"
+                                size="large"
+                                aria-label="end video call"
+                            >
+                                <CallEnd />
+                            </IconButton>
+                        </Tooltip>
+                    </div>
+                </>
+            )}
         </div>
-      </div>
-
-      {!isMinimized && (
-        <>
-          <div className="video-display">
-            {error && (
-              <div className="video-error">
-                {error}
-              </div>
-            )}
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="local-video"
-            />
-            {!isCameraOn && (
-              <div className="camera-off-overlay">
-                <span className="camera-off-icon">📷</span>
-                <p>Camera is off</p>
-              </div>
-            )}
-          </div>
-
-          <div className="video-controls">
-            <button
-              className={`control-btn ${!isMicOn ? 'off' : ''}`}
-              onClick={toggleMic}
-              title={isMicOn ? "Mute microphone" : "Unmute microphone"}
-            >
-              {isMicOn ? '🎤' : '🔇'}
-            </button>
-            <button
-              className={`control-btn ${!isCameraOn ? 'off' : ''}`}
-              onClick={toggleCamera}
-              title={isCameraOn ? "Turn off camera" : "Turn on camera"}
-            >
-              {isCameraOn ? '📹' : '📷'}
-            </button>
-            <button
-              className="control-btn end-call-btn"
-              onClick={endCall}
-              title="End call"
-            >
-              📞
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+    );
 }
