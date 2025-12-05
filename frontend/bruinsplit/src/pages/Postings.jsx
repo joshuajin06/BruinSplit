@@ -249,7 +249,7 @@ export default function Postings() {
                                 checked={showFriendsOnly}
                                 onChange={(e) => setShowFriendsOnly(e.target.checked)}
                             />
-                            Show friends' rides only
+                            See what your friends are up to...
                         </label>
                     </div>
                 )}
