@@ -124,6 +124,10 @@ export default function Postings() {
             // Extract rides array from response (controller returns { message, rides })
 
             ridesArray = data.rides || data || [];
+            if (ridesArray.length > 0) {
+                console.log('[Postings.fetchRides] First ride:', ridesArray[0]);
+                console.log('[Postings.fetchRides] membership_status:', ridesArray[0]?.membership_status);
+            }
             const myRidesResponse = await getMyRides();
             const myRidesArray = myRidesResponse.rides || [];
             const availableRidesArray = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id))
