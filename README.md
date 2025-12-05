@@ -50,7 +50,7 @@ Built to address this, Bruinsplit is a web app that helps UCLA students find oth
    ```
 
 5. **Set up environment variables:**
-   - Create a `.env` file in the `backend` directory with your Supabase credentials. On your .env file you should have the following environmental variables.
+   Create a `.env` file in the `backend` directory with your Supabase credentials. On your .env file you should have the following environmental variables.
     ```bash
     SUPABASE_URL=[key]
     SUPABASE_SERVICE_ROLE_KEY=[key]
