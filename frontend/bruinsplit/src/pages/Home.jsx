@@ -3,7 +3,7 @@
 import "./Home.css"
 import { useState, useEffect } from "react"
 import { useNavigate } from 'react-router-dom';
-import driving1 from '../assets/homeIm.png';
+import driving1 from '../assets/final.png';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
