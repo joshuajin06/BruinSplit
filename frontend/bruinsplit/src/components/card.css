@@ -67,19 +67,24 @@
         font-size: 1.25rem;
         font-weight: 600;
         color: #333;
-        
+
         display: flex;
         align-items: center;
         justify-content: center;
 
-        padding: 0.75rem 1rem;       /* consistent internal spacing */
-        min-height: 3rem;            /* fixed height for gradient block */
+        padding: 1rem;
+        min-height: 6rem;            /* match the gradient height */
+        width: 100%;
+        box-sizing: border-box;
 
-        /* remove default margin override so spacing is consistent */
-        margin: 1.25rem 1rem 0.5rem;
+        /* position at top to overlap gradient */
+        margin: 0;
+        position: relative;
+        z-index: 1;
 
         text-align: center;
-        line-height: 1.2;
+        line-height: 1.3;
+        word-break: break-word;
     }
 
         .card-datetime {
