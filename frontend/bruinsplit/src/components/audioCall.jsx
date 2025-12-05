@@ -26,7 +26,6 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
 
             // Set up callbacks
             const onRemoteStream = (remoteUserId, stream) => {
-                console.log(`🎵 Received audio stream from user ${remoteUserId}`);
                 setRemoteStreams(prevStreams => {
                     const newStreams = new Map(prevStreams);
                     newStreams.set(remoteUserId, stream);
@@ -35,7 +34,6 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
             };
 
             const onParticipantJoined = (participantId) => {
-                console.log(`Participant joined: ${participantId}`);
                 setParticipants(prevParticipants => {
                     if (!prevParticipants.includes(participantId)) {
                         return [...prevParticipants, participantId];
@@ -45,7 +43,6 @@ const AudioCall = ({ userId, rideId, onCallStateChange }) => {
             };
 
             const onParticipantLeft = (participantId) => {
-                console.log(`Participant left: ${participantId}`);
                 setParticipants(prevParticipants =>
                     prevParticipants.filter(id => id !== participantId)
                 );

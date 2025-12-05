@@ -147,7 +147,7 @@ export default function Profile() {
     try {
       e.preventDefault();
       setError(null);
-      // TODO: Send updated data to backend
+      
       if(isEditing) {
         const updatedProfile = await updateProfile(formData);
         console.log('Profile Updated Successfully:', updatedProfile);
