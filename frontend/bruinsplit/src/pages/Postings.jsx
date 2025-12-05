@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import SkeletonCard from '../components/SkeletonCard.jsx';
 
 import { useAuth } from '../context/AuthContext';
-import { getMyRides } from '../pages/api/rides';
+import { getMyRides, getRides } from '../pages/api/rides';
 
 export default function Postings() {
     const [rides, setRides] = useState([]);
@@ -146,16 +146,16 @@ export default function Postings() {
     await fetchRides();
     };
     
-    const handleSearch = (searchQuery) => {
+    const handleSearch = (searchQuery, ridesListToFilter = availableRides) => {
         // Only filter the rides, don't update URL on every keystroke
-        // Always search from availableRides (which excludes user's own rides)
+        // Always search from the provided rides list (which excludes user's own rides)
         if (!searchQuery.trim()) {
-            setFilteredRides(availableRides);
+            setFilteredRides(ridesListToFilter);
             return;
         }
 
         const query = searchQuery.toLowerCase();
-        const filtered = availableRides.filter(ride => {
+        const filtered = ridesListToFilter.filter(ride => {
             const origin = ride.origin_text?.toLowerCase() || '';
             const destination = ride.destination_text?.toLowerCase() || '';
             const combinedText = `${origin} to ${destination}`;
@@ -171,9 +171,28 @@ export default function Postings() {
     // Fetch rides on component mount and when initialSearchQuery changes
     useEffect(() => {
         async function loadAndFilter() {
-            const allRides = await fetchRides();
-            if (allRides && initialSearchQuery) {
-                handleSearch(initialSearchQuery);
+            setLoading(true);
+            try {
+                const data = await getRides();
+                const ridesArray = data.rides || data || [];
+                const myRidesResponse = await getMyRides();
+                const myRidesArray = myRidesResponse.rides || [];
+                const availableRidesArray = ridesArray.filter(rides => !myRidesArray.some(myRide => myRide.id === rides.id));
+
+                setRides(ridesArray);
+                setAvailableRides(availableRidesArray);
+
+                // Apply search immediately with the fetched rides
+                if (initialSearchQuery) {
+                    handleSearch(initialSearchQuery, availableRidesArray);
+                } else {
+                    setFilteredRides(availableRidesArray);
+                }
+            } catch (err) {
+                console.error('fetchRides error:', err);
+                setError(err.message || 'Failed to load rides');
+            } finally {
+                setLoading(false);
             }
         }
         loadAndFilter();

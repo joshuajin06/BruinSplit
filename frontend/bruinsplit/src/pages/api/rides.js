@@ -3,7 +3,9 @@ const url = "http://localhost:8080/api";
 
 export const getRides = async () => {
     try {
-        const response = await axios.get(`${url}/rides`);
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const response = await axios.get(`${url}/rides`, { headers });
         return response.data;
     } catch (error) {
         console.error("Error fetching rides:", error);
