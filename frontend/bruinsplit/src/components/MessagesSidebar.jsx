@@ -18,6 +18,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
   const [sending, setSending] = useState(false);
   const conversationsRef = useRef(conversations);
   const scrollContainerRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
 
   // Update ref whenever conversations change
   useEffect(() => {
@@ -125,14 +126,27 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     return () => clearInterval(interval);
   }, [selectedConversation, isOpen]);
 
-  // Scroll to bottom whenever messages change
+  // Scroll to bottom only when NEW messages are added (not on every poll)
   useEffect(() => {
-    if (scrollContainerRef.current && !loading) {
+    if (!selectedConversation) return;
+
+    const conversation = conversations.find(c => c.id === selectedConversation);
+    if (!conversation) return;
+
+    const currentMessageCount = conversation.messages?.length || 0;
+    const previousCount = previousMessageCountRef.current;
+
+    // Only scroll if message count increased (new message added)
+    if (currentMessageCount > previousCount) {
       setTimeout(() => {
-        scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
       }, 0);
     }
-  }, [conversations, loading]);
+
+    previousMessageCountRef.current = currentMessageCount;
+  }, [conversations, selectedConversation]);
 
   const handleBack = () => {
     setSelectedConversation(null);
