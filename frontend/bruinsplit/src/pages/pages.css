@@ -31,20 +31,12 @@ html, body {
 
 .card-grid {
   display: grid;
-  /*
-   * Use minmax to create a responsive grid that prevents overflow on small screens.
-   * Columns will be at least 18rem, and will expand to fill available space (1fr).
-  */
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
   gap: 1rem;
-  padding: 0 2rem; /* Add some side padding */
+  padding: 0 2rem;
 }
 
 .card-grid > * {
-  /*
-   * Constrain the card width to a max of 25rem and center it within the grid column.
-   * This creates a consistent card size while the grid itself is responsive.
-  */
   max-width: 25rem;
   justify-self: center;
   width: 100%;
@@ -77,11 +69,11 @@ html, body {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px); /* Modern blur effect */
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999; 
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -91,7 +83,7 @@ html, body {
 }
 
 .modal-content {
-  background: var(--bg-surface); /* Changed to pure white to pop against grey bg */
+  background: var(--bg-surface);
   padding: 2rem;
   border-radius: 1.25rem;
   max-width: 480px;
@@ -101,6 +93,7 @@ html, body {
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0,0,0,0.05);
+  z-index: 10000; 
 }
 
 .modal-content h2 {
@@ -216,6 +209,7 @@ p {
   align-items: center;
   justify-content: center;
   transition: color 0.15s;
+  z-index: 10001; 
 }
 
 .modal-close:hover {
@@ -233,7 +227,6 @@ p {
 }
 
 /* Posts Page */
-/* .posts-title-section has been merged with .title-section for consistency */
 .add-post {
   position: fixed;
   right: 24px;
@@ -249,7 +242,7 @@ p {
   font-size: 32px;
   line-height: 1;
   border: none;
-  background: linear-gradient(135deg, #2774AE 0%, #174d7c 100%); /* Use primary theme color */
+  background: linear-gradient(135deg, #2774AE 0%, #174d7c 100%);
   color: #fff;
   box-shadow: 0 8px 26px rgba(39, 116, 174, 0.25), 0 2px 6px rgba(0,0,0,0.12);
   padding: 0;
@@ -272,7 +265,7 @@ p {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
-  padding: 2rem 4%; /* Added side padding */
+  padding: 2rem 4%;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -280,11 +273,13 @@ p {
 .rides-column {
   display: flex;
   flex-direction: column;
-  background: var(--bg-surface); /* UPDATED: Changed to white to pop against grey bg */
+  background: var(--bg-surface);
   border-radius: 1rem;
   padding: 1.5rem;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Added subtle shadow */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  position: relative;
+  
 }
 
 .rides-column h2 {
@@ -310,11 +305,6 @@ p {
 }
 
 .column-grid > * {
-  /* 
-   * Constrain the width of items within the My Rides columns
-   * to be consistent with the 25rem cards in the main postings grid.
-   * This prevents them from stretching too wide on larger screens.
-  */
   max-width: 25rem;
   width: 100%;
   margin: 0 auto;
@@ -342,7 +332,7 @@ p {
 }
 
 .friends-filter-button:hover {
-  background-color: #206294; /* A darker shade of --primary */
+  background-color: #206294;
   box-shadow: 0 4px 15px rgba(39, 116, 174, 0.2);
   transform: translateY(-2px);
 }
@@ -373,6 +363,47 @@ p {
 
 .btn-cancel-pending:active {
   transform: translateY(0);
+}
+
+/* Ride Card Action Buttons (Edit/Delete) */
+.ride-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-edit,
+.btn-delete {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-edit {
+  background-color: #f1f5f9;
+  color: var(--text-secondary);
+}
+
+.btn-edit:hover {
+  background-color: #e2e8f0;
+  color: var(--text-main);
+}
+
+.btn-delete {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-delete:hover {
+  background-color: #fecaca;
+  color: #991b1b;
 }
 
 /* Responsive Design */

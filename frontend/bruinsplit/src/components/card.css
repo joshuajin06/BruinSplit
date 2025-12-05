@@ -564,6 +564,7 @@
             align-items: center;
             justify-content: center;
 
+            z-index: 2; /* Ensure button is above card content and gradient */
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
             transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
         }
@@ -592,7 +593,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            z-index: 5000;
         }
 
         /* Delete modal box */
@@ -743,6 +744,7 @@
         font-weight: 600;
         font-size: 0.85rem;
         transition: 0.2s ease;
+        z-index: 2; /* Ensure button is above card content and gradient */
         }
 
         .editButton:hover {
