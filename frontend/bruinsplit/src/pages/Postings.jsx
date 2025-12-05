@@ -13,6 +13,7 @@ export default function Postings() {
     const [availableRides, setAvailableRides] = useState([]);
     const [filteredRides, setFilteredRides] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
@@ -172,6 +173,7 @@ export default function Postings() {
     useEffect(() => {
         async function loadAndFilter() {
             setLoading(true);
+            setInitialLoading(true);
             try {
                 const data = await getRides();
                 const ridesArray = data.rides || data || [];
@@ -193,6 +195,7 @@ export default function Postings() {
                 setError(err.message || 'Failed to load rides');
             } finally {
                 setLoading(false);
+                setInitialLoading(false);
             }
         }
         loadAndFilter();
@@ -211,21 +214,21 @@ export default function Postings() {
             </div>
 
             {error && <p className="error-message">{error}</p>}
-            
-            {loading && (
+
+            {initialLoading && (
                 <div className='card-grid'>
                     {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
                 </div>
             )}
 
-            {!loading && rides.length === 0 && (
+            {!initialLoading && rides.length === 0 && (
                 <div className="empty-message" style={{marginTop: '2rem'}}>
                     <p>No rides have been posted yet. Be the first to create one!</p>
                 </div>
             )}
 
             <div className='card-grid'>
-                {!loading && filteredRides.map(ride => (
+                {!initialLoading && filteredRides.map(ride => (
                     <Card key={ride.id}
                         rideId={ride.id}
                         ownerId={ride.owner_id}
@@ -263,7 +266,7 @@ export default function Postings() {
                     />
                 ))}
 
-                {!loading && rides.length > 0 && filteredRides.length === 0 && (
+                {!initialLoading && rides.length > 0 && filteredRides.length === 0 && (
                     <div className="empty-message" style={{gridColumn: '1 / -1'}}>
                         <p>No rides match your search.</p>
                     </div>
