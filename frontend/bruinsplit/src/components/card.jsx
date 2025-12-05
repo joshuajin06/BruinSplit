@@ -441,15 +441,15 @@ export default function Card({ title, origin, destination, content, image, rideD
                 <h2 className={`card-title`}>{displayTitle}</h2>
 
                 {/* Member Avatars Display */}
-                {cardMembers.length > 0 && (
-                    <div className="card-members">
+                <div className="card-members">
+                    {cardMembers.length > 0 && (
                         <div className="member-avatars">
                             {cardMembers.slice(0, 4).map((member, index) => {
                                 const profile = member.profile || {};
-                                const fullName = profile.first_name && profile.last_name 
-                                    ? `${profile.first_name} ${profile.last_name}` 
+                                const fullName = profile.first_name && profile.last_name
+                                    ? `${profile.first_name} ${profile.last_name}`
                                     : profile.username || 'Unknown User';
-                                
+
                                 return (
                                     <div
                                         key={member.id}
@@ -457,7 +457,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                                         title={fullName}>
                                         {profile?.profile_photo_url ? (
                                             <img src={profile.profile_photo_url} alt="Profile" className="navbar-profile-pic" />
-                                        ) : 
+                                        ) :
                                         (
                                             <div className="navbar-profile-placeholder">
                                                 {profile?.first_name?.charAt(0)}
@@ -472,9 +472,9 @@ export default function Card({ title, origin, destination, content, image, rideD
                                 </div>
                             )}
                         </div>
-                    </div>
-                )}
-                
+                    )}
+                </div>
+
                 <p className="card-datetime">Departing at: {formattedDatetime}</p>
                 <p className="card-seats">
                     <span className="seats-badge">{availableSeats} of {totalSeats} seats available</span>
