@@ -224,7 +224,7 @@ export default function Postings() {
                 </div>
             )}
 
-            <div className='card-grid'> 
+            <div className='card-grid'>
                 {!loading && filteredRides.map(ride => (
                     <Card key={ride.id}
                         rideId={ride.id}
@@ -260,7 +260,7 @@ export default function Postings() {
                         onEdit={ async (editedRideId) => {
                             await fetchRides();
                         }}
-                    /> 
+                    />
                 ))}
 
                 {!loading && rides.length > 0 && filteredRides.length === 0 && (
