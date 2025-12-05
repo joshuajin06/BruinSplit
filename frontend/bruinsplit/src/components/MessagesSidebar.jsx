@@ -296,7 +296,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
           {!initialLoading && conversations.length > 0 && (
             <div className="messages-list">
               {conversations.map((conv) => {
-                const groupName = conv.members?.map(m => m.first_name).join(', ') || 'Group Chat';
+                const groupName = `${conv.origin} → ${conv.destination}` || 'Group Chat';
                 return (
                   <div
                     key={conv.id}
