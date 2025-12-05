@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { postMessage, getMessages, getConversations } from '../pages/api/messages';
+import { getCallInfo } from '../pages/api/calls';
 import { useAuth } from '../context/AuthContext';
-import AudioCall from './audioCall.jsx' 
+import AudioCall from './audioCall.jsx'
 
 import './MessagesSidebar.css';
 
@@ -16,6 +17,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
   const [error, setError] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [activeCall, setActiveCall] = useState(null);
   const conversationsRef = useRef(conversations);
   const scrollContainerRef = useRef(null);
 
@@ -76,6 +78,23 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     try {
       const response = await getMessages(rideId);
       const messages = response.messages || [];
+
+      // Check for active calls in this ride
+      try {
+        const callInfo = await getCallInfo(rideId);
+        if (callInfo.active && callInfo.participants && callInfo.participants.length > 0) {
+          setActiveCall({
+            rideId,
+            participantCount: callInfo.participants.length,
+            participants: callInfo.participants
+          });
+        } else {
+          setActiveCall(null);
+        }
+      } catch (callErr) {
+        // Silently fail if we can't get call info
+        setActiveCall(null);
+      }
 
       // Update the conversation with fetched messages
       setConversations(prev => {
@@ -169,6 +188,21 @@ export default function MessagesSidebar({ isOpen, onClose }) {
             <AudioCall userId={user?.id} rideId={conversation.ride_id} />
             <button className="close-btn" onClick={onClose}>✕</button>
           </div>
+          {activeCall && activeCall.participantCount > 0 && (
+            <div style={{
+              backgroundColor: '#e8f5e9',
+              padding: '8px 12px',
+              borderBottom: '1px solid #c8e6c9',
+              fontSize: '13px',
+              color: '#2e7d32',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{ fontSize: '16px' }}>🎙️</span>
+              <span>Active call: {activeCall.participantCount} {activeCall.participantCount === 1 ? 'person' : 'people'} on call</span>
+            </div>
+          )}
           <div className="conversation-title">
             <h2>{groupName}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
