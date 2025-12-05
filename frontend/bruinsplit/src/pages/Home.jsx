@@ -36,7 +36,7 @@ export default function Home() {
             <span>Save money.</span>
           </h1>
           <p className="sub-heading">
-            The easiest way for UCLA students to share rides to LAX, concerts, and home. Verified, safe, and simple.
+            Cheaper travels to LAX, Rose Bowl, Santa Monica, downtown, and more. Safe and simple.
           </p>
 
           <div className="search-box">
