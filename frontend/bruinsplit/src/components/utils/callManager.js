@@ -30,15 +30,8 @@ class CallManager {
             this.onParticipantLeft = onParticipantLeft;
             this.onError = onError;
 
-            // Get local audio stream
-            this.localStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                },
-                video: false
-            });
+            // Get local audio stream with optimized constraints
+            this.localStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
 
             // Notify backend we're joining
             const response = await joinCall(this.rideId);
@@ -73,9 +66,10 @@ class CallManager {
                 return this.peerConnections.get(remoteUserId);
             }
 
-            const peerConnection = new RTCPeerConnection({
-                iceServers: STUN_SERVERS
-            });
+            const peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
+
+            console.log(`🔗 Creating peer connection to ${remoteUserId} with STUN/TURN servers`);
+            console.log('ICE servers configured:', RTC_CONFIGURATION.iceServers.length);
 
             // Add local audio tracks
             this.localStream.getTracks().forEach(track => {
@@ -88,19 +82,50 @@ class CallManager {
                 this.onRemoteStream?.(remoteUserId, event.streams[0]);
             };
 
-            // Handle ICE candidates
+            // Handle ICE candidates with detailed logging
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
+                    console.log(`🧊 ICE candidate for ${remoteUserId}:`, {
+                        type: event.candidate.type,
+                        protocol: event.candidate.protocol,
+                        address: event.candidate.address,
+                        port: event.candidate.port
+                    });
                     this.sendIceCandidate(remoteUserId, event.candidate);
+                } else {
+                    console.log(`✅ ICE gathering completed for ${remoteUserId}`);
+                }
+            };
+
+            // Handle ICE gathering state changes
+            peerConnection.onicegatheringstatechange = () => {
+                console.log(`ICE gathering state for ${remoteUserId}:`, peerConnection.iceGatheringState);
+            };
+
+            // Handle ICE connection state changes
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log(`ICE connection state for ${remoteUserId}:`, peerConnection.iceConnectionState);
+
+                if (peerConnection.iceConnectionState === 'failed') {
+                    console.warn(`❌ ICE connection failed for ${remoteUserId}, attempting ICE restart...`);
+                    // Automatically restart ICE when it fails
+                    peerConnection.restartIce();
+                } else if (peerConnection.iceConnectionState === 'connected') {
+                    console.log(`✅ ICE connection established with ${remoteUserId}`);
                 }
             };
 
             // Handle connection state changes
             peerConnection.onconnectionstatechange = () => {
-                if (peerConnection.connectionState === 'failed') {
-                    console.error(`Connection failed with ${remoteUserId}`);
+                console.log(`Connection state for ${remoteUserId}:`, peerConnection.connectionState);
+
+                if (peerConnection.connectionState === 'connected') {
+                    console.log(`✅ Peer connection established with ${remoteUserId}`);
+                } else if (peerConnection.connectionState === 'failed') {
+                    console.error(`❌ Connection failed with ${remoteUserId}`);
                     this.onError?.(`Connection failed with user ${remoteUserId}`);
-                    this.peerConnections.delete(remoteUserId);
+                } else if (peerConnection.connectionState === 'disconnected') {
+                    console.warn(`⚠️ Connection disconnected with ${remoteUserId}`);
                 }
             };
 
