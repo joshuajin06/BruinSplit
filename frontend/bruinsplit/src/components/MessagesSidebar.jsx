@@ -264,6 +264,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
               disabled={sending || !messageInput.trim()}
               onClick={() => {
                 // Placeholder for send handler - you'll connect this to your backend
+                handleSendMessage(conversation.ride_id);
               }}
             >
               {sending ? '...' : 'Send'}
