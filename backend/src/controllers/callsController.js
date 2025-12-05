@@ -32,17 +32,26 @@ const activeCalls = new Map();
 
 // POST /api/calls/:rideId/join - join a call for a ride
 export async function joinCall(req, res, next) {
+    console.log('🚨 ========== JOIN CALL FUNCTION ENTERED ==========');
+    console.log('Request params:', req.params);
+    console.log('User from req:', req.user);
+    
     try {
         const { rideId } = req.params;
         const userId = req.user.id;
 
+        console.log(`[JOIN] 📥 RECEIVED join request - RideID: ${rideId}, UserID: ${userId}`);
+
         // verify user is a confirmed member
         const isMember = await verifyRideMembership(rideId, userId);
         if (!isMember) {
+            console.log(`[JOIN] ❌ User ${userId} is NOT a confirmed member of ride ${rideId}`);
             return res.status(403).json({
                 error: 'You must be a confirmed member of this ride to join the call'
             });
         }
+        
+        console.log(`[JOIN] ✅ User ${userId} verified as member of ride ${rideId}`);
 
         // get all confirmed members
         const allMembers = await getConfirmedMembers(rideId);
@@ -58,7 +67,12 @@ export async function joinCall(req, res, next) {
         }
 
         const call = activeCalls.get(rideId);
+        const wasNewParticipant = !call.participants.has(userId);
         call.participants.add(userId);
+
+        console.log(`[JOIN] 👤 User ${userId} ${wasNewParticipant ? 'joined' : 'rejoined'} call ${rideId}`);
+        console.log(`[JOIN] 📊 Total participants in call: ${call.participants.size}`);
+        console.log(`[JOIN] 👥 Participant IDs:`, Array.from(call.participants));
 
         // initialize peer connection state for this user if it doesn't exist
         if (!call.peerConnections.has(userId)) {
@@ -76,6 +90,7 @@ export async function joinCall(req, res, next) {
             allMembers: allMembers
         };
 
+        console.log(`[JOIN] 📤 Sending response with ${response.participants.length} participants`);
         res.json(response);
 
     } catch (error) {
@@ -250,9 +265,17 @@ export async function getCallStatus(req, res, next) {
         const userId = req.user.id;
 
         const call = activeCalls.get(rideId);
-        if (!call || !call.participants.has(userId)) {
+        if (!call) {
+            console.log(`[STATUS] ⚠️ No active call found for ride ${rideId}`);
             return res.json({ active: false });
         }
+        
+        if (!call.participants.has(userId)) {
+            console.log(`[STATUS] ⚠️ User ${userId} not in call ${rideId}`);
+            return res.json({ active: false });
+        }
+        
+        console.log(`[STATUS] 🔄 User ${userId} polling. ${call.participants.size} participants:`, Array.from(call.participants));
 
         const userState = call.peerConnections.get(userId) || {
             offers: new Map(),
@@ -347,7 +370,12 @@ export async function leaveCall(req, res, next) {
         const call = activeCalls.get(rideId);
         if (call) {
             // remove user from participants
+            const wasInCall = call.participants.has(userId);
             call.participants.delete(userId);
+            
+            console.log(`[LEAVE] 👋 User ${userId} ${wasInCall ? 'left' : 'attempted to leave'} call ${rideId}`);
+            console.log(`[LEAVE] 📊 Remaining participants: ${call.participants.size}`);
+            console.log(`[LEAVE] 👥 Remaining IDs:`, Array.from(call.participants));
 
             // remove user's peer connection state
             call.peerConnections.delete(userId);
