@@ -29,13 +29,8 @@ export default function Navbar() {
         </Link>
       </h2> 
 
-      <ul className="nav-linksC">
-        <li><Link to="/postings">Postings</Link></li>
-        <a>|</a>
-        <li><Link to="/events">Events</Link></li>
-      </ul>
-
       <ul className="nav-linksR">
+        <li><Link to="/postings">Postings</Link></li>
         <li className="myrides"><Link to="/myrides">My Rides</Link></li>
 
         <li className="navButtonLogin" ref={menuRef}>

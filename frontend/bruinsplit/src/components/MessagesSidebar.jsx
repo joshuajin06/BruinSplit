@@ -17,6 +17,8 @@ export default function MessagesSidebar({ isOpen, onClose }) {
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
   const conversationsRef = useRef(conversations);
+  const scrollContainerRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
 
   // Update ref whenever conversations change
   useEffect(() => {
@@ -124,6 +126,28 @@ export default function MessagesSidebar({ isOpen, onClose }) {
     return () => clearInterval(interval);
   }, [selectedConversation, isOpen]);
 
+  // Scroll to bottom only when NEW messages are added (not on every poll)
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const conversation = conversations.find(c => c.id === selectedConversation);
+    if (!conversation) return;
+
+    const currentMessageCount = conversation.messages?.length || 0;
+    const previousCount = previousMessageCountRef.current;
+
+    // Only scroll if message count increased (new message added)
+    if (currentMessageCount > previousCount) {
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+      }, 0);
+    }
+
+    previousMessageCountRef.current = currentMessageCount;
+  }, [conversations, selectedConversation]);
+
   const handleBack = () => {
     setSelectedConversation(null);
   };
@@ -145,7 +169,7 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
     // Handle both 'members' (new) and 'other_users' (old) for backward compatibility
     const members = conversation.members || conversation.other_users || [];
-    const groupName = members?.map(m => m.first_name).join(', ') || 'Group Chat';
+    const groupName = `${conversation.origin} → ${conversation.destination}`;
 
     return (
       <>
@@ -155,37 +179,65 @@ export default function MessagesSidebar({ isOpen, onClose }) {
 
         <div className={`messages-sidebar ${isOpen ? 'open' : ''}`}>
           <div className="conversation-header">
-            <button className="back-btn" onClick={handleBack}>← Back</button>
-            <button className="close-btn" onClick={onClose}>✕</button>
+            <button className="back-btn" onClick={handleBack}>←</button>
             <AudioCall userId={user?.id} rideId={conversation.ride_id} />
+            <button className="close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="conversation-title">
             <h2>{groupName}</h2>
             <p style={{ margin: '0', fontSize: '12px', color: '#999' }}>
-              {conversation.origin} → {conversation.destination}
+              {conversation.members?.map(m => m.first_name).join(', ') || 'No members'}
             </p>
             <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#bbb' }}>
               {conversation.member_count} members
             </p>
           </div>
 
-          <div className="conversation-view">
+          <div className="conversation-view" ref={scrollContainerRef}>
             {loading && <p style={{ textAlign: 'center', color: '#999' }}>Loading messages...</p>}
             {error && <p style={{ textAlign: 'center', color: '#f44336' }}>{error}</p>}
             {!loading && !error && (
               conversation.messages && conversation.messages.length > 0 ? (
-                conversation.messages.map((msg) => {
-                  const sender = members?.find(m => m.id === msg.user_id);
-                  const senderName = sender?.first_name || 'Unknown User';
-                  const isSent = msg.user_id === user?.id;
-                  return (
-                    <div key={msg.id} className={`chat-message ${isSent ? 'sent' : 'received'}`}>
-                      <p className="chat-sender">{senderName}</p>
-                      <p className="chat-text">{msg.content}</p>
-                      <p className="chat-time">{new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
-                  );
-                })
+                (() => {
+                  const messageGroups = [];
+                  let currentGroup = null;
+                  const TIME_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+                  conversation.messages.forEach((msg, index) => {
+                    const isSent = msg.user_id === user?.id;
+                    const prevMsg = conversation.messages[index - 1];
+                    const shouldGroup = prevMsg &&
+                      prevMsg.user_id === msg.user_id &&
+                      (new Date(msg.sent_at) - new Date(prevMsg.sent_at)) < TIME_THRESHOLD;
+
+                    if (!shouldGroup) {
+                      currentGroup = {
+                        userId: msg.user_id,
+                        isSent,
+                        messages: [msg]
+                      };
+                      messageGroups.push(currentGroup);
+                    } else {
+                      currentGroup.messages.push(msg);
+                    }
+                  });
+
+                  return messageGroups.map((group, groupIndex) => {
+                    const sender = members?.find(m => m.id === group.userId);
+                    const senderName = sender?.first_name || 'Unknown User';
+                    const lastMsg = group.messages[group.messages.length - 1];
+
+                    return (
+                      <div key={`group-${groupIndex}`} className={`message-group ${group.isSent ? 'sent' : 'received'}`}>
+                        <p className="chat-sender">{senderName}</p>
+                        {group.messages.map((msg) => (
+                          <p key={msg.id} className="chat-text">{msg.content}</p>
+                        ))}
+                        <p className="chat-time">{new Date(lastMsg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    );
+                  });
+                })()
               ) : (
                 <p style={{ textAlign: 'center', color: '#999' }}>No messages yet</p>
               )
