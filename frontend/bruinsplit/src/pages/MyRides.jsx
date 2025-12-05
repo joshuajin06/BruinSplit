@@ -9,16 +9,20 @@ export default function MyRides() {
     const [pendingRides, setPendingRides] = useState([]);
     const [joinedRides, setJoinedRides] = useState([]);
     const [createdRides, setCreatedRides] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const { user } = useAuth();
 
     useEffect(() => {
-        loadMyRides();
+        loadMyRides(true);
     }, []);
 
-    async function loadMyRides() {
+    async function loadMyRides(isInitial = false) {
+        if (isInitial) {
+            setInitialLoading(true);
+        }
         setLoading(true);
         setError(null);
         try {
@@ -42,6 +46,9 @@ export default function MyRides() {
             setError(err.message || 'Failed to load rides');
         } finally {
             setLoading(false);
+            if (isInitial) {
+                setInitialLoading(false);
+            }
         }
     }
 
@@ -127,7 +134,7 @@ export default function MyRides() {
         );
     }
 
-    if (loading) {
+    if (initialLoading) {
         return (
             <div className="page-container">
                 <h1>My Rides</h1>
