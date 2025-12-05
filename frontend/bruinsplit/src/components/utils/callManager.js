@@ -223,9 +223,9 @@ class CallManager {
             let peerConnection = this.peerConnections.get(fromUserId);
             if (!peerConnection) {
                 // Create peer connection WITHOUT sending an offer back (avoid race condition)
-                peerConnection = new RTCPeerConnection({
-                    iceServers: STUN_SERVERS
-                });
+                peerConnection = new RTCPeerConnection(RTC_CONFIGURATION);
+
+                console.log(`🔗 Creating peer connection for incoming offer from ${fromUserId}`);
 
                 // Add local audio tracks
                 this.localStream.getTracks().forEach(track => {
@@ -238,17 +238,39 @@ class CallManager {
                     this.onRemoteStream?.(fromUserId, event.streams[0]);
                 };
 
-                // Handle ICE candidates
+                // Handle ICE candidates with detailed logging
                 peerConnection.onicecandidate = (event) => {
                     if (event.candidate) {
+                        console.log(`🧊 ICE candidate for ${fromUserId}:`, {
+                            type: event.candidate.type,
+                            protocol: event.candidate.protocol
+                        });
                         this.sendIceCandidate(fromUserId, event.candidate);
+                    } else {
+                        console.log(`✅ ICE gathering completed for ${fromUserId}`);
+                    }
+                };
+
+                // Handle ICE connection state changes
+                peerConnection.oniceconnectionstatechange = () => {
+                    console.log(`ICE connection state for ${fromUserId}:`, peerConnection.iceConnectionState);
+
+                    if (peerConnection.iceConnectionState === 'failed') {
+                        console.warn(`❌ ICE connection failed for ${fromUserId}, attempting ICE restart...`);
+                        peerConnection.restartIce();
+                    } else if (peerConnection.iceConnectionState === 'connected') {
+                        console.log(`✅ ICE connection established with ${fromUserId}`);
                     }
                 };
 
                 // Handle connection state changes
                 peerConnection.onconnectionstatechange = () => {
-                    if (peerConnection.connectionState === 'failed') {
-                        console.error(`Connection failed with ${fromUserId}`);
+                    console.log(`Connection state for ${fromUserId}:`, peerConnection.connectionState);
+
+                    if (peerConnection.connectionState === 'connected') {
+                        console.log(`✅ Peer connection established with ${fromUserId}`);
+                    } else if (peerConnection.connectionState === 'failed') {
+                        console.error(`❌ Connection failed with ${fromUserId}`);
                         this.onError?.(`Connection failed with user ${fromUserId}`);
                     }
                 };
