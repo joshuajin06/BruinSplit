@@ -495,7 +495,6 @@ export async function enrichRide(ride, userId = null) {
             .eq('user_id', userId)
             .maybeSingle();
         membership_status = membership?.status || null;
-        console.log(`[enrichRide] Ride ${ride.id}: userId=${userId}, membership_status=${membership_status}`);
     }
 
     return {

@@ -114,7 +114,7 @@ export default function MyRides() {
                     seats: ride.available_seats,
                     current_members: ride.current_members,
                     owner_id: ride.owner_id,
-                    membership_status: ride.membership_status,
+                    membership_status: membershipStatus,
                     owner: ride.owner
                 }}
                 onJoin={async () => loadMyRides}
@@ -229,7 +229,7 @@ export default function MyRides() {
                             <div className="column-grid">
                                 {pendingRides.map(ride => (
                                     <div key={ride.id} className="pending-ride-wrapper">
-                                        {renderRideCard(ride, false)}
+                                        {renderRideCard(ride, false, 'pending')}
                                         <button
                                             className="btn-cancel-pending"
                                             onClick={() => handleCancelPending(ride.id)}
