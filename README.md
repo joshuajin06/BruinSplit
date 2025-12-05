@@ -74,5 +74,27 @@ These two diagrams display the system architecture and database schema for Bruin
   <img src="frontend/bruinsplit/public/REdbdiagram.png" alt="Database Schema Diagram" width="800">
 </div>
 
+# API Documentation
+
+- Swagger UI: http://localhost:8080/api/docs
+- OpenAPI JSON: http://localhost:8080/api/docs-json
+
+Run locally:
+1) cd backend
+2) npm install
+3) npm run start   # or: node server.js
+
+Your Swagger UI should look like this:
+
+<div align="center">
+  <img src="frontend/bruinsplit/public/apiDocu.png" alt="Swagger UI overview" width="800">
+</div>
+
+Example schema/details view:
+
+<div align="center">
+  <img src="frontend/bruinsplit/public/apiDocu2.png" alt="Swagger UI schema example" width="800">
+</div>
+
 # Creators 
 Jaden Ho, Anish Kumar, Joshua Jin, Justin Luc
