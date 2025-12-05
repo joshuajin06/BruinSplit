@@ -44,7 +44,12 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     }, []);
 
-    const isOwner = currentUser && ownerId && (currentUser.id === ownerId);
+    const [currentOwnerId, setCurrentOwnerId] = useState(ownerId);
+    useEffect(() => {
+        setCurrentOwnerId(ownerId);
+    }, [ownerId]);
+
+    const isOwner = currentUser && currentOwnerId && (currentUser.id === currentOwnerId);
 
     // Initial modal states
     const [showModal, setShowModal] = useState(false);
