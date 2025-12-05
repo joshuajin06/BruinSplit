@@ -262,7 +262,6 @@ export async function getRides(req, res) {
             // enrich each ride with available seats and owner info using helper function defined above
             // pass req.user?.id so the enrichment can include whether the current user is a member
             const userId = req.user?.id;
-            console.log('[getRides] User ID:', userId, 'Total rides:', (rides || []).length);
             const enrichedRides = await Promise.all((rides || []).map(ride => enrichRide(ride, userId)));
 
             // filter by min_seats if provided (after calculating the available seats)
