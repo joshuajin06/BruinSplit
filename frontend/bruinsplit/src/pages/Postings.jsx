@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './pages.css';
 import Card from '../components/card.jsx';
 import SearchBar from '../components/searchBar.jsx';
+import { useSearchParams } from 'react-router-dom';
+import SkeletonCard from '../components/SkeletonCard.jsx';
 
 import { useAuth } from '../context/AuthContext';
 import { getMyRides } from '../pages/api/rides';
@@ -14,11 +16,19 @@ export default function Postings() {
     const [modalError, setModalError] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const token = localStorage.getItem('token');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialSearchQuery = searchParams.get('q') || '';
     const { isAuthenticated } = useAuth();
 
     //fetches rides when component loads
     useEffect(() => {
-        fetchRides();
+        async function loadAndFilter() {
+            const allRides = await fetchRides();
+            if (allRides && initialSearchQuery) {
+                handleSearch(initialSearchQuery, allRides);
+            }
+        }
+        loadAndFilter();
     }, []);
 
     const [form, setForm] = useState({
@@ -134,6 +144,7 @@ export default function Postings() {
             setError(err.message || 'Failed to load rides');
         } finally {
             setLoading(false);
+            return ridesArray;
         }
     }
 
@@ -143,14 +154,21 @@ export default function Postings() {
     await fetchRides();
     };
     
-    const handleSearch = (searchQuery) => {
+    const handleSearch = (searchQuery, rideList = rides) => {
+        // Update URL search param as user types
+        if (searchQuery.trim()) {
+            setSearchParams({ q: searchQuery }, { replace: true });
+        } else {
+            setSearchParams({}, { replace: true });
+        }
+
         if (!searchQuery.trim()) {
-            setFilteredRides(rides);
+            setFilteredRides(rideList);
             return;
         }
 
         const query = searchQuery.toLowerCase();
-        const filtered = rides.filter(ride => {
+        const filtered = rideList.filter(ride => {
             const origin = ride.origin_text?.toLowerCase() || '';
             const destination = ride.destination_text?.toLowerCase() || '';
             const combinedText = `${origin} to ${destination}`;
@@ -172,17 +190,25 @@ export default function Postings() {
             </section>
             
             <div style={{ marginBottom: '24px', width: '60%', maxWidth: '1200px', margin: '0 auto 24px auto' }}>
-                <SearchBar onSearch={handleSearch} />
+                <SearchBar onSearch={handleSearch} initialValue={initialSearchQuery} />
             </div>
 
-            {loading && <p>Loading rides...</p>}
             {error && <p className="error-message">{error}</p>}
-            {!loading && rides.length === 0 && <p>No rides available.</p>}
-            {!loading && rides.length > 0 && filteredRides.length === 0 && (
-                <p>No rides match your search.</p>
+            
+            {loading && (
+                <div className='card-grid'>
+                    {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+                </div>
             )}
+
+            {!loading && rides.length === 0 && (
+                <div className="empty-message" style={{marginTop: '2rem'}}>
+                    <p>No rides have been posted yet. Be the first to create one!</p>
+                </div>
+            )}
+
             <div className='card-grid'> 
-                {filteredRides.map(ride => (
+                {!loading && filteredRides.map(ride => (
                     <Card key={ride.id}
                         rideId={ride.id}
                         ownerId={ride.owner_id}
@@ -219,6 +245,12 @@ export default function Postings() {
                         }}
                     /> 
                 ))}
+
+                {!loading && rides.length > 0 && filteredRides.length === 0 && (
+                    <div className="empty-message" style={{gridColumn: '1 / -1'}}>
+                        <p>No rides match your search.</p>
+                    </div>
+                )}
           </div>
         </div>
             {showModal && isAuthenticated && (

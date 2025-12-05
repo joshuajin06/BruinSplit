@@ -336,7 +336,7 @@ export default function Card({ title, origin, destination, content, image, rideD
         }
     };
 
-    // Implemented via api call - UPDATED
+    // Kick memeber by calling api
     const handleKickMember = async (memberId) => {
         try {
             await kickMember(rideId, memberId);
@@ -423,7 +423,7 @@ export default function Card({ title, origin, destination, content, image, rideD
     return (
         <>
 {/*Main Card*/}
-            <div className="card-container">
+            <div className={`card-container ${gradientClass}`}>
                 {isOwner && (
                     <div className='owner-utilities'>
                         <button 
@@ -438,7 +438,7 @@ export default function Card({ title, origin, destination, content, image, rideD
                         <button className='editButton' type='button' onClick={() => setEditModalOpen(true)}>edit</button>
                     </div>
                 )}
-                <h2 className={`card-title ${gradientClass}`}>{displayTitle}</h2>
+                <h2 className={`card-title`}>{displayTitle}</h2>
 
                 {/* Member Avatars Display */}
                 {cardMembers.length > 0 && (
