@@ -244,14 +244,12 @@ export default function Postings() {
                 <SearchBar onSearch={handleSearch} initialValue={initialSearchQuery} />
                 {isAuthenticated && (
                     <div style={{ marginTop: '10px' }}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={showFriendsOnly}
-                                onChange={(e) => setShowFriendsOnly(e.target.checked)}
-                            />
-                            See what your friends are up to...
-                        </label>
+                        <button
+                            className="friends-filter-button"
+                            onClick={() => setShowFriendsOnly(prev => !prev)}
+                        >
+                            {showFriendsOnly ? 'See all rides' : 'See what your friends are up to...'}
+                        </button>
                     </div>
                 )}
             </div>
