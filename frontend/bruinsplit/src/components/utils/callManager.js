@@ -6,11 +6,7 @@ import {
     getCallStatus,
     leaveCall
 } from '../../pages/api/calls';
-
-const STUN_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-];
+import { RTC_CONFIGURATION, AUDIO_CONSTRAINTS } from '../../config/webrtcConfig';
 
 class CallManager {
     constructor(rideId, userId) {
