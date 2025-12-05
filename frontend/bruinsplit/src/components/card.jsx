@@ -201,7 +201,6 @@ export default function Card({ title, origin, destination, content, image, rideD
 
     useEffect(() => {
         if (rideDetails?.membership_status !== undefined) {
-            console.log(`[Card] Ride ${rideId}: Setting membershipStatus to ${rideDetails.membership_status}`);
             setMembershipStatus(rideDetails.membership_status);
         }
     }, [rideDetails?.membership_status, rideId]);
