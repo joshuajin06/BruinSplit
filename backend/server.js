@@ -2,13 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js';
+
 // load environment variables
 dotenv.config();
 
 
-// Debug: Check if env variables are loading
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'Found' : 'NOT FOUND');
-console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'Found' : 'NOT FOUND');
 
 // import routes
 import authRoutes from './src/routes/authRoute.js';
@@ -30,6 +30,9 @@ const app = express();
 app.use(cors()); // allow the frontend to access the backend
 app.use(express.json()); // parse JSON request bodies
 app.use(logger); // log every request
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api/docs-json', (req, res) => res.json(swaggerSpec));
 
 
 // register routes

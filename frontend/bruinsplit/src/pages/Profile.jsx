@@ -5,6 +5,7 @@ import Card from '../components/card.jsx'; // Import the Card component
 
 import { updateProfile, updatePassword, updateProfilePic, getProfileById } from './api/profile.js';
 import { getFriendCount, getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest, getFriendRides, sendFriendRequest, getUserFriends } from './api/friends.js';
+import { getMyRides } from './api/rides.js';
 import './Profile.css';
 
 
@@ -89,12 +90,25 @@ export default function Profile() {
                     setError('Failed to fetch friend count. Please try again later.');
                 }
 
-                try {
-                    const ridesData = await getFriendRides(targetId);
-                    setJoinedRides(ridesData.rides || []);
-                } catch (error) {
-                    console.error('Failed to fetch friend rides:', error);
-                    setError('Failed to fetch friend rides. Please try again later.');
+                // Fetch rides based on whether viewing own profile or another user's
+                if (userId && user.id !== userId) {
+                    // Viewing another user's profile - fetch their friend rides
+                    try {
+                        const ridesData = await getFriendRides(targetId);
+                        setJoinedRides(ridesData.rides || []);
+                    } catch (error) {
+                        console.error('Failed to fetch friend rides:', error);
+                        // Don't set error - user might not be friends with this person yet
+                    }
+                } else {
+                    // Viewing own profile - fetch own rides
+                    try {
+                        const ridesData = await getMyRides();
+                        setJoinedRides(ridesData.rides || []);
+                    } catch (error) {
+                        console.error('Failed to fetch own rides:', error);
+                        setError('Failed to fetch your rides. Please try again later.');
+                    }
                 }
 
                 // If viewing another user's profile, determine friendship status
@@ -232,7 +246,7 @@ export default function Profile() {
     try {
       e.preventDefault();
       setError(null);
-      // TODO: Send updated data to backend
+      
       if(isEditing) {
         const updatedProfile = await updateProfile(formData);
         console.log('Profile Updated Successfully:', updatedProfile);

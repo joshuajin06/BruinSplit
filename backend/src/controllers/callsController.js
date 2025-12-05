@@ -79,7 +79,7 @@ export async function joinCall(req, res, next) {
         res.json(response);
 
     } catch (error) {
-        console.error(`[JOIN] ❌ Error:`, error.message);
+        console.error('Error joining call:', error.message);
         next(error);
     }
 }
