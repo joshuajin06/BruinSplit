@@ -140,7 +140,8 @@ export async function getPendingRequestsService(rideId, ownerId) {
                 first_name,
                 last_name,
                 email,
-                phone_number
+                phone_number,
+                profile_photo_url
             )
         `)
         .eq('ride_id', rideId)
@@ -684,7 +685,9 @@ export async function updateRideService(rideId, userId, updateData) {
             throw updateError;
         }
 
-        return updatedRide;
+        const enrichedRide = await enrichRide(updatedRide, userId);
+
+        return enrichedRide;
     
 }
 
