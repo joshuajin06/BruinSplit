@@ -75,9 +75,16 @@ export default function VideoCall({ userId, rideId }) {
                 onError
             );
 
-            // Set local video stream
+            // Set local video stream and play it
             if (localVideoRef.current && result.localStream) {
                 localVideoRef.current.srcObject = result.localStream;
+                try {
+                    await localVideoRef.current.play();
+                    console.log('✅ Local video playing');
+                } catch (playError) {
+                    console.error('Failed to play local video:', playError);
+                    setError('Failed to play local video. Please check browser permissions.');
+                }
             }
 
             setIsCallActive(true);
@@ -145,6 +152,19 @@ export default function VideoCall({ userId, rideId }) {
             setIsMicOn(newMicState);
         }
     };
+
+    // Attach local video stream when call becomes active
+    useEffect(() => {
+        if (isCallActive && localVideoRef.current && videoCallManagerRef.current) {
+            const localStream = videoCallManagerRef.current.getLocalStream();
+            if (localStream && localVideoRef.current.srcObject !== localStream) {
+                localVideoRef.current.srcObject = localStream;
+                localVideoRef.current.play().catch(err => {
+                    console.error('Failed to play local video:', err);
+                });
+            }
+        }
+    }, [isCallActive]);
 
     // Attach remote video streams when they update
     useEffect(() => {
