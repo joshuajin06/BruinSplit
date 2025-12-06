@@ -61,7 +61,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'User not found' } };
       axios.post.mockRejectedValue(error);
 
-      await expect(sendFriendRequest('invalid-user')).rejects.toThrow();
+      await expect(sendFriendRequest('invalid-user')).rejects.toThrow('User not found');
     });
 
     it('should work without auth token', async () => {
@@ -105,7 +105,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'Request not found' } };
       axios.post.mockRejectedValue(error);
 
-      await expect(acceptFriendRequest('invalid-id')).rejects.toThrow();
+      await expect(acceptFriendRequest('invalid-id')).rejects.toThrow('Request not found');
     });
   });
 
@@ -132,7 +132,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'Request not found' } };
       axios.post.mockRejectedValue(error);
 
-      await expect(rejectFriendRequest('invalid-id')).rejects.toThrow();
+      await expect(rejectFriendRequest('invalid-id')).rejects.toThrow('Request not found');
     });
   });
 
@@ -158,7 +158,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'Friendship not found' } };
       axios.delete.mockRejectedValue(error);
 
-      await expect(removeFriend('invalid-id')).rejects.toThrow();
+      await expect(removeFriend('invalid-id')).rejects.toThrow('Friendship not found');
     });
   });
 
@@ -197,7 +197,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'Unauthorized' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getFriends()).rejects.toThrow();
+      await expect(getFriends()).rejects.toThrow('Unauthorized');
     });
   });
 
@@ -239,7 +239,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'Failed to fetch requests' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getPendingRequests()).rejects.toThrow();
+      await expect(getPendingRequests()).rejects.toThrow('Failed to fetch requests');
     });
   });
 
@@ -273,7 +273,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'User not found' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getFriendCount('invalid-user')).rejects.toThrow();
+      await expect(getFriendCount('invalid-user')).rejects.toThrow('User not found');
     });
   });
 
@@ -311,7 +311,7 @@ describe('Friends API Tests', () => {
       error.response = { data: { error: 'User not found' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getUserFriends('invalid-user')).rejects.toThrow();
+      await expect(getUserFriends('invalid-user')).rejects.toThrow('User not found');
     });
   });
 });

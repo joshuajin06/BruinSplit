@@ -1,0 +1,788 @@
+import { jest } from '@jest/globals';
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { BrowserRouter } from 'react-router-dom';
+import Card from '../card';
+import * as AuthContext from '../../context/AuthContext';
+import * as ridesApi from '../../pages/api/rides';
+import * as friendsApi from '../../pages/api/friends';
+
+// Mock dependencies
+jest.mock('../../context/AuthContext');
+jest.mock('../../pages/api/rides');
+jest.mock('../../pages/api/friends');
+jest.mock('react-dom', () => ({
+  ...jest.requireActual('react-dom'),
+  createPortal: (node) => node,
+}));
+
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
+
+const renderWithRouter = (component) => {
+  return render(
+    <BrowserRouter>
+      {component}
+    </BrowserRouter>
+  );
+};
+
+describe('Card Component', () => {
+  const mockUser = {
+    id: 1,
+    first_name: 'John',
+    last_name: 'Doe',
+    profile_photo_url: 'https://example.com/photo.jpg'
+  };
+
+  const mockRideDetails = {
+    membership_status: null,
+    seats: 4,
+    current_members: 2,
+    members: []
+  };
+
+  const defaultProps = {
+    title: 'Test Ride',
+    origin: 'UCLA',
+    destination: 'LAX',
+    content: 'Test ride description',
+    departureDatetime: '2024-12-25T10:00:00Z',
+    platform: 'Uber',
+    notes: 'Test notes',
+    maxRiders: 4,
+    createdAt: '2024-12-01T10:00:00Z',
+    rideId: 'ride-123',
+    ownerId: 2,
+    rideDetails: mockRideDetails,
+    onJoin: jest.fn(),
+    onDelete: jest.fn(),
+    onEdit: jest.fn(),
+    onLeave: jest.fn(),
+    onTransferOwnership: jest.fn()
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    
+    AuthContext.useAuth = jest.fn(() => ({
+      user: mockUser,
+      isAuthenticated: true
+    }));
+
+    ridesApi.getRideById.mockResolvedValue({
+      ride: {
+        id: 'ride-123',
+        origin: 'UCLA',
+        destination: 'LAX',
+        members: [
+          { id: 1, user_id: 2, status: 'CONFIRMED JOINING', profile: { first_name: 'Jane', last_name: 'Smith' } }
+        ]
+      }
+    });
+
+    ridesApi.getPendingRequests.mockResolvedValue({
+      pending_requests: []
+    });
+
+    friendsApi.getFriends.mockResolvedValue({
+      friends: []
+    });
+
+    friendsApi.getPendingRequests.mockResolvedValue({
+      sent: []
+    });
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  describe('Rendering', () => {
+    test('should render card with basic information', () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      expect(screen.getByText('UCLA ➡ LAX')).toBeInTheDocument();
+      expect(screen.getByText('Test ride description')).toBeInTheDocument();
+      expect(screen.getByText(/2 of 4 seats available/i)).toBeInTheDocument();
+    });
+
+    test('should render fallback title when origin/destination not provided', () => {
+      const props = { ...defaultProps, origin: null, destination: null };
+      renderWithRouter(<Card {...props} />);
+
+      expect(screen.getByText('Test Ride')).toBeInTheDocument();
+    });
+
+    test('should display formatted departure datetime', () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      expect(screen.getByText(/Departing at:/i)).toBeInTheDocument();
+    });
+
+    test('should render Details button', () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const detailsButton = screen.getByRole('button', { name: /Details/i });
+      expect(detailsButton).toBeInTheDocument();
+    });
+
+    test('should render Join Ride button', () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join Ride/i });
+      expect(joinButton).toBeInTheDocument();
+    });
+  });
+
+  describe('Owner Features', () => {
+    test('should show owner utilities when user is owner', () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      renderWithRouter(<Card {...ownerProps} />);
+
+      expect(screen.getByRole('button', { name: /Delete Ride/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
+    });
+
+    test('should not show owner utilities when user is not owner', () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      expect(screen.queryByRole('button', { name: /Delete Ride/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
+    });
+
+    test('should open delete confirmation modal when delete button clicked', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const deleteButton = screen.getByRole('button', { name: /Delete Ride/i });
+      fireEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Are you sure you want to delete this ride/i)).toBeInTheDocument();
+      });
+    });
+
+    test('should call deleteRide API when delete is confirmed', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.deleteRide.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const deleteButton = screen.getByRole('button', { name: /Delete Ride/i });
+      fireEvent.click(deleteButton);
+
+      await waitFor(() => {
+        const confirmButton = screen.getByRole('button', { name: /Yes, Delete/i });
+        fireEvent.click(confirmButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.deleteRide).toHaveBeenCalledWith('ride-123');
+        expect(defaultProps.onDelete).toHaveBeenCalledWith('ride-123');
+      });
+    });
+
+    test('should open edit modal when edit button clicked', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      fireEvent.click(editButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Edit Ride/i)).toBeInTheDocument();
+      });
+    });
+
+    test('should call updateRide API when edit form is submitted', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.updateRide.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const editButton = screen.getByRole('button', { name: /edit/i });
+      fireEvent.click(editButton);
+
+      await waitFor(() => {
+        const notesInput = screen.getByLabelText(/Notes/i);
+        fireEvent.change(notesInput, { target: { value: 'Updated notes' } });
+
+        const saveButton = screen.getByRole('button', { name: /Save/i });
+        fireEvent.click(saveButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.updateRide).toHaveBeenCalledWith('ride-123', expect.objectContaining({
+          notes: 'Updated notes'
+        }));
+        expect(defaultProps.onEdit).toHaveBeenCalledWith('ride-123');
+      });
+    });
+  });
+
+  describe('Join/Leave Ride Functionality', () => {
+    test('should open modal when Join Ride button is clicked', async () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join Ride/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        expect(ridesApi.getRideById).toHaveBeenCalledWith('ride-123');
+      });
+    });
+
+    test('should call joinRide API when join is confirmed', async () => {
+      ridesApi.joinRide.mockResolvedValue({ success: true });
+      global.alert = jest.fn();
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join Ride/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const confirmJoinButton = screen.getByRole('button', { name: /Confirm Join/i });
+        fireEvent.click(confirmJoinButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.joinRide).toHaveBeenCalledWith('ride-123');
+        expect(defaultProps.onJoin).toHaveBeenCalledWith('ride-123');
+        expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('Request sent'));
+      });
+    });
+
+    test('should call leaveRide API when leave is confirmed', async () => {
+      const propsWithMembership = {
+        ...defaultProps,
+        rideDetails: { ...mockRideDetails, membership_status: 'CONFIRMED JOINING' }
+      };
+      ridesApi.leaveRide.mockResolvedValue({ success: true });
+      global.alert = jest.fn();
+
+      renderWithRouter(<Card {...propsWithMembership} />);
+
+      const joinButton = screen.getByRole('button', { name: /Joined/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const leaveButton = screen.getByRole('button', { name: /Leave Ride/i });
+        fireEvent.click(leaveButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.leaveRide).toHaveBeenCalledWith('ride-123');
+        expect(global.alert).toHaveBeenCalledWith('Left ride');
+      });
+    });
+
+    test('should handle join error gracefully', async () => {
+      ridesApi.joinRide.mockRejectedValue({
+        response: { data: { error: 'Ride is full' } }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const confirmJoinButton = screen.getByRole('button', { name: /Confirm Join/i });
+        fireEvent.click(confirmJoinButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ride is full/i)).toBeInTheDocument();
+      });
+    });
+
+    test('should update membership status after joining', async () => {
+      ridesApi.joinRide.mockResolvedValue({ success: true });
+      global.alert = jest.fn();
+
+      const { rerender } = renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join Ride/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const confirmJoinButton = screen.getByRole('button', { name: /Confirm Join/i });
+        fireEvent.click(confirmJoinButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.joinRide).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Riders Tab', () => {
+    test('should fetch and display riders when Riders tab is opened', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 2, status: 'CONFIRMED JOINING', profile: { first_name: 'Jane', last_name: 'Smith' } },
+            { id: 2, user_id: 3, status: 'CONFIRMED JOINING', profile: { first_name: 'Bob', last_name: 'Johnson' } }
+          ]
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+        expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
+      });
+    });
+
+    test('should display loading state while fetching riders', async () => {
+      ridesApi.getRideById.mockImplementation(() => new Promise(() => {}));
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      expect(screen.getByText(/Loading riders/i)).toBeInTheDocument();
+    });
+
+    test('should handle riders fetch error', async () => {
+      ridesApi.getRideById.mockRejectedValue({
+        response: { data: { message: 'Failed to fetch riders' } }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to fetch riders/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Pending Requests (Owner)', () => {
+    test('should fetch pending requests when owner opens Requests tab', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.getPendingRequests.mockResolvedValue({
+        pending_requests: [
+          { id: 1, user_id: 5, status: 'PENDING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+        ]
+      });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const requestsTab = screen.getByRole('button', { name: /Requests/i });
+        fireEvent.click(requestsTab);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.getPendingRequests).toHaveBeenCalledWith('ride-123');
+        expect(screen.getByText('Alice Wonder')).toBeInTheDocument();
+      });
+    });
+
+    test('should approve pending request', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.getPendingRequests.mockResolvedValue({
+        pending_requests: [
+          { id: 1, user_id: 5, status: 'PENDING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+        ]
+      });
+      ridesApi.manageRequest.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const requestsTab = screen.getByRole('button', { name: /Requests/i });
+        fireEvent.click(requestsTab);
+      });
+
+      await waitFor(() => {
+        const approveButton = screen.getByRole('button', { name: /Approve/i });
+        fireEvent.click(approveButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.manageRequest).toHaveBeenCalledWith('ride-123', 1, 'approve');
+      });
+    });
+
+    test('should reject pending request', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.getPendingRequests.mockResolvedValue({
+        pending_requests: [
+          { id: 1, user_id: 5, status: 'PENDING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+        ]
+      });
+      ridesApi.manageRequest.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const requestsTab = screen.getByRole('button', { name: /Requests/i });
+        fireEvent.click(requestsTab);
+      });
+
+      await waitFor(() => {
+        const rejectButton = screen.getByRole('button', { name: /Reject/i });
+        fireEvent.click(rejectButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.manageRequest).toHaveBeenCalledWith('ride-123', 1, 'reject');
+      });
+    });
+  });
+
+  describe('Friend Requests', () => {
+    test('should send friend request when Add Friend button is clicked', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 5, status: 'CONFIRMED JOINING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+          ]
+        }
+      });
+      friendsApi.sendFriendRequest.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        const addFriendButton = screen.getByRole('button', { name: /Add Friend/i });
+        fireEvent.click(addFriendButton);
+      });
+
+      await waitFor(() => {
+        expect(friendsApi.sendFriendRequest).toHaveBeenCalledWith(5);
+      });
+    });
+
+    test('should not show Add Friend button if already friends', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 5, status: 'CONFIRMED JOINING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+          ]
+        }
+      });
+      friendsApi.getFriends.mockResolvedValue({
+        friends: [{ id: 5, first_name: 'Alice' }]
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: /Add Friend/i })).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Transfer Ownership', () => {
+    test('should transfer ownership when Transfer Ownership is clicked', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 3, status: 'CONFIRMED JOINING', profile: { first_name: 'Bob', last_name: 'Jones' } }
+          ]
+        }
+      });
+      ridesApi.transferOwnership.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        const transferButton = screen.getByRole('button', { name: /Transfer Ownership/i });
+        fireEvent.click(transferButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.transferOwnership).toHaveBeenCalledWith('ride-123', 1);
+        expect(defaultProps.onTransferOwnership).toHaveBeenCalledWith('ride-123', 1);
+      });
+    });
+  });
+
+  describe('Kick Member', () => {
+    test('should kick member when owner clicks Kick button', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 3, status: 'CONFIRMED JOINING', profile: { first_name: 'Bob', last_name: 'Jones' } }
+          ]
+        }
+      });
+      ridesApi.kickMember.mockResolvedValue({ success: true });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        const kickButton = screen.getByRole('button', { name: /Kick/i });
+        fireEvent.click(kickButton);
+      });
+
+      await waitFor(() => {
+        expect(ridesApi.kickMember).toHaveBeenCalledWith('ride-123', 1);
+      });
+    });
+  });
+
+  describe('View Profile', () => {
+    test('should navigate to profile when View Profile is clicked', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 5, status: 'CONFIRMED JOINING', profile: { first_name: 'Alice', last_name: 'Wonder' } }
+          ]
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const ridersTab = screen.getByRole('button', { name: /Riders/i });
+        fireEvent.click(ridersTab);
+      });
+
+      await waitFor(() => {
+        const viewProfileButton = screen.getByRole('button', { name: /View Profile/i });
+        fireEvent.click(viewProfileButton);
+      });
+
+      expect(mockNavigate).toHaveBeenCalledWith('/profile/5');
+    });
+  });
+
+  describe('Member Avatars Display', () => {
+    test('should display member avatars on card', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 2, status: 'CONFIRMED JOINING', profile: { first_name: 'J', profile_photo_url: 'https://example.com/photo.jpg' } }
+          ]
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      await waitFor(() => {
+        const avatar = screen.getByRole('img', { name: /Profile/i });
+        expect(avatar).toHaveAttribute('src', 'https://example.com/photo.jpg');
+      });
+    });
+
+    test('should display placeholder when no profile photo', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 2, status: 'CONFIRMED JOINING', profile: { first_name: 'Jane', profile_photo_url: null } }
+          ]
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('J')).toBeInTheDocument();
+      });
+    });
+
+    test('should show +N indicator when more than 4 members', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          members: [
+            { id: 1, user_id: 2, status: 'CONFIRMED JOINING', profile: { first_name: 'A' } },
+            { id: 2, user_id: 3, status: 'CONFIRMED JOINING', profile: { first_name: 'B' } },
+            { id: 3, user_id: 4, status: 'CONFIRMED JOINING', profile: { first_name: 'C' } },
+            { id: 4, user_id: 5, status: 'CONFIRMED JOINING', profile: { first_name: 'D' } },
+            { id: 5, user_id: 6, status: 'CONFIRMED JOINING', profile: { first_name: 'E' } },
+            { id: 6, user_id: 7, status: 'CONFIRMED JOINING', profile: { first_name: 'F' } }
+          ]
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('+2')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Details Modal', () => {
+    test('should open details modal when Details button is clicked', async () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const detailsButton = screen.getByRole('button', { name: /Details/i });
+      fireEvent.click(detailsButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Ride Details/i)).toBeInTheDocument();
+      });
+    });
+
+    test('should fetch and display full ride details', async () => {
+      ridesApi.getRideById.mockResolvedValue({
+        ride: {
+          origin: 'UCLA',
+          destination: 'LAX',
+          platform: 'Uber',
+          notes: 'Test notes',
+          max_seats: 4
+        }
+      });
+
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const detailsButton = screen.getByRole('button', { name: /Details/i });
+      fireEvent.click(detailsButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Test notes/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Modal Close Functionality', () => {
+    test('should close modal when Cancel is clicked', async () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const cancelButton = screen.getByRole('button', { name: /Cancel/i });
+        fireEvent.click(cancelButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Ride Details/i)).not.toBeInTheDocument();
+      });
+    });
+
+    test('should close modal when clicking outside', async () => {
+      renderWithRouter(<Card {...defaultProps} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      await waitFor(() => {
+        const overlay = document.querySelector('.modal-overlay');
+        if (overlay) {
+          fireEvent.click(overlay);
+        }
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Ride Details/i)).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Error Handling', () => {
+    test('should handle missing rideId gracefully', async () => {
+      const propsWithoutId = { ...defaultProps, rideId: null };
+      renderWithRouter(<Card {...propsWithoutId} />);
+
+      const joinButton = screen.getByRole('button', { name: /Join\/Leave/i });
+      fireEvent.click(joinButton);
+
+      // Should not crash
+      expect(screen.getByRole('button', { name: /Join\/Leave/i })).toBeInTheDocument();
+    });
+
+    test('should display error when delete fails', async () => {
+      const ownerProps = { ...defaultProps, ownerId: 1 };
+      ridesApi.deleteRide.mockRejectedValue({
+        response: { data: { error: 'Delete failed' } }
+      });
+
+      renderWithRouter(<Card {...ownerProps} />);
+
+      const deleteButton = screen.getByRole('button', { name: /Delete Ride/i });
+      fireEvent.click(deleteButton);
+
+      await waitFor(() => {
+        const confirmButton = screen.getByRole('button', { name: /Yes, Delete/i });
+        fireEvent.click(confirmButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Delete failed/i)).toBeInTheDocument();
+      });
+    });
+  });
+});

@@ -280,7 +280,7 @@ describe('Rides API Tests', () => {
       error.response = { data: { error: 'Unauthorized' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getMyPendingRides()).rejects.toThrow();
+      await expect(getMyPendingRides()).rejects.toThrow('Unauthorized');
     });
   });
 
@@ -313,7 +313,7 @@ describe('Rides API Tests', () => {
       error.response = { data: { error: 'Ride not found' } };
       axios.get.mockRejectedValue(error);
 
-      await expect(getPendingRequests('invalid-id')).rejects.toThrow();
+      await expect(getPendingRequests('invalid-id')).rejects.toThrow('Ride not found');
     });
   });
 
@@ -364,7 +364,7 @@ describe('Rides API Tests', () => {
       error.response = { data: { error: 'Not authorized' } };
       axios.post.mockRejectedValue(error);
 
-      await expect(manageRequest('ride-1', 'user-1', 'approve')).rejects.toThrow();
+      await expect(manageRequest('ride-123', 'user-456', 'invalid')).rejects.toThrow('Invalid action');
     });
   });
 
@@ -393,7 +393,7 @@ describe('Rides API Tests', () => {
       error.response = { data: { error: 'Only owner can kick members' } };
       axios.delete.mockRejectedValue(error);
 
-      await expect(kickMember('ride-1', 'user-1')).rejects.toThrow();
+      await expect(kickMember('ride-1', 'user-1')).rejects.toThrow('Only owner can kick members');
     });
   });
 
@@ -426,7 +426,7 @@ describe('Rides API Tests', () => {
       error.response = { data: { error: 'New owner must be a member' } };
       axios.post.mockRejectedValue(error);
 
-      await expect(transferOwnership('ride-1', 'user-1')).rejects.toThrow();
+      await expect(transferOwnership('ride-123', 'user-456')).rejects.toThrow('User not a member');
     });
   });
 });
