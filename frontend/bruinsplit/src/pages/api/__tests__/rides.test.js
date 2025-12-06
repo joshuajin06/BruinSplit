@@ -34,6 +34,8 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 describe('Rides API Tests', () => {
+  const mockToken = 'fake-jwt-token';
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
@@ -51,8 +53,8 @@ describe('Rides API Tests', () => {
 
       const result = await getRides();
 
-      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides');
-      expect(result).toEqual(mockRides);
+      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides', { headers: {} });
+      expect(result).toEqual(mockRides.data);
     });
 
     it('should handle errors when fetching rides', async () => {
@@ -60,12 +62,13 @@ describe('Rides API Tests', () => {
       axios.get.mockRejectedValue(error);
 
       await expect(getRides()).rejects.toThrow('Network error');
-      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides');
+      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides', { headers: {} });
     });
   });
 
   describe('createRide', () => {
     it('should call POST /api/rides with ride data and return created ride', async () => {
+      localStorageMock.setItem('token', mockToken);
       const rideData = {
         origin_text: 'UCLA',
         destination_text: 'LAX',
@@ -83,7 +86,9 @@ describe('Rides API Tests', () => {
 
       const result = await createRide(rideData);
 
-      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData);
+      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData, {
+        headers: { Authorization: `Bearer ${mockToken}` }
+      });
       expect(result).toEqual(mockResponse.data);
     });
 
@@ -271,9 +276,9 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when fetching pending rides', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Unauthorized' } }
-      });
+      const error = new Error('Unauthorized');
+      error.response = { data: { error: 'Unauthorized' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getMyPendingRides()).rejects.toThrow();
     });
@@ -304,9 +309,9 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when fetching pending requests', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Ride not found' } }
-      });
+      const error = new Error('Ride not found');
+      error.response = { data: { error: 'Ride not found' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getPendingRequests('invalid-id')).rejects.toThrow();
     });
@@ -355,9 +360,9 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when managing requests', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'Not authorized' } }
-      });
+      const error = new Error('Not authorized');
+      error.response = { data: { error: 'Not authorized' } };
+      axios.post.mockRejectedValue(error);
 
       await expect(manageRequest('ride-1', 'user-1', 'approve')).rejects.toThrow();
     });
@@ -384,9 +389,9 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when kicking member', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.delete.mockRejectedValue({
-        response: { data: { error: 'Only owner can kick members' } }
-      });
+      const error = new Error('Only owner can kick members');
+      error.response = { data: { error: 'Only owner can kick members' } };
+      axios.delete.mockRejectedValue(error);
 
       await expect(kickMember('ride-1', 'user-1')).rejects.toThrow();
     });
@@ -417,9 +422,9 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when transferring ownership', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'New owner must be a member' } }
-      });
+      const error = new Error('New owner must be a member');
+      error.response = { data: { error: 'New owner must be a member' } };
+      axios.post.mockRejectedValue(error);
 
       await expect(transferOwnership('ride-1', 'user-1')).rejects.toThrow();
     });

@@ -57,10 +57,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when sending friend request fails', async () => {
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'User not found' } },
-        message: 'User not found'
-      });
+      const error = new Error('User not found');
+      error.response = { data: { error: 'User not found' } };
+      axios.post.mockRejectedValue(error);
 
       await expect(sendFriendRequest('invalid-user')).rejects.toThrow();
     });
@@ -102,9 +101,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when accepting friend request fails', async () => {
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'Request not found' } }
-      });
+      const error = new Error('Request not found');
+      error.response = { data: { error: 'Request not found' } };
+      axios.post.mockRejectedValue(error);
 
       await expect(acceptFriendRequest('invalid-id')).rejects.toThrow();
     });
@@ -129,9 +128,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when rejecting friend request fails', async () => {
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'Request not found' } }
-      });
+      const error = new Error('Request not found');
+      error.response = { data: { error: 'Request not found' } };
+      axios.post.mockRejectedValue(error);
 
       await expect(rejectFriendRequest('invalid-id')).rejects.toThrow();
     });
@@ -155,9 +154,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when removing friend fails', async () => {
-      axios.delete.mockRejectedValue({
-        response: { data: { error: 'Friendship not found' } }
-      });
+      const error = new Error('Friendship not found');
+      error.response = { data: { error: 'Friendship not found' } };
+      axios.delete.mockRejectedValue(error);
 
       await expect(removeFriend('invalid-id')).rejects.toThrow();
     });
@@ -194,9 +193,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when getting friends fails', async () => {
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Unauthorized' } }
-      });
+      const error = new Error('Unauthorized');
+      error.response = { data: { error: 'Unauthorized' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getFriends()).rejects.toThrow();
     });
@@ -236,9 +235,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when getting pending requests fails', async () => {
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Failed to fetch requests' } }
-      });
+      const error = new Error('Failed to fetch requests');
+      error.response = { data: { error: 'Failed to fetch requests' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getPendingRequests()).rejects.toThrow();
     });
@@ -270,9 +269,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when getting friend count fails', async () => {
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'User not found' } }
-      });
+      const error = new Error('User not found');
+      error.response = { data: { error: 'User not found' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getFriendCount('invalid-user')).rejects.toThrow();
     });
@@ -308,9 +307,9 @@ describe('Friends API Tests', () => {
     });
 
     it('should handle errors when getting user friends fails', async () => {
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'User not found' } }
-      });
+      const error = new Error('User not found');
+      error.response = { data: { error: 'User not found' } };
+      axios.get.mockRejectedValue(error);
 
       await expect(getUserFriends('invalid-user')).rejects.toThrow();
     });

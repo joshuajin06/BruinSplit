@@ -63,12 +63,24 @@ describe('Card Component', () => {
     jest.spyOn(window.localStorage.__proto__, 'getItem').mockReturnValue(JSON.stringify(mockUser));
   });
 
-  test('renders basic card information', () => {
+  test('renders basic card information', async () => {
+    ridesApi.getRideById.mockResolvedValue({
+      ride: {
+        ...baseProps,
+        members: [
+          { id: 1, status: 'CONFIRMED JOINING' },
+          { id: 2, status: 'CONFIRMED JOINING' }
+        ],
+      },
+    });
+
     renderCardWithProvider(baseProps);
 
     expect(screen.getByText('UCLA ➡ Downtown LA')).toBeInTheDocument();
     expect(screen.getByText(/Departing at:/)).toBeInTheDocument();
-    expect(screen.getByText('2 of 4 seats available')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('2 of 4 seats available')).toBeInTheDocument();
+    });
   });
 
   test('shows "Join Ride" button for a regular user', () => {
@@ -112,7 +124,7 @@ describe('Card Component', () => {
     fireEvent.click(detailsButton);
 
     // The modal's content should now be visible
-    expect(await screen.findByText('Ride Logistics')).toBeInTheDocument();
+    expect(await screen.findByText('Ride Details')).toBeInTheDocument();
   });
 
     test('opens delete confirmation modal when delete button is clicked', () => {
