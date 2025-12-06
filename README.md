@@ -1,6 +1,6 @@
 # BruinSplit
 
-<img src="https://github.com/joshuajin06/BruinSplit/frontend/bruinsplit/src/assets/finalogofinal.png" alt="BruinSplit Logo" width="140">
+<img src="https://github.com/joshuajin06/BruinSplit/blob/main/frontend/bruinsplit/src/assets/finalogofinal.png" alt="BruinSplit Logo" width="140">
 
 Uber, Lyft, and Waymo rides are increasing in price, and students tend to grab a ride to the same destination at the same time while paying full price. If two students both go to LAX at 8pm after their finals, why not split the cost? 
 
