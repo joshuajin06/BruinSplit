@@ -42,8 +42,8 @@ const RidersTab = ({ rideId, ownerId, isOwner }) => {
     if (!window.confirm('Are you sure you want to transfer ownership? This cannot be undone.')) return;
     try {
       await transferOwnership(rideId, newOwnerId);
-      fetchRiders(); // Refresh list
-      // You might want to pass an onOwnershipChange callback up to the parent if the ownerId needs to be updated there
+      // Reload the page to update all ownership-related UI
+      window.location.reload();
     } catch (err) {
       alert('Failed to transfer ownership.');
       console.error("Transfer ownership error:", err);

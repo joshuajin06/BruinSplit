@@ -4,13 +4,15 @@ import './card.css';
 import RideDetailsTab from './manageRideModal/RideDetailsTab';
 import RidersTab from './manageRideModal/RidersTab';
 import RequestsTab from './manageRideModal/RequestsTab';
-import { getPendingRequests } from '../pages/api/rides';
+import { getPendingRequests, getRideById } from '../pages/api/rides';
 
-const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipStatus, onJoin, onLeave }) => {
+const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipStatus, onJoin, onLeave, onMembersUpdated }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [currentMembersCount, setCurrentMembersCount] = useState(ride.rideDetails?.current_members || 0);
+  const [ridersRefreshKey, setRidersRefreshKey] = useState(0);
 
   const fetchRequests = useCallback(async () => {
     if (!ride.rideId || !isOwner) return;
@@ -22,11 +24,24 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
     }
   }, [ride.rideId, isOwner]);
 
+  const fetchRideMembers = useCallback(async () => {
+    if (!ride.rideId) return;
+    try {
+      const data = await getRideById(ride.rideId);
+      const members = data?.ride?.members || [];
+      const confirmed = members.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
+      setCurrentMembersCount(confirmed.length);
+    } catch (err) {
+      console.error('Failed to load members count:', err);
+    }
+  }, [ride.rideId]);
+
   useEffect(() => {
     if (isOpen) {
       fetchRequests();
+      fetchRideMembers();
     }
-  }, [isOpen, fetchRequests]);
+  }, [isOpen, fetchRequests, fetchRideMembers]);
 
   if (!isOpen) {
     return null;
@@ -62,6 +77,11 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
 
   const handleRequestsUpdated = () => {
     fetchRequests();
+    fetchRideMembers();
+    setRidersRefreshKey(prev => prev + 1); // Force RidersTab to refresh
+    if (onMembersUpdated) {
+      onMembersUpdated(); // Update card face member count
+    }
   };
 
   return createPortal(
@@ -90,7 +110,7 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
             onClick={() => setActiveTab('riders')}
             type="button"
           >
-            Current Riders ({ride.rideDetails?.current_members || 0})
+            Current Riders ({currentMembersCount})
           </button>
           {isOwner && (
             <button
@@ -106,7 +126,7 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
         {/* Tab Content */}
         <div className="tab-content">
           {activeTab === 'details' && <RideDetailsTab ride={ride} />}
-          {activeTab === 'riders' && <RidersTab rideId={ride.rideId} ownerId={ownerId} isOwner={isOwner} />}
+          {activeTab === 'riders' && <RidersTab key={ridersRefreshKey} rideId={ride.rideId} ownerId={ownerId} isOwner={isOwner} />}
           {activeTab === 'requests' && isOwner && (
             <RequestsTab
               rideId={ride.rideId}

@@ -3,6 +3,6 @@ module.exports = {
     ['@babel/preset-env', {
       targets: { browsers: 'defaults' }
     }],
-    '@babel/preset-react'
+    ['@babel/preset-react', { runtime: 'automatic' }]
   ]
 };

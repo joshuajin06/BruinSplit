@@ -1,5 +1,6 @@
 module.exports = {
   testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/styleMock.js',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/styleMock.js',
@@ -9,9 +10,9 @@ module.exports = {
     '^.+\\.(js|jsx)$': ['babel-jest', { configFile: './babel.config.cjs' }],
   },
   testMatch: [
-    '**/__tests__/**/*.test.js',
+    '**/__tests__/**/*.test.[tj]s?(x)',
     '!**/__tests__/integration.test.js',
-    '**/?(*.)+(spec|test).js'
+    '**/?(*.)+(spec|test).[tj]s?(x)'
   ],
   collectCoverageFrom: [
     'src/pages/api/**/*.js',

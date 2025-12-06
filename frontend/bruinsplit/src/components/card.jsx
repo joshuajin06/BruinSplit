@@ -32,18 +32,19 @@ export default function Card({
   const [actionState, setActionState] = useState({ loading: false, error: null });
 
   // Fetch members for the card face display
+  const fetchCardMembers = async () => {
+    if (!rideId) return;
+    try {
+      const data = await getRideById(rideId);
+      const members = data?.ride?.members || [];
+      const confirmed = members.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
+      setCardMembers(confirmed);
+    } catch (err) {
+      console.debug('Could not fetch members for card', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchCardMembers = async () => {
-      if (!rideId) return;
-      try {
-        const data = await getRideById(rideId);
-        const members = data?.ride?.members || [];
-        const confirmed = members.filter(m => m.status === 'CONFIRMED JOINING' || m.status === 'JOINED');
-        setCardMembers(confirmed);
-      } catch (err) {
-        console.debug('Could not fetch members for card', err);
-      }
-    };
     fetchCardMembers();
   }, [rideId]);
   
@@ -146,6 +147,7 @@ export default function Card({
         membershipStatus={membershipStatus}
         onJoin={handleJoin}
         onLeave={handleLeave}
+        onMembersUpdated={fetchCardMembers}
       />
     </>
   );
