@@ -185,6 +185,7 @@ BruinSplit uses Playwright for end-to-end testing. The E2E tests automatically s
 **Run E2E tests:**
 From the root directory
 `npm run test:e2e`
+
 **Run tests with UI mode (interactive)**
 `npm run test:e2e:ui`
 
