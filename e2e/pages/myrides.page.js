@@ -74,16 +74,15 @@ export class MyRidesPage {
       }
     }
 
-    // Wait for either skeleton cards to disappear or the three-column layout to appear
-    try {
-      await Promise.race([
-        this.skeletonCards.first().waitFor({ state: 'hidden', timeout: 15000 }),
-        this.threeColumnLayout.waitFor({ state: 'visible', timeout: 15000 })
-      ]);
-    } catch (error) {
-      if (error.message.includes('closed')) {
-        throw error;
+    // Wait for skeleton cards to disappear or three-column layout to appear
+    for (let i = 0; i < 30; i++) {
+      const skeletonHidden = await this.skeletonCards.first().isHidden().catch(() => true);
+      const layoutVisible = await this.threeColumnLayout.isVisible().catch(() => false);
+      
+      if (skeletonHidden || layoutVisible) {
+        break;
       }
+      await this.page.waitForTimeout(500);
     }
 
     // Additional wait for content to render
