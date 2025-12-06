@@ -10,6 +10,8 @@ module.exports = {
   testMatch: [
     '**/__tests__/**/*.test.jsx',
     '**/__tests__/**/*.test.js',
+    '**/e2e_tests/**/*.test.jsx',
+    '**/e2e_tests/**/*.test.js',
     '!**/__tests__/integration.test.js'
   ],
   collectCoverageFrom: [

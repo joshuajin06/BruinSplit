@@ -51,8 +51,8 @@ describe('Rides API Tests', () => {
 
       const result = await getRides();
 
-      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides');
-      expect(result).toEqual(mockRides);
+      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides', { headers: {} });
+      expect(result).toEqual(mockRides.data);
     });
 
     it('should handle errors when fetching rides', async () => {
@@ -60,7 +60,7 @@ describe('Rides API Tests', () => {
       axios.get.mockRejectedValue(error);
 
       await expect(getRides()).rejects.toThrow('Network error');
-      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides');
+      expect(axios.get).toHaveBeenCalledWith('http://localhost:8080/api/rides', { headers: {} });
     });
   });
 
@@ -83,7 +83,7 @@ describe('Rides API Tests', () => {
 
       const result = await createRide(rideData);
 
-      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData);
+      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData, { headers: {} });
       expect(result).toEqual(mockResponse.data);
     });
 
@@ -271,11 +271,11 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when fetching pending rides', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Unauthorized' } }
-      });
+      const error = new Error('Unauthorized');
+      error.response = { data: { error: 'Unauthorized' } };
+      axios.get.mockRejectedValue(error);
 
-      await expect(getMyPendingRides()).rejects.toThrow();
+      await expect(getMyPendingRides()).rejects.toThrow('Unauthorized');
     });
   });
 
@@ -304,11 +304,11 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when fetching pending requests', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.get.mockRejectedValue({
-        response: { data: { error: 'Ride not found' } }
-      });
+      const error = new Error('Ride not found');
+      error.response = { data: { error: 'Ride not found' } };
+      axios.get.mockRejectedValue(error);
 
-      await expect(getPendingRequests('invalid-id')).rejects.toThrow();
+      await expect(getPendingRequests('invalid-id')).rejects.toThrow('Ride not found');
     });
   });
 
@@ -355,11 +355,11 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when managing requests', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'Not authorized' } }
-      });
+      const error = new Error('Invalid action');
+      error.response = { data: { error: 'Invalid action' } };
+      axios.post.mockRejectedValue(error);
 
-      await expect(manageRequest('ride-1', 'user-1', 'approve')).rejects.toThrow();
+      await expect(manageRequest('ride-123', 'user-456', 'invalid')).rejects.toThrow('Invalid action');
     });
   });
 
@@ -384,11 +384,11 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when kicking member', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.delete.mockRejectedValue({
-        response: { data: { error: 'Only owner can kick members' } }
-      });
+      const error = new Error('Only owner can kick members');
+      error.response = { data: { error: 'Only owner can kick members' } };
+      axios.delete.mockRejectedValue(error);
 
-      await expect(kickMember('ride-1', 'user-1')).rejects.toThrow();
+      await expect(kickMember('ride-1', 'user-1')).rejects.toThrow('Only owner can kick members');
     });
   });
 
@@ -417,11 +417,11 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when transferring ownership', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      axios.post.mockRejectedValue({
-        response: { data: { error: 'New owner must be a member' } }
-      });
+      const error = new Error('User not a member');
+      error.response = { data: { error: 'User not a member' } };
+      axios.post.mockRejectedValue(error);
 
-      await expect(transferOwnership('ride-1', 'user-1')).rejects.toThrow();
+      await expect(transferOwnership('ride-123', 'user-456')).rejects.toThrow('User not a member');
     });
   });
 });
