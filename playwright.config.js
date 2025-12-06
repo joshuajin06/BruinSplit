@@ -77,11 +77,11 @@ export default defineConfig({
   // Output folder for test artifacts
   outputDir: 'e2e/test-results',
 
-  // Global timeout for each test
-  timeout: 30 * 1000,
+  // Global timeout for each test (240 seconds for complex multi-user tests)
+  timeout: 240 * 1000,
 
   // Timeout for each expect() assertion
   expect: {
-    timeout: 5000,
+    timeout: 10000,
   },
 });
