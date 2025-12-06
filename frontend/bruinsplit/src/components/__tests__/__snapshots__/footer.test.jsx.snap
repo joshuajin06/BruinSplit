@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Footer Component Snapshot should match snapshot 1`] = `
+<footer>
+  <p>
+    © 
+    2025
+     BruinSplit. All rights reserved.
+  </p>
+</footer>
+`;
