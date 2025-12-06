@@ -1,7 +1,8 @@
 module.exports = {
   presets: [
     ['@babel/preset-env', {
-      targets: { node: 'current' }
-    }]
+      targets: { browsers: 'defaults' }
+    }],
+    '@babel/preset-react'
   ]
 };
