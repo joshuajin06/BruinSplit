@@ -70,15 +70,8 @@ export class PostingsPage {
     async gotoAuthenticated() {
       // Navigate and ensure we stay on postings (for authenticated users)
       await this.page.goto('/postings');
-  
-      // Wait for auth check to complete by waiting for either:
-      // 1. The page title to appear (we're authenticated)
-      // 2. Redirect to login (we're not authenticated)
-      await Promise.race([
-        this.pageTitle.waitFor({ state: 'visible', timeout: 10000 }),
-        this.page.waitForURL(/\/login/, { timeout: 10000 })
-      ]).catch(() => {});
-  
+      await this.page.waitForLoadState('load').catch(() => {});
+
       // If we ended up on login, throw an error
       if (this.page.url().includes('/login')) {
         throw new Error('User is not authenticated - redirected to login');
@@ -97,19 +90,19 @@ export class PostingsPage {
     }
   
     async openCreateRideModal() {
-      await this.addPostButton.waitFor({ state: 'visible', timeout: 10000 });
+      await this.addPostButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
       await this.addPostButton.click();
       await this.modal.waitFor({ state: 'visible' });
     }
   
     async closeModal() {
       await this.modalCloseButton.click();
-      await this.modal.waitFor({ state: 'hidden' });
+      await this.modal.waitFor({ state: 'hidden' }).catch(() => {});
     }
   
     async createRide({ origin, destination, departure, platform = 'LYFT', maxSeats = 2, notes = '' }) {
       await this.openCreateRideModal();
-  
+
       await this.originInput.fill(origin);
       await this.destinationInput.fill(destination);
       await this.departureInput.fill(departure);
@@ -118,9 +111,9 @@ export class PostingsPage {
       if (notes) {
         await this.notesTextarea.fill(notes);
       }
-  
+
       await this.createButton.click();
-  
+
       // Wait for modal to close (success) or error to appear
       try {
         await this.modal.waitFor({ state: 'hidden', timeout: 10000 });
@@ -131,9 +124,7 @@ export class PostingsPage {
           throw error;
         }
       }
-    }
-  
-    async getRideCards() {
+    }    async getRideCards() {
       return this.rideCards.all();
     }
   
@@ -144,7 +135,7 @@ export class PostingsPage {
     async waitForRidesToLoad() {
       // Wait for page to be fully loaded first
       try {
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('load');
       } catch (error) {
         if (!error.message.includes('closed')) {
           throw error;

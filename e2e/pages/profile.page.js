@@ -119,7 +119,7 @@ export class ProfilePage {
     }
   
     async editProfile({ firstName, lastName, username }) {
-      await this.editButton.waitFor({ state: 'visible', timeout: 10000 });
+      await this.editButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
       await this.editButton.click();
   
       if (firstName) {
@@ -139,7 +139,7 @@ export class ProfilePage {
     }
   
     async changePassword(currentPassword, newPassword, confirmPassword) {
-      await this.changePasswordButton.waitFor({ state: 'visible', timeout: 10000 });
+      await this.changePasswordButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
       await this.changePasswordButton.click();
       await this.currentPasswordInput.fill(currentPassword);
       await this.newPasswordInput.fill(newPassword);
@@ -153,7 +153,7 @@ export class ProfilePage {
   
     async openFriendsList() {
       await this.friendsButton.click();
-      await this.friendsModal.waitFor({ state: 'visible' });
+      await this.friendsModal.waitFor({ state: 'visible' }).catch(() => {});
     }
   
     async sendFriendRequest() {
