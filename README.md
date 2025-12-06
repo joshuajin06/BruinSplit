@@ -190,13 +190,17 @@ From the root directory
 
 ## Backend Unit Tests
 
-Run backend unit tests from the backend directory:
-`cd backend`
-`npm test`
+**Run backend unit tests from the backend directory:**
+```bash
+cd backend
+npm test
+```
 
-Run frontend unit tests from the frontend directory:
-`cd frontend/bruinsplit`
-`npm test`
+**Run frontend unit tests from the frontend directory:**
+```bash
+cd frontend/bruinsplit
+npm test
+```
 
 # Creators 
 Jaden Ho, Anish Kumar, Joshua Jin, Justin Luc
