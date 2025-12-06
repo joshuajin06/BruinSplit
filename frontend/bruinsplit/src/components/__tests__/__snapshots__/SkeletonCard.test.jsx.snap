@@ -1,0 +1,75 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SkeletonCard Component Snapshot should match snapshot with default props 1`] = `
+<div
+  class="skeleton-card"
+  style="--skeleton-delay: 0s;"
+>
+  <div
+    class="skeleton-header"
+  />
+  <div
+    class="skeleton-content"
+  >
+    <div
+      class="skeleton-line"
+      style="width: 80%;"
+    />
+    <div
+      class="skeleton-line"
+      style="width: 60%;"
+    />
+    <div
+      class="skeleton-line"
+      style="width: 90%;"
+    />
+    <div
+      class="skeleton-buttons"
+    >
+      <div
+        class="skeleton-button"
+      />
+      <div
+        class="skeleton-button"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`SkeletonCard Component Snapshot should match snapshot with index prop 1`] = `
+<div
+  class="skeleton-card"
+  style="--skeleton-delay: 0.5s;"
+>
+  <div
+    class="skeleton-header"
+  />
+  <div
+    class="skeleton-content"
+  >
+    <div
+      class="skeleton-line"
+      style="width: 80%;"
+    />
+    <div
+      class="skeleton-line"
+      style="width: 60%;"
+    />
+    <div
+      class="skeleton-line"
+      style="width: 90%;"
+    />
+    <div
+      class="skeleton-buttons"
+    >
+      <div
+        class="skeleton-button"
+      />
+      <div
+        class="skeleton-button"
+      />
+    </div>
+  </div>
+</div>
+`;
