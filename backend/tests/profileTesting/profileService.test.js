@@ -1,7 +1,38 @@
-import { getProfileService, updateProfileService } from '../../src/services/profileService.js';
-import { supabase } from '../../src/supabase.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-jest.mock('../../src/supabase.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const supabasePath = resolve(__dirname, '../../src/supabase.js');
+
+// use unstable_mockModule with absolute path for ES modules
+const mockQueryBuilder = {
+  select: jest.fn().mockReturnThis(),
+  insert: jest.fn().mockReturnThis(),
+  update: jest.fn().mockReturnThis(),
+  delete: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  neq: jest.fn().mockReturnThis(),
+  in: jest.fn().mockReturnThis(),
+  or: jest.fn().mockReturnThis(),
+  order: jest.fn().mockReturnThis(),
+  limit: jest.fn().mockReturnThis(),
+  single: jest.fn(),
+  maybeSingle: jest.fn(),
+  then: jest.fn(function(resolve, reject) {
+    return Promise.resolve(this._response).then(resolve, reject);
+  }),
+  _response: { data: null, error: null }
+};
+
+await jest.unstable_mockModule(supabasePath, () => ({
+  supabase: {
+    from: jest.fn(() => mockQueryBuilder)
+  }
+}));
+
+import { supabase } from '../../src/supabase.js';
+import { getProfileService, updateProfileService } from '../../src/services/profileService.js';
 
 describe('Profile Service', () => {
   let mockQueryBuilder;

@@ -1,9 +1,24 @@
-import { getProfile, getProfileById, updateProfile } from '../../src/controllers/profileController.js';
-import * as profileService from '../../src/services/profileService.js';
 import { createMockRequest, createMockResponse, createMockNext } from '../helpers/testHelpers.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-// mock the service layer to isolate controller logic
-jest.mock('../../src/services/profileService.js');
+// use unstable_mockModule with absolute path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const profileServicePath = resolve(__dirname, '../../src/services/profileService.js');
+
+// create mock functions that will be used as test doubles
+// these mocks isolate the controller from the service layer
+const mockProfileService = {
+  getProfileService: jest.fn(),
+  getProfileByIdService: jest.fn(),
+  updateProfileService: jest.fn()
+};
+
+await jest.unstable_mockModule(profileServicePath, () => mockProfileService);
+
+const { getProfile, getProfileById, updateProfile } = await import('../../src/controllers/profileController.js');
+const profileService = await import(profileServicePath);
 
 describe('Profile Controller', () => {
   let req, res, next;

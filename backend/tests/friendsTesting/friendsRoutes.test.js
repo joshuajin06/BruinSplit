@@ -1,10 +1,16 @@
 import request from 'supertest';
 import express from 'express';
-import friendsRoutes from '../../src/routes/friendsRoute.js';
 import { generateTestToken } from '../helpers/authHelpers.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-// mock all controllers (another insane block xD)
-jest.mock('../../src/controllers/friendsController.js', () => ({
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const friendsControllerPath = resolve(__dirname, '../../src/controllers/friendsController.js');
+const authMiddlewarePath = resolve(__dirname, '../../src/middleware/authenticateUser.js');
+
+// mock all controllers using test doubles
+await jest.unstable_mockModule(friendsControllerPath, () => ({
   sendFriendRequest: jest.fn((req, res) => res.status(201).json({ message: 'Request sent' })),
   acceptFriendRequest: jest.fn((req, res) => res.status(200).json({ message: 'Accepted' })),
   rejectFriendRequest: jest.fn((req, res) => res.status(200).json({ message: 'Rejected' })),
@@ -18,14 +24,22 @@ jest.mock('../../src/controllers/friendsController.js', () => ({
 }));
 
 // mock auth middleware
-jest.mock('../../src/middleware/authenticateUser.js', () => ({
+await jest.unstable_mockModule(authMiddlewarePath, () => ({
   authenticateUser: (req, res, next) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'No token provided' });
     req.user = { id: 'user-1111', email: 'test@example.com' };
     next();
+  },
+  maybeAuthenticateUser: (req, res, next) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) req.user = { id: 'user-1111' };
+    next();
   }
 }));
+
+const friendsRoutesModule = await import('../../src/routes/friendsRoute.js');
+const friendsRoutes = friendsRoutesModule.default;
 
 const createTestApp = () => {
   const app = express();

@@ -1,17 +1,23 @@
 import request from 'supertest';
 import express from 'express';
-import messagesRoutes from '../../src/routes/messagesRoute.js';
 import { generateTestToken } from '../helpers/authHelpers.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-// mock all controllers
-jest.mock('../../src/controllers/messagesController.js', () => ({
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const messagesControllerPath = resolve(__dirname, '../../src/controllers/messagesController.js');
+const authMiddlewarePath = resolve(__dirname, '../../src/middleware/authenticateUser.js');
+
+// mock all controllers using test doubles
+await jest.unstable_mockModule(messagesControllerPath, () => ({
   postMessage: jest.fn((req, res) => res.status(201).json({ message: 'Message sent' })),
   getMessages: jest.fn((req, res) => res.json({ messages: [] })),
   getConversations: jest.fn((req, res) => res.json({ conversations: [] }))
 }));
 
 // mock auth middleware
-jest.mock('../../src/middleware/authenticateUser.js', () => ({
+await jest.unstable_mockModule(authMiddlewarePath, () => ({
   authenticateUser: (req, res, next) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -19,6 +25,8 @@ jest.mock('../../src/middleware/authenticateUser.js', () => ({
     next();
   }
 }));
+
+const messagesRoutes = await import('../../src/routes/messagesRoute.js').then(m => m.default);
 
 const createTestApp = () => {
   const app = express();

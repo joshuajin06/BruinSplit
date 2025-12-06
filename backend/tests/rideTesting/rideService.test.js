@@ -1,3 +1,33 @@
+// use unstable_mockModule with absolute path for ES modules
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const supabasePath = resolve(__dirname, '../../src/supabase.js');
+
+const mockQueryBuilder = {
+  select: jest.fn().mockReturnThis(),
+  insert: jest.fn().mockReturnThis(),
+  update: jest.fn().mockReturnThis(),
+  delete: jest.fn().mockReturnThis(),
+  eq: jest.fn().mockReturnThis(),
+  in: jest.fn().mockReturnThis(),
+  single: jest.fn(),
+  maybeSingle: jest.fn(),
+  then: jest.fn(function(resolve, reject) {
+    return Promise.resolve(this._response).then(resolve, reject);
+  }),
+  _response: { data: null, error: null }
+};
+
+await jest.unstable_mockModule(supabasePath, () => ({
+  supabase: {
+    from: jest.fn(() => mockQueryBuilder)
+  }
+}));
+
+import { supabase } from '../../src/supabase.js';
 import { 
   createRide, 
   joinRideService, 
@@ -5,9 +35,6 @@ import {
   approveRideRequestService,
   getAvailableSeats 
 } from '../../src/services/rideService.js';
-import { supabase } from '../../src/supabase.js';
-
-jest.mock('../../src/supabase.js');
 
 describe('Ride Service', () => {
   let mockQueryBuilder;
@@ -15,7 +42,7 @@ describe('Ride Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // create chainable mock builder
+    // create fresh mock query builder for each test
     mockQueryBuilder = {
       select: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
@@ -31,7 +58,8 @@ describe('Ride Service', () => {
       _response: { data: null, error: null }
     };
 
-    supabase.from = jest.fn(() => mockQueryBuilder);
+    // set up the mock to return our query builder
+    supabase.from.mockReturnValue(mockQueryBuilder);
   });
 
   describe('createRide', () => {

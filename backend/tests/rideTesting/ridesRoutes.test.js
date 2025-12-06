@@ -1,10 +1,16 @@
 import request from 'supertest';
 import express from 'express';
-import ridesRoutes from '../../src/routes/ridesRoute.js';
 import { generateTestToken } from '../helpers/authHelpers.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-// mock all controllers (what a block of code)
-jest.mock('../../src/controllers/ridesController.js', () => ({
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const ridesControllerPath = resolve(__dirname, '../../src/controllers/ridesController.js');
+const authMiddlewarePath = resolve(__dirname, '../../src/middleware/authenticateUser.js');
+
+// mock all controllers using test doubles
+await jest.unstable_mockModule(ridesControllerPath, () => ({
   postRide: jest.fn((req, res) => res.status(201).json({ message: 'Ride created', ride: { id: 'ride-3535' } })),
   getRides: jest.fn((req, res) => res.json({ rides: [] })),
   joinRide: jest.fn((req, res) => res.status(201).json({ message: 'Joined' })),
@@ -22,7 +28,7 @@ jest.mock('../../src/controllers/ridesController.js', () => ({
 }));
 
 // mock auth middleware
-jest.mock('../../src/middleware/authenticateUser.js', () => ({
+await jest.unstable_mockModule(authMiddlewarePath, () => ({
   authenticateUser: (req, res, next) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -35,6 +41,8 @@ jest.mock('../../src/middleware/authenticateUser.js', () => ({
     next();
   }
 }));
+
+const ridesRoutes = await import('../../src/routes/ridesRoute.js').then(m => m.default);
 
 const createTestApp = () => {
   const app = express();

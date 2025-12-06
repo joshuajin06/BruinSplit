@@ -1,9 +1,30 @@
-import { sendFriendRequest, acceptFriendRequest, getFriends } from '../../src/controllers/friendsController.js';
-import * as friendsService from '../../src/services/friendsService.js';
 import { createMockRequest, createMockResponse, createMockNext } from '../helpers/testHelpers.js';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-// mock the service layer to isolate controller logic
-jest.mock('../../src/services/friendsService.js');
+// use unstable_mockModule with absolute path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const friendsServicePath = resolve(__dirname, '../../src/services/friendsService.js');
+
+// create mock functions that will be used as test doubles
+// these mocks isolate the controller from the service layer
+const mockFriendsService = {
+  sendFriendRequestService: jest.fn(),
+  acceptFriendRequestService: jest.fn(),
+  rejectFriendRequestService: jest.fn(),
+  removeFriendService: jest.fn(),
+  getFriendsService: jest.fn(),
+  getPendingFriendRequestsService: jest.fn(),
+  getFriendCountService: jest.fn(),
+  getFriendRidesService: jest.fn(),
+  getFriendsUpcomingRidesService: jest.fn()
+};
+
+await jest.unstable_mockModule(friendsServicePath, () => mockFriendsService);
+
+const { sendFriendRequest, acceptFriendRequest, getFriends } = await import('../../src/controllers/friendsController.js');
+const friendsService = await import(friendsServicePath);
 
 describe('Friends Controller', () => {
   let req, res, next;
