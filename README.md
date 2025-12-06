@@ -171,5 +171,46 @@ Communicate with other riders through in-app messaging to coordinate ride detail
   <img src="frontend/bruinsplit/public/demoSS/messages.png" alt="Messages" width="800">
 </div>
 
+# Testing:
+
+## End-to-End Tests
+
+BruinSplit uses Playwright for end-to-end testing. The E2E tests automatically start both the backend and frontend servers, so you don't need to run them manually.
+
+**Prerequisites:**
+- Ensure all dependencies are installed (see [Installation Instructions](#installation-instructions))
+- Set up your `.env` file in the `backend` directory
+
+**Run E2E tests:**
+# From the root directory
+npm run test:e2e**Other E2E test commands:**sh
+# Run tests with UI mode (interactive)
+npm run test:e2e:ui
+
+# Run tests in headed mode (see browser)
+npm run test:e2e:headed
+
+# Debug tests
+npm run test:e2e:debug
+
+# View test report
+npm run test:e2e:report**Note:** The E2E tests will automatically:
+- Start the backend server on `http://localhost:8080`
+- Start the frontend server on `http://localhost:5173`
+- Run the test suite
+- Clean up servers when done
+
+## Backend Unit Tests
+
+Run backend unit tests from the backend directory:
+h
+cd backend
+npm test## Frontend Unit Tests
+
+Run frontend unit tests from the frontend directory:
+h
+cd frontend/bruinsplit
+npm test
+
 # Creators 
 Jaden Ho, Anish Kumar, Joshua Jin, Justin Luc
