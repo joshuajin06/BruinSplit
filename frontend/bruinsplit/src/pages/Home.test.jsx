@@ -1,14 +1,19 @@
+import { jest } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Home from './Home'; // Assuming Home.jsx is in the same directory
 import { BrowserRouter } from 'react-router-dom';
 
-// Mock the useNavigate hook from react-router-dom
+// Mock the useNavigate hook from react-router-dom using Jest
 const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'), // Import and retain default behavior
-  useNavigate: () => mockNavigate, // Mock useNavigate
-}));
+jest.mock('react-router-dom', () => {
+  const originalModule = jest.requireActual('react-router-dom');
+  return {
+    __esModule: true,
+    ...originalModule, // Preserve all non-mocked exports
+    useNavigate: () => mockNavigate, // Mock useNavigate
+  };
+});
 
 describe('Home Component', () => {
   // Clear mock calls before each test to ensure isolation
@@ -107,7 +112,7 @@ describe('Home Component', () => {
       expect(screen.getByText(/Seamless ride sharing designed for students\./i)).toBeInTheDocument();
       expect(screen.getAllByText(/Search/i)[0]).toBeInTheDocument();
       expect(screen.getByText(/Connect/i)).toBeInTheDocument();
-      expect(screen.getByText(/Split/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^Split$/i })).toBeInTheDocument();
     });
   });
 

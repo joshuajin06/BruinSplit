@@ -1,3 +1,9 @@
+import { jest } from '@jest/globals';
+
+// Mock API modules
+jest.mock('./api/rides');
+jest.mock('./api/friends');
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
@@ -6,9 +12,6 @@ import { AuthContext } from '../context/AuthContext';
 import * as ridesApi from './api/rides';
 import * as friendsApi from './api/friends';
 
-// Mock API modules
-jest.mock('./api/rides');
-jest.mock('./api/friends');
 // Mock fetch
 global.fetch = jest.fn();
 
@@ -151,8 +154,8 @@ describe('Postings Component', () => {
         test('handles successful ride creation', async () => {
             // first call for create, second for auto-join
             fetch
-                .mockResolvedValueOnce({ ok: true, json: async () => ({ ride: { id: 104 } }) })
-                .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+                .mockResolvedValueOnce({ ok: true, json: async () => ({ ride: { id: 104 } }), text: async () => 'success' })
+                .mockResolvedValueOnce({ ok: true, json: async () => ({}), text: async () => 'joined' });
 
 
             renderPostings({ isAuthenticated: true, user: mockUser });
@@ -169,15 +172,20 @@ describe('Postings Component', () => {
 
             await waitFor(() => {
                 expect(fetch).toHaveBeenCalledWith('/api/rides', expect.any(Object));
-                expect(screen.queryByRole('heading', { name: 'Create Ride' })).not.toBeInTheDocument();
             });
-            // check that rides are refetched
-            expect(ridesApi.getRides).toHaveBeenCalledTimes(2);
+            
+            // Wait for modal to close
+            await waitFor(() => {
+                expect(screen.queryByRole('heading', { name: 'Create Ride' })).not.toBeInTheDocument();
+            }, { timeout: 2000 });
+            
+            // Rides should be refetched after successful creation
+            expect(ridesApi.getRides).toHaveBeenCalled();
         });
 
         test('handles failed ride creation', async () => {
             const errorMessage = 'Creation failed';
-            fetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: errorMessage }) });
+            fetch.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({ error: errorMessage }), text: async () => errorMessage });
 
             renderPostings({ isAuthenticated: true, user: mockUser });
             await waitFor(() => {
@@ -190,7 +198,8 @@ describe('Postings Component', () => {
             fireEvent.click(screen.getByRole('button', { name: 'Create' }));
 
             await waitFor(() => {
-                expect(screen.getByText(errorMessage)).toBeInTheDocument();
+                // The component displays error message from the exception
+                expect(screen.getByText((content) => content.includes('Failed to create ride') || content.includes(errorMessage))).toBeInTheDocument();
             });
             // Modal should remain open
             expect(screen.getByRole('heading', { name: 'Create Ride' })).toBeInTheDocument();

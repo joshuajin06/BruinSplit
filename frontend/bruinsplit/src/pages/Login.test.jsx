@@ -1,32 +1,42 @@
+import { jest } from '@jest/globals';
+
+// Mock the react-router-dom module
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => {
+  const originalModule = jest.requireActual('react-router-dom');
+  return {
+    __esModule: true,
+    ...originalModule,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// Mock the useAuth hook
+const mockLogin = jest.fn();
+const mockUpdateUser = jest.fn();
+jest.mock('../context/AuthContext', () => {
+  const originalModule = jest.requireActual('../context/AuthContext');
+  return {
+    __esModule: true,
+    ...originalModule,
+    useAuth: () => ({
+      login: mockLogin,
+      updateUser: mockUpdateUser,
+    }),
+  };
+});
+
+// Mock the getProfile API call
+jest.mock('./api/profile', () => ({
+  getProfile: jest.fn(),
+}));
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
 import LoginSignup from '../components/loginsignup';
 import { AuthContext } from '../context/AuthContext';
 import * as profileApi from './api/profile';
-
-// Mock the useNavigate hook
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
-}));
-
-// Mock the useAuth hook
-const mockLogin = jest.fn();
-const mockUpdateUser = jest.fn();
-jest.mock('../context/AuthContext', () => ({
-  ...jest.requireActual('../context/AuthContext'),
-  useAuth: () => ({
-    login: mockLogin,
-    updateUser: mockUpdateUser,
-  }),
-}));
-
-// Mock the getProfile API call
-jest.mock('./api/profile', () => ({
-  getProfile: jest.fn(),
-}));
 
 // Mock global fetch
 global.fetch = jest.fn();
@@ -107,7 +117,7 @@ describe('LoginSignup Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
 
     await waitFor(() => {
-      expect(screen.getByText(`⚠️ ${errorMessage}`)).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes(errorMessage))).toBeInTheDocument();
     });
     expect(mockLogin).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -169,7 +179,7 @@ describe('LoginSignup Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign Up' }));
 
     await waitFor(() => {
-      expect(screen.getByText(`⚠️ ${errorMessage}`)).toBeInTheDocument();
+      expect(screen.getByText((content) => content.includes(errorMessage))).toBeInTheDocument();
     });
     expect(mockLogin).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();

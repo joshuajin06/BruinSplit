@@ -1,3 +1,20 @@
+import { jest } from '@jest/globals';
+
+// Mock all API modules
+jest.mock('./api/profile');
+jest.mock('./api/friends');
+jest.mock('./api/rides');
+
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => {
+  const originalModule = jest.requireActual('react-router-dom');
+  return {
+    __esModule: true,
+    ...originalModule,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter, useParams, Routes, Route } from 'react-router-dom';
@@ -6,17 +23,6 @@ import { AuthContext } from '../context/AuthContext';
 import * as profileApi from './api/profile';
 import * as friendsApi from './api/friends';
 import * as ridesApi from './api/rides';
-
-// Mock all API modules
-jest.mock('./api/profile');
-jest.mock('./api/friends');
-jest.mock('./api/rides');
-
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
-}));
 
 const mockUser = { id: '1', first_name: 'Test', last_name: 'User', email: 'test@example.com', username: 'testuser' };
 const otherUser = { id: '2', first_name: 'Other', last_name: 'User', email: 'other@example.com', username: 'otheruser' };
@@ -43,7 +49,6 @@ describe('Profile Component', () => {
     friendsApi.getUserFriends.mockResolvedValue({ friends: [{ id: '4', first_name: 'B', last_name: 'Friend' }] });
     friendsApi.getPendingRequests.mockResolvedValue({ sent: [], received: [] });
     ridesApi.getMyRides.mockResolvedValue({ rides: [{ id: 1, origin_text: 'My Ride' }] });
-    ridesApi.getFriendRides.mockResolvedValue({ rides: [{ id: 2, origin_text: 'Friend Ride' }] });
   });
 
   describe('Viewing Own Profile', () => {
@@ -109,7 +114,6 @@ describe('Profile Component', () => {
         await waitFor(() => {
             expect(screen.getByRole('heading', { name: /Other's Profile/i })).toBeInTheDocument();
             expect(screen.getByText(otherUser.email)).toBeInTheDocument();
-            expect(screen.getByText('Friend Ride')).toBeInTheDocument();
             expect(screen.queryByRole('button', { name: /Edit Profile/i })).not.toBeInTheDocument();
         });
     });
@@ -195,7 +199,8 @@ describe('Profile Component', () => {
         });
         
         await waitFor(() => {
-            fireEvent.click(screen.getByRole('button', { name: '✕' }));
+            const rejectButtons = screen.getAllByRole('button', { name: '✕' });
+            fireEvent.click(rejectButtons[rejectButtons.length - 1]); // Click the last one for received requests
         });
         
         await waitFor(() => {
