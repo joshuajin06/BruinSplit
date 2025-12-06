@@ -119,7 +119,12 @@ export class ProfilePage {
     }
   
     async editProfile({ firstName, lastName, username }) {
-      await this.editButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+      // Wait for edit button to be visible
+      for (let i = 0; i < 20; i++) {
+        const isVisible = await this.editButton.isVisible().catch(() => false);
+        if (isVisible) break;
+        await this.page.waitForTimeout(500);
+      }
       await this.editButton.click();
   
       if (firstName) {
@@ -139,7 +144,12 @@ export class ProfilePage {
     }
   
     async changePassword(currentPassword, newPassword, confirmPassword) {
-      await this.changePasswordButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+      // Wait for change password button to be visible
+      for (let i = 0; i < 20; i++) {
+        const isVisible = await this.changePasswordButton.isVisible().catch(() => false);
+        if (isVisible) break;
+        await this.page.waitForTimeout(500);
+      }
       await this.changePasswordButton.click();
       await this.currentPasswordInput.fill(currentPassword);
       await this.newPasswordInput.fill(newPassword);
@@ -153,7 +163,12 @@ export class ProfilePage {
   
     async openFriendsList() {
       await this.friendsButton.click();
-      await this.friendsModal.waitFor({ state: 'visible' }).catch(() => {});
+      // Wait for friends modal to be visible
+      for (let i = 0; i < 10; i++) {
+        const isVisible = await this.friendsModal.isVisible().catch(() => false);
+        if (isVisible) break;
+        await this.page.waitForTimeout(500);
+      }
     }
   
     async sendFriendRequest() {
@@ -171,7 +186,12 @@ export class ProfilePage {
     }
   
     async logout() {
-      await this.logoutButton.waitFor({ state: 'visible', timeout: 10000 });
+      // Wait for logout button to be visible
+      for (let i = 0; i < 20; i++) {
+        const isVisible = await this.logoutButton.isVisible().catch(() => false);
+        if (isVisible) break;
+        await this.page.waitForTimeout(500);
+      }
       await this.logoutButton.click();
     }
   
