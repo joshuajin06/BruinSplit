@@ -180,35 +180,20 @@ BruinSplit uses Playwright for end-to-end testing. The E2E tests automatically s
 - Set up your `.env` file in the `backend` directory
 
 **Run E2E tests:**
-# From the root directory
-npm run test:e2e**Other E2E test commands:**sh
-# Run tests with UI mode (interactive)
-npm run test:e2e:ui
-
-# Run tests in headed mode (see browser)
-npm run test:e2e:headed
-
-# Debug tests
-npm run test:e2e:debug
-
-# View test report
-npm run test:e2e:report**Note:** The E2E tests will automatically:
-- Start the backend server on `http://localhost:8080`
-- Start the frontend server on `http://localhost:5173`
-- Run the test suite
-- Clean up servers when done
+From the root directory
+`npm run test:e2e`
+**Run tests with UI mode (interactive)**
+`npm run test:e2e:ui`
 
 ## Backend Unit Tests
 
 Run backend unit tests from the backend directory:
-h
-cd backend
-npm test## Frontend Unit Tests
+`cd backend`
+`npm test`
 
 Run frontend unit tests from the frontend directory:
-h
-cd frontend/bruinsplit
-npm test
+`cd frontend/bruinsplit`
+`npm test`
 
 # Creators 
 Jaden Ho, Anish Kumar, Joshua Jin, Justin Luc
