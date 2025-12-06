@@ -3,6 +3,7 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.jsx?$': '$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(jpg|jpeg|png|gif|svg|webp)$': '<rootDir>/styleMock.js',
   },
   transform: {
     '^.+\\.(jsx?)$': ['babel-jest', { configFile: './babel.config.cjs' }],
@@ -10,8 +11,8 @@ module.exports = {
   testMatch: [
     '**/__tests__/**/*.test.jsx',
     '**/__tests__/**/*.test.js',
-    '**/e2e_tests/**/*.test.jsx',
-    '**/e2e_tests/**/*.test.js',
+    '**/*.test.jsx',
+    '**/*.test.js',
     '!**/__tests__/integration.test.js'
   ],
   collectCoverageFrom: [

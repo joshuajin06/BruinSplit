@@ -2,9 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext();
 
+export { AuthContext }; // Export AuthContext for testing
+
 export const AuthProvider = ({children}) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to check auth on mount
 
   useEffect(() => {
     checkAuth();
@@ -80,3 +82,4 @@ export const useAuth = () => {
   }
   return context;
 }
+

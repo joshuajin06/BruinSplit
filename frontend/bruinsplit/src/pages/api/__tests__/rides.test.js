@@ -34,6 +34,8 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 describe('Rides API Tests', () => {
+  const mockToken = 'fake-jwt-token';
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorageMock.clear();
@@ -66,6 +68,7 @@ describe('Rides API Tests', () => {
 
   describe('createRide', () => {
     it('should call POST /api/rides with ride data and return created ride', async () => {
+      localStorageMock.setItem('token', mockToken);
       const rideData = {
         origin_text: 'UCLA',
         destination_text: 'LAX',
@@ -83,7 +86,9 @@ describe('Rides API Tests', () => {
 
       const result = await createRide(rideData);
 
-      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData, { headers: {} });
+      expect(axios.post).toHaveBeenCalledWith('http://localhost:8080/api/rides', rideData, {
+        headers: { Authorization: `Bearer ${mockToken}` }
+      });
       expect(result).toEqual(mockResponse.data);
     });
 
@@ -355,8 +360,8 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when managing requests', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      const error = new Error('Invalid action');
-      error.response = { data: { error: 'Invalid action' } };
+      const error = new Error('Not authorized');
+      error.response = { data: { error: 'Not authorized' } };
       axios.post.mockRejectedValue(error);
 
       await expect(manageRequest('ride-123', 'user-456', 'invalid')).rejects.toThrow('Invalid action');
@@ -417,8 +422,8 @@ describe('Rides API Tests', () => {
 
     it('should handle errors when transferring ownership', async () => {
       localStorageMock.setItem('token', 'fake-jwt-token');
-      const error = new Error('User not a member');
-      error.response = { data: { error: 'User not a member' } };
+      const error = new Error('New owner must be a member');
+      error.response = { data: { error: 'New owner must be a member' } };
       axios.post.mockRejectedValue(error);
 
       await expect(transferOwnership('ride-123', 'user-456')).rejects.toThrow('User not a member');

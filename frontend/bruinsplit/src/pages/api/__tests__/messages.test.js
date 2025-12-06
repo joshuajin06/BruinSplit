@@ -1,6 +1,6 @@
-// Mock axios and axios.create BEFORE importing the module
+// Mock axios and axios.create  
 jest.mock('axios', () => {
-  const mockInstance = {
+  const instance = {
     post: jest.fn(),
     get: jest.fn(),
     interceptors: {
@@ -9,13 +9,17 @@ jest.mock('axios', () => {
     }
   };
   
+  // Store in global for access outside mock factory
+  global.mockAxiosInstance = instance;
+  
   return {
     __esModule: true,
     default: {
-      create: jest.fn(() => mockInstance),
-      post: jest.fn(),
+      create: jest.fn(() => instance),
       get: jest.fn(),
-      _mockInstance: mockInstance // Expose for tests
+      post: jest.fn(),
+      put: jest.fn(),
+      delete: jest.fn(),
     }
   };
 });
@@ -23,7 +27,8 @@ jest.mock('axios', () => {
 import axios from 'axios';
 import { postMessage, getMessages, getConversations } from '../messages';
 
-const mockAxiosInstance = axios._mockInstance;
+// Access the mock instance from global
+const mockAxiosInstance = global.mockAxiosInstance;
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -42,10 +47,12 @@ describe('Messages API Tests', () => {
   const mockRideId = 'ride-123';
 
   beforeEach(() => {
-    jest.clearAllMocks();
     localStorage.setItem('token', mockToken);
-    mockAxiosInstance.post.mockClear();
-    mockAxiosInstance.get.mockClear();
+    const mockInstance = mockAxiosInstance;
+    if (mockInstance) {
+      mockInstance.post.mockClear();
+      mockInstance.get.mockClear();
+    }
   });
 
   afterEach(() => {
@@ -208,10 +215,7 @@ describe('Messages API Tests', () => {
 
   describe('apiClient interceptors', () => {
     it('should setup request and response interceptors', () => {
-      // Verify the interceptors structure exists on the mock instance
-      expect(mockAxiosInstance.interceptors).toBeDefined();
-      expect(mockAxiosInstance.interceptors.request).toBeDefined();
-      expect(mockAxiosInstance.interceptors.response).toBeDefined();
+      // Verify that the mock axios instance has interceptors configured
       expect(mockAxiosInstance.interceptors.request.use).toBeDefined();
       expect(mockAxiosInstance.interceptors.response.use).toBeDefined();
     });
