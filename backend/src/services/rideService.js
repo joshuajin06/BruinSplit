@@ -54,7 +54,7 @@ export async function joinRideService(rideId, userId) {
     const isOwner = ride.owner_id === userId;
 
     // use helper to count current ride members
-    const currentMembers = await getAvailableSeats(rideId);
+    const currentMembers = await getConfirmedMemberCount(rideId);
 
     const availableSeats = ride.max_seats - currentMembers;
 
@@ -200,7 +200,7 @@ export async function approveRideRequestService(rideId, requesterUserId, ownerId
     }
 
     // check if ride has available seats
-    const currentMembers = await getAvailableSeats(rideId);
+    const currentMembers = await getConfirmedMemberCount(rideId);
     const availableSeats = ride.max_seats - currentMembers;
 
     if (availableSeats <= 0) {
@@ -475,7 +475,7 @@ export async function leaveRideService(rideId, userId) {
 
 // helper to enrich a ride with member count and owner info 
 export async function enrichRide(ride, userId = null) {
-    const memberCount = await getAvailableSeats(ride.id);
+    const memberCount = await getConfirmedMemberCount(ride.id);
     const availableSeats = ride.max_seats - memberCount;
 
     // get owner profile
@@ -601,8 +601,8 @@ export async function getMyRidesService(userId) {
 
 
 
-// helper function to grab the number of available seats per rideShare group
-export async function getAvailableSeats(rideId) {
+// helper function to get the count of confirmed members for a ride
+export async function getConfirmedMemberCount(rideId) {
     const { count, error } = await supabase
         .from('ride_members')
         .select('*', { count: 'exact', head: true })
