@@ -12,7 +12,7 @@ const rideServicePath = resolve(__dirname, '../../src/services/rideService.js');
 const mockRideService = {
   createRide: jest.fn(),
   enrichRide: jest.fn(),
-  getAvailableSeats: jest.fn(),
+  getConfirmedMemberCount: jest.fn(),
   joinRideService: jest.fn(),
   deleteRideService: jest.fn(),
   leaveRideService: jest.fn(),

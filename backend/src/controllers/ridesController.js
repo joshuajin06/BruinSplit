@@ -1,5 +1,5 @@
 import { supabase } from '../supabase.js';
-import { createRide, enrichRide, getAvailableSeats, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService, transferOwnershipService } from '../services/rideService.js';
+import { createRide, enrichRide, joinRideService, deleteRideService, leaveRideService, getMyRidesService, updateRideService, getPendingRequestsService, approveRideRequestService, rejectRideRequestService, kickMemberService, getMyPendingRidesService, transferOwnershipService } from '../services/rideService.js';
 
 
 // POST /api/rides - create a rideShare group

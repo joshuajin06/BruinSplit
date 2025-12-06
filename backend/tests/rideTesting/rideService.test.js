@@ -33,7 +33,7 @@ import {
   joinRideService, 
   deleteRideService,
   approveRideRequestService,
-  getAvailableSeats 
+  getConfirmedMemberCount 
 } from '../../src/services/rideService.js';
 
 describe('Ride Service', () => {
