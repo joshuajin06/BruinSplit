@@ -1,5 +1,5 @@
 /**
- * E2E Test Suite 2: Social & Profile Management
+ * E2E Test Suite 2: Social & Profile Management :D
  *
  * Tests the social and profile features of BruinSplit:
  * - User signup and profile creation
@@ -32,7 +32,7 @@ test.describe('Social & Profile Management', () => {
         userData.password
       );
 
-      // Should redirect to home after successful signup
+      // should redirect to home after successful signup
       await page.waitForURL('/', { timeout: 10000 });
       await expect(page).toHaveURL('/');
     });
@@ -41,7 +41,7 @@ test.describe('Social & Profile Management', () => {
       const loginPage = new LoginPage(page);
       const userData = generateTestUser('login');
 
-      // First sign up
+      // first sign up
       await loginPage.goto();
       await loginPage.signup(
         userData.username,
@@ -52,14 +52,14 @@ test.describe('Social & Profile Management', () => {
       );
       await page.waitForURL('/');
 
-      // Logout (navigate to login)
+      // logout (navigate to login)
       await loginPage.goto();
 
-      // Login with the same credentials
+      // login with the same credentials
       await loginPage.switchToLogin();
       await loginPage.login(userData.username, userData.email, userData.password);
 
-      // Should redirect to home
+      // should redirect to home
       await page.waitForURL('/', { timeout: 10000 });
     });
 
@@ -69,7 +69,7 @@ test.describe('Social & Profile Management', () => {
       await loginPage.goto();
       await loginPage.login('invalid_user', 'invalid@test.com', 'wrongpassword');
 
-      // Should show error message
+      // should show error message
       await expect(loginPage.errorMessage).toBeVisible({ timeout: 5000 });
     });
 
@@ -78,22 +78,22 @@ test.describe('Social & Profile Management', () => {
 
       await loginPage.goto();
 
-      // Should start on login
+      // should start on login
       await expect(loginPage.headerText).toHaveText('Welcome Back');
 
-      // Toggle to signup
+      // toggle to signup
       await loginPage.switchToSignup();
       await expect(loginPage.headerText).toHaveText('Create Account');
 
-      // First and last name inputs should be visible in signup mode
+      // first and last name inputs should be visible in signup mode
       await expect(loginPage.firstNameInput).toBeVisible();
       await expect(loginPage.lastNameInput).toBeVisible();
 
-      // Toggle back to login
+      // toggle back to login
       await loginPage.switchToLogin();
       await expect(loginPage.headerText).toHaveText('Welcome Back');
 
-      // First and last name inputs should not be visible in login mode
+      // first and last name inputs should not be visible in login mode
       await expect(loginPage.firstNameInput).not.toBeVisible();
       await expect(loginPage.lastNameInput).not.toBeVisible();
     });
@@ -107,7 +107,7 @@ test.describe('Social & Profile Management', () => {
 
       await profilePage.goto();
 
-      // Profile page should load
+      // profile page should load
       await expect(page).toHaveURL(/\/profile/);
     });
 
@@ -117,23 +117,23 @@ test.describe('Social & Profile Management', () => {
 
       await profilePage.goto();
 
-      // Edit profile
+      // edit profile
       const newFirstName = `Updated${Date.now() % 1000}`;
 
       await profilePage.editProfile({
         firstName: newFirstName
       });
 
-      // Wait for save to complete
+      // wait for save to complete
       await page.waitForTimeout(2000);
 
-      // Refresh and verify the change persisted
+      // refresh and verify the change persisted
       await profilePage.goto();
       
-      // Wait for profile content to load (not "Loading...")
+      // wait for profile content to load (not "Loading...")
       await page.waitForTimeout(2000);
       
-      // The profile should show the updated name
+      // the profile should show the updated name
       const profileContent = await page.content();
       expect(profileContent).toContain(newFirstName);
     });
@@ -146,21 +146,21 @@ test.describe('Social & Profile Management', () => {
 
       const newPassword = 'NewTestPassword456!';
 
-      // Change password
+      // change password
       await profilePage.changePassword(password, newPassword, newPassword);
 
-      // Wait for the operation to complete
+      // wait for the operation to complete
       await page.waitForTimeout(1000);
 
-      // Verify success (no error shown, or success message appears)
+      // verify success (no error shown, or success message appears)
       const errorVisible = await profilePage.errorMessage.isVisible().catch(() => false);
-      // If there's a success message, verify it
+      // if there's a success message, verify it
       const successVisible = await profilePage.successMessage.isVisible().catch(() => false);
 
-      // At minimum, no error should be shown for a valid password change
+      // at minimum, no error should be shown for a valid password change
       if (errorVisible) {
         const errorText = await profilePage.errorMessage.textContent();
-        // Password mismatch or weak password errors are expected failures
+        // password mismatch or weak password errors are expected failures
         expect(errorText).not.toContain('Server error');
       }
     });
@@ -174,9 +174,7 @@ test.describe('Social & Profile Management', () => {
 
       const { owner: userA, joiner: userB } = twoUsers;
 
-      // ============================================
-      // STEP 1: User A creates a ride (so User B can find them)
-      // ============================================
+      // 1 - user A creates a ride (so user B can find them)
       const rideData = generateTestRide({
         destination: `Friend Test Destination ${Date.now()}`
       });
@@ -194,9 +192,7 @@ test.describe('Social & Profile Management', () => {
         notes: rideData.notes
       });
 
-      // ============================================
-      // STEP 2: User B finds User A's ride (with retry logic)
-      // ============================================
+      // 2 - user B finds user A's ride (with retry logic)
       const userBPostings = new PostingsPage(userB.page);
 
       // Retry logic to wait for ride to appear
@@ -237,11 +233,11 @@ test.describe('Social & Profile Management', () => {
       
       await expect(rideCard).toBeVisible();
 
-      // Click on the ride to open details
+      // click on the ride to open details
       await rideCard.click();
       await userB.page.waitForTimeout(500);
 
-      // Look for owner/driver link to view their profile
+      // look for owner/driver link to view their profile
       const ownerLink = userB.page.locator('a[href*="/profile/"], .owner-name, .driver-name').first();
       const ownerLinkVisible = await ownerLink.isVisible().catch(() => false);
 
@@ -249,10 +245,8 @@ test.describe('Social & Profile Management', () => {
         await ownerLink.click();
         await userB.page.waitForURL(/\/profile\//, { timeout: 10000 });
 
-        // ============================================
-        // STEP 3: User B sends friend request to User A
-        // ============================================
-        // Should see "Add Friend" button since they're not friends yet
+        // 3 - user B sends friend request to user A
+        // should see "Add Friend" button since they're not friends yet
         const addFriendButton = userB.page.locator('button:has-text("Add Friend"), button:has-text("Send Request")');
         await addFriendButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
 
@@ -260,28 +254,24 @@ test.describe('Social & Profile Management', () => {
           await addFriendButton.click();
           await userB.page.waitForTimeout(2000);
 
-          // Button should change to "Pending" or similar
+          // button should change to "Pending" or similar
           const pendingIndicator = userB.page.locator('button:has-text("Pending"), button:has-text("Request Sent"), button:disabled');
           await expect(pendingIndicator.first()).toBeVisible();
         }
       }
 
-      // ============================================
-      // STEP 4: User A checks pending friend requests
-      // ============================================
+      // 4 - user A checks pending friend requests
       const userAProfilePage = new ProfilePage(userA.page);
       await userAProfilePage.goto();
       await userA.page.waitForTimeout(1000);
 
-      // Look for pending requests button/section
+      // look for pending requests button/section
       const pendingRequestsButton = userA.page.locator('button:has-text("Pending"), button:has-text("Requests")');
       if (await pendingRequestsButton.isVisible().catch(() => false)) {
         await pendingRequestsButton.click();
         await userA.page.waitForTimeout(1000);
 
-        // ============================================
-        // STEP 5: User A accepts User B's friend request
-        // ============================================
+        // 5 - user A accepts user B's friend request
         const acceptButton = userA.page.locator('button:has-text("Accept")').first();
         await acceptButton.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
 
@@ -291,16 +281,14 @@ test.describe('Social & Profile Management', () => {
         }
       }
 
-      // ============================================
-      // STEP 6: Verify both users now see each other as friends
-      // ============================================
-      // Check User A's friend count
+      // 6 - verify both users now see each other as friends
+      // check user A's friend count
       await userAProfilePage.goto();
       await userA.page.waitForTimeout(500);
       const friendCount = await userAProfilePage.getFriendCount().catch(() => 0);
       expect(friendCount).toBeGreaterThanOrEqual(0); // May be 0 if friend UI not found
 
-      // User B should also see User A as a friend
+      // user B should also see user A as a friend
       const userBOwnProfilePage = new ProfilePage(userB.page);
       await userBOwnProfilePage.goto();
       await userB.page.waitForTimeout(500);
@@ -314,16 +302,16 @@ test.describe('Social & Profile Management', () => {
 
       await profilePage.goto();
 
-      // Try to open friends list
+      // try to open friends list
       const friendsButton = page.locator('button:has-text("Friends"), .friend-count, [class*="friend"]').first();
       if (await friendsButton.isVisible()) {
         await friendsButton.click();
 
-        // A modal or list should appear
+        // a modal or list should appear
         const friendsModal = page.locator('.friends-modal, [class*="modal"]').first();
-        // Even if no friends, the modal/list should be visible
+        // even if no friends, the modal/list should be visible
         await expect(friendsModal).toBeVisible({ timeout: 3000 }).catch(() => {
-          // Some implementations might show inline, which is also acceptable
+          // some implementations might show inline, which is also acceptable
         });
       }
     });
@@ -334,7 +322,7 @@ test.describe('Social & Profile Management', () => {
 
       const { owner: userA, joiner: userB } = twoUsers;
 
-      // Create a ride as User A
+      // create a ride as user A
       const rideData = generateTestRide({
         destination: `Friends Filter Test ${Date.now()}`
       });
@@ -352,10 +340,10 @@ test.describe('Social & Profile Management', () => {
         notes: rideData.notes
       });
 
-      // User B browses postings - with retry logic to find the ride
+      // user B browses postings - with retry logic to find the ride
       const userBPostings = new PostingsPage(userB.page);
 
-      // First, wait for ride to appear (with retry)
+      // first, wait for ride to appear (with retry)
       let rideCardInitial;
       let rideFound = false;
       for (let i = 0; i < 3; i++) {
@@ -397,20 +385,20 @@ test.describe('Social & Profile Management', () => {
         await userBPostings.toggleFriendsFilter();
         await userB.page.waitForTimeout(1000);
 
-        // When friends filter is on and User B has no friends,
-        // they shouldn't see User A's ride
+        // when friends filter is on and user B has no friends,
+        // they shouldn't see user A's ride
         const rideCard = await userBPostings.findRideCard(rideData.destination);
         await expect(rideCard).not.toBeVisible();
 
-        // Toggle back to see all rides
+        // toggle back to see all rides
         await userBPostings.toggleFriendsFilter();
         await userB.page.waitForTimeout(1000);
 
-        // Now the ride should be visible
+        // now the ride should be visible
         const rideCardAfterToggle = await userBPostings.findRideCard(rideData.destination);
         await expect(rideCardAfterToggle).toBeVisible();
       } else {
-        // If no friends filter button, just verify ride is visible
+        // if no friends filter button, just verify ride is visible
         await expect(rideCardInitial).toBeVisible();
       }
     });
@@ -424,7 +412,7 @@ test.describe('Social & Profile Management', () => {
 
       const { owner: userA, joiner: userB } = twoUsers;
 
-      // User A creates a ride so we can find their profile
+      // user A creates a ride so we can find their profile
       const rideData = generateTestRide({
         destination: `Public Profile Test ${Date.now()}`
       });
@@ -442,7 +430,7 @@ test.describe('Social & Profile Management', () => {
         notes: rideData.notes
       });
 
-      // User B finds the ride (with retry logic)
+      // user B finds the ride (with retry logic)
       const userBPostings = new PostingsPage(userB.page);
 
       let rideCard;
@@ -484,23 +472,23 @@ test.describe('Social & Profile Management', () => {
       await rideCard.click();
       await userB.page.waitForTimeout(500);
 
-      // Click on owner to view profile
+      // click on owner to view profile
       const ownerLink = userB.page.locator('a[href*="/profile/"], .owner-name, .driver-name, [class*="owner"]').first();
       const ownerLinkVisible = await ownerLink.isVisible().catch(() => false);
 
       if (ownerLinkVisible) {
         await ownerLink.click();
 
-        // Should navigate to a profile page (not their own)
+        // should navigate to a profile page (not their own)
         await userB.page.waitForURL(/\/profile\/.+/, { timeout: 10000 });
 
-        // Should see the other user's profile (with their name)
+        // should see the other user's profile (with their name)
         await userB.page.waitForTimeout(500);
         const pageContent = await userB.page.content();
         expect(pageContent).toContain(userA.firstName);
       } else {
-        // If owner link not visible, just verify we're on the card details
-        // This is acceptable as the test is about viewing profiles
+        // if owner link not visible, just verify we're on the card details
+        // this is acceptable as the test is about viewing profiles
         const modalOrDetailsVisible = await userB.page.locator('.modal, .ride-details, .card-details').first().isVisible().catch(() => false);
         expect(modalOrDetailsVisible || true).toBeTruthy(); // Pass if we got this far
       }
@@ -514,7 +502,7 @@ test.describe('Social & Profile Management', () => {
 
       await page.goto('/');
 
-      // Check for main navigation links
+      // check for main navigation links
       const homeLink = page.locator('a[href="/"], nav a:has-text("Home")');
       const postingsLink = page.locator('a[href="/postings"], nav a:has-text("Postings"), nav a:has-text("Posts")');
       const myRidesLink = page.locator('a[href="/myrides"], nav a:has-text("My Rides")');
@@ -529,26 +517,26 @@ test.describe('Social & Profile Management', () => {
     test('can navigate through all main pages', async ({ authenticatedUser }) => {
       const { page } = authenticatedUser;
 
-      // Start at home
+      // start at home
       await page.goto('/');
       await expect(page).toHaveURL('/');
 
-      // Navigate to postings
+      // navigate to postings
       await page.click('a[href="/postings"]');
       await expect(page).toHaveURL('/postings');
 
-      // Navigate to my rides
+      // navigate to my rides
       await page.click('a[href="/myrides"]');
       await expect(page).toHaveURL('/myrides');
 
-      // Navigate to profile - need to hover over profile button to reveal submenu
+      // navigate to profile - need to hover over profile button to reveal submenu
       const profileButton = page.locator('.navButtonLogin').first();
       await profileButton.hover();
-      await page.waitForTimeout(300); // Wait for submenu animation
+      await page.waitForTimeout(300); // wait for submenu animation
       await page.click('.submenu a[href="/profile"]');
       await expect(page).toHaveURL(/\/profile/);
 
-      // Navigate back to home via logo/site title
+      // navigate back to home via logo/site title
       await page.click('.siteTitle a, a[href="/"]');
       await expect(page).toHaveURL('/');
     });
@@ -562,12 +550,12 @@ test.describe('Social & Profile Management', () => {
 
       await profilePage.goto();
 
-      // Find and click logout button
+      // find and click logout button
       const logoutButton = page.locator('button:has-text("Logout"), button:has-text("Sign Out"), button:has-text("Log Out")');
       if (await logoutButton.isVisible()) {
         await logoutButton.click();
 
-        // Should redirect to home or login
+        // should redirect to home or login
         await page.waitForURL(/\/(login)?$/);
       }
     });
@@ -578,16 +566,16 @@ test.describe('Social & Profile Management', () => {
 
       await profilePage.goto();
 
-      // Logout
+      // logout
       const logoutButton = page.locator('button:has-text("Logout"), button:has-text("Sign Out")');
       if (await logoutButton.isVisible()) {
         await logoutButton.click();
         await page.waitForTimeout(1000);
 
-        // Try to access my rides (protected)
+        // try to access my rides (protected)
         await page.goto('/myrides');
 
-        // Should redirect to login or show login prompt
+        // should redirect to login or show login prompt
         // (behavior depends on implementation)
         const currentUrl = page.url();
         const isOnLoginOrRedirected = currentUrl.includes('/login') || currentUrl.includes('/myrides');
