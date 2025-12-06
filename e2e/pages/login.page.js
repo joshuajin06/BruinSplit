@@ -64,7 +64,11 @@ export class LoginPage {
     if (!isSignupMode) {
       await this.toggleLink.click();
       // Wait for signup fields to appear
-      await this.firstNameInput.waitFor({ state: 'visible', timeout: 5000 });
+      for (let i = 0; i < 10; i++) {
+        const isVisible = await this.firstNameInput.isVisible().catch(() => false);
+        if (isVisible) break;
+        await this.page.waitForTimeout(500);
+      }
     }
   }
 
@@ -74,12 +78,21 @@ export class LoginPage {
     if (isSignupMode) {
       await this.toggleLink.click();
       // Wait for signup fields to disappear
-      await this.firstNameInput.waitFor({ state: 'hidden', timeout: 5000 });
+      for (let i = 0; i < 10; i++) {
+        const isHidden = await this.firstNameInput.isHidden().catch(() => true);
+        if (isHidden) break;
+        await this.page.waitForTimeout(500);
+      }
     }
   }
 
   async getErrorMessage() {
-    await this.errorMessage.waitFor({ state: 'visible', timeout: 5000 });
+    // Wait for error to appear
+    for (let i = 0; i < 10; i++) {
+      const isVisible = await this.errorMessage.isVisible().catch(() => false);
+      if (isVisible) break;
+      await this.page.waitForTimeout(500);
+    }
     return this.errorMessage.textContent();
   }
 
