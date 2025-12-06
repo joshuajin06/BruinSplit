@@ -31,7 +31,8 @@ const RidersTab = ({ rideId, ownerId, isOwner }) => {
   const handleKickMember = async (memberId) => {
     try {
       await kickMember(rideId, memberId);
-      fetchRiders(); // Refresh list
+      // Reload the page to update all ride-related UI
+      window.location.reload();
     } catch (err) {
       alert('Failed to kick member.');
       console.error("Kick error:", err);
