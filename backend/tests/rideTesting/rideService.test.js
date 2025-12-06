@@ -1,170 +1,131 @@
+import { 
+  createRide, 
+  joinRideService, 
+  deleteRideService,
+  approveRideRequestService,
+  getAvailableSeats 
+} from '../../src/services/rideService.js';
 import { supabase } from '../../src/supabase.js';
 
-import { createRide } from '../../src/services/rideService.js';
+jest.mock('../../src/supabase.js');
 
-import { joinRide } from '../../src/services/rideService.js';
+describe('Ride Service', () => {
+  let mockQueryBuilder;
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // create chainable mock builder
+    mockQueryBuilder = {
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      single: jest.fn(),
+      maybeSingle: jest.fn(),
+      then: jest.fn(function(resolve, reject) {
+        return Promise.resolve(this._response).then(resolve, reject);
+      }),
+      _response: { data: null, error: null }
+    };
 
-// mock supabase
-jest.mock('../../src/supabase.js', () => ({
-    supabase: {
-        from: jest.fn()
-    }
-}));
+    supabase.from = jest.fn(() => mockQueryBuilder);
+  });
 
-/* ADD MORE EDGE CASE TESTING */
-describe('createRide', () => {
+  describe('createRide', () => {
+    test('should create ride with valid data', async () => {
+      const rideData = {
+        owner_id: 'user-1111',
+        origin_text: 'UCLA',
+        destination_text: 'LAX',
+        departAt: new Date('2025-12-15T14:00:00Z'),
+        platformUpper: 'UBER',
+        maxSeats: 4,
+        notes: 'justins cave'
+      };
 
-    // resets mocks before each test
-    beforeEach( () => {
-        jest.clearAllMocks();
+      const mockRide = { id: 'ride-3535', ...rideData, platform: 'UBER', max_seats: 4 };
+      mockQueryBuilder._response = { data: mockRide, error: null };
+      mockQueryBuilder.single.mockResolvedValue({ data: mockRide, error: null });
+
+      const result = await createRide(rideData);
+
+      expect(result).toEqual(mockRide);
+      expect(supabase.from).toHaveBeenCalledWith('rides');
+      expect(mockQueryBuilder.insert).toHaveBeenCalledWith([expect.objectContaining({
+        origin_text: 'UCLA',
+        destination_text: 'LAX',
+        platform: 'UBER'
+      })]);
     });
 
-    it('should sucessfully create a ride with valid data', async () => {
+    test('should throw error on database failure', async () => {
+      const rideData = {
+        owner_id: 'user-1111',
+        origin_text: 'UCLA',
+        destination_text: 'LAX',
+        departAt: new Date(),
+        platformUpper: 'UBER',
+        maxSeats: 4
+      };
 
-        // set up test data
-        const rideData = {
-            owner_id: '3535',
-            origin_text: 'UCLA Sproul Crosswalk',
-            destination_text: 'LAX',
-            departAt: new Date('2025-12-11T10:00:00Z'),
-            platformUpper: 'UBER',
-            maxSeats: 4,
-            notes: 'Testing ride creation'
-        };
+      mockQueryBuilder._response = { data: null, error: { message: 'Database error' } };
+      mockQueryBuilder.single.mockResolvedValue({ data: null, error: { message: 'Database error' } });
 
-        // mock the supabase chain
-        const mockSingle = jest.fn().mockResolvedValue({
-            data: mockRideFromDB,
-            error: null
-        });
-        const mockSelect = jest.fn().mockReturnValue({
-            single: mockSingle
-        });
-        const mockInsert = jest.fn().mockReturnValue({
-            select: mockSelect
-        });
+      await expect(createRide(rideData)).rejects.toThrow();
+    });
+  });
 
-        supabase.from.mockReturnValue({
-            insert: mockInsert
-        });
+  describe('joinRideService', () => {
+    test('should throw error when ride not found', async () => {
+      mockQueryBuilder.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
 
-        // call the function
-        const result = await createRide(rideData);
+      await expect(joinRideService('invalid-ride', 'user-1111')).rejects.toThrow('Ride not found');
+    });
+  });
 
-        // check the result matches what the databasse returns
-        expect(result).toHaveProperty('id');
-        expect(result.owner_id).toBe('3535');
-        expect(result.origin_text).toBe('UCLA Sproul Crosswalk');
-        expect(result.destination_text).toBe('LAX');
-        expect(result.platform).toBe('UBER');
-        expect(result.max_seats).toBe(4);
-        expect(result.notes).toBe('Testing ride creation');
+  describe('deleteRideService', () => {
+    test('should delete ride when user is owner', async () => {
+      const rideId = 'ride-3535';
+      const userId = 'user-1111';
 
-        // verify supabase was called correctly
-        expect(supabase.from).toHaveBeenCalledWith('rides');
-        expect(mockInsert).toHaveBeenCalledWith([{
-            owner_id: '3535',
-            origin_text: 'UCLA Sproul Crosswalk',
-            destination_text: 'LAX',
-            depart_at: rideData.departAt,
-            platform: 'UBER',
-            max_seats: 4,
-            notes: 'Testing ride creation'
-        }]);
-    })
+      // mock ride exists and user is owner
+      mockQueryBuilder.single
+        .mockResolvedValueOnce({ data: { id: rideId, owner_id: userId }, error: null })
+        .mockResolvedValueOnce({ data: null, error: null });
 
-    it('should throw error when database insert fais', async () => {
+      const result = await deleteRideService(rideId, userId);
 
-        // set up test data
-        const rideData = {
-            owner_id: '3535',
-            origin_text: 'UCLA Sproul Crosswalk',
-            destination_text: 'LAX',
-            departAt: new Date('2025-12-11T10:00:00Z'),
-            platformUpper: 'UBER',
-            maxSeats: 4,
-            notes: 'Testing ride deletion'
-        };
+      expect(result.message).toBe('Ride has been deleted successfully');
+      expect(supabase.from).toHaveBeenCalledWith('ride_members');
+      expect(supabase.from).toHaveBeenCalledWith('rides');
+    });
 
-        // mock - database returns error
-        const mockSingle = jest.fn().mocklResolvedValue({
-            data: null,
-            error: { message: 'Database constraint violation' }
-        });
-        const mockSelect = jest.fn().mockReturnValue({
-            single: mockSingle
-        });
-        const mockInsert = jest.fn().mockReturnValue({
-            select: mockSelect
-        });
+    test('should throw error when user is not owner', async () => {
+      const rideId = 'ride-3535';
+      const userId = 'user-2222';
 
-        supabase.from.mockReturnValue({
-            insert: mockInsert
-        });
+      mockQueryBuilder.single.mockResolvedValue({ 
+        data: { id: rideId, owner_id: 'user-1111' }, 
+        error: null 
+      });
 
-        await expect(createRide(rideData)).rejects.toThrow();
-    })
+      await expect(deleteRideService(rideId, userId)).rejects.toThrow('Unauthorized');
+    });
+  });
 
+  describe('approveRideRequestService', () => {
+    test('should throw error when not owner', async () => {
+      mockQueryBuilder.single.mockResolvedValue({ 
+        data: { id: 'ride-3535', owner_id: 'user-1111' }, 
+        error: null 
+      });
+
+      await expect(
+        approveRideRequestService('ride-3535', 'user-2222', 'user-3333')
+      ).rejects.toThrow('Unauthorized');
+    });
+  });
 });
-
-
-
-/* *****  TODO AFTER IMPLEMENTATION **** 
-describe('joinRide', () => {
-
-    beforeEach( () => {
-        jest.clearAllMocks();
-    });
-
-    it('should add user to a ride when the ride has available seats', async () => {
-        // setting up the test data
-        const rideId = 'ride-3535';
-        const userId = 'user-3535';
-
-        // this is a mock - check if the ride exists 
-        const mockRide = {
-            id: rideId,
-            max_seats: 4,
-            owner_id: 'owner-3535'
-        };
-
-        // mock - the ride has 2 members, so user should be able to join
-        const mockMemberCount = { count: 2, error: null };
-
-        // mock - check if user has already joined the ride (should return null - not joined)
-        const mockExistingMember = { data: null, error: null };
-
-        // mock - insert new member
-        const mockNewMember = {
-            id: 'member-3535',
-            ride_id: rideId,
-            user_id: userId,
-            status: 'CONFIRMED JOINING',
-            joined_at: new Date()
-        };
-
-        setupSupabaseMocks({
-            ride: mockRide,
-            memberCount: mockMemberCount,
-            existingMember: mockExistingMember,
-            newMember: newMember
-        });
-
-        const result = await joinRide(rideId, userId);
-
-        expect(result.ride_id).toBe(rideId);
-        expecr(result.user_id).toBe(userId);
-        expect(result.status).toBe('CONFIRMED JOINING');
-    });
-
-
-
-    it('should throw error when ride is full', async () => {
-
-
-
-    });
-
-});
-*/
