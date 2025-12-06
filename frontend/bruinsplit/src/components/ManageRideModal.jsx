@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import './card.css';
 import RideDetailsTab from './manageRideModal/RideDetailsTab';
 import RidersTab from './manageRideModal/RidersTab';
 import RequestsTab from './manageRideModal/RequestsTab';
+import { getPendingRequests } from '../pages/api/rides';
 
 const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipStatus, onJoin, onLeave }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState(null);
+  const [requests, setRequests] = useState([]);
+
+  const fetchRequests = useCallback(async () => {
+    if (!ride.rideId || !isOwner) return;
+    try {
+      const data = await getPendingRequests(ride.rideId);
+      setRequests(data?.pending_requests || []);
+    } catch (err) {
+      console.error('Failed to load requests:', err);
+    }
+  }, [ride.rideId, isOwner]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchRequests();
+    }
+  }, [isOpen, fetchRequests]);
 
   if (!isOpen) {
     return null;
   }
-  
+
   const displayTitle = ride.origin && ride.destination ? `${ride.origin} ➡ ${ride.destination}` : ride.title;
 
   const handleConfirmJoin = async () => {
@@ -42,6 +60,9 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
     }
   };
 
+  const handleRequestsUpdated = () => {
+    fetchRequests();
+  };
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -77,16 +98,22 @@ const ManageRideModal = ({ isOpen, onClose, ride, isOwner, ownerId, membershipSt
               onClick={() => setActiveTab('requests')}
               type="button"
             >
-              Requests ({ride.rideDetails?.pending_requests || 0})
+              Requests ({requests.length})
             </button>
           )}
         </div>
 
         {/* Tab Content */}
         <div className="tab-content">
-            {activeTab === 'details' && <RideDetailsTab ride={ride} />}
-            {activeTab === 'riders' && <RidersTab rideId={ride.rideId} ownerId={ownerId} isOwner={isOwner} />}
-            {activeTab === 'requests' && isOwner && <RequestsTab rideId={ride.rideId} />}
+          {activeTab === 'details' && <RideDetailsTab ride={ride} />}
+          {activeTab === 'riders' && <RidersTab rideId={ride.rideId} ownerId={ownerId} isOwner={isOwner} />}
+          {activeTab === 'requests' && isOwner && (
+            <RequestsTab
+              rideId={ride.rideId}
+              requests={requests}
+              onRequestsUpdated={handleRequestsUpdated}
+            />
+          )}
         </div>
         
 

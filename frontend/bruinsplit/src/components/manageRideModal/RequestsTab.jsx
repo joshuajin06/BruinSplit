@@ -1,41 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { getPendingRequests, manageRequest } from '../../pages/api/rides';
+import React from 'react';
+import { manageRequest } from '../../pages/api/rides';
 
-const RequestsTab = ({ rideId }) => {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const fetchRequests = useCallback(async () => {
-    if (!rideId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getPendingRequests(rideId);
-      setRequests(data?.pending_requests || []);
-    } catch (err) {
-      setError(err.message || 'Failed to load requests.');
-    } finally {
-      setLoading(false);
-    }
-  }, [rideId]);
-
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
-
+const RequestsTab = ({ rideId, requests, onRequestsUpdated }) => {
   const handleRequestAction = async (memberId, action) => {
     try {
       await manageRequest(rideId, memberId, action);
-      fetchRequests(); // Refresh list
+      if (onRequestsUpdated) {
+        onRequestsUpdated();
+      }
     } catch (err) {
       alert(`Failed to ${action} request.`);
       console.error(`Error during ${action} member:`, err);
     }
   };
 
-  if (loading) return <div className="riders-loading">Loading requests...</div>;
-  if (error) return <div className="riders-error">{error}</div>;
   if (requests.length === 0) return <div className="riders-empty">No pending requests</div>;
 
   return (
