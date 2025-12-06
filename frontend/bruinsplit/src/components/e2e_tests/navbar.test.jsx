@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom';
 import Navbar from '../navbar';
 import * as AuthContext from '../../context/AuthContext';
 
-// Mock dependencies
 jest.mock('../../context/AuthContext');
 jest.mock('../../assets/finalogofinal.png', () => 'mocked-logo.png');
 
