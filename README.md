@@ -1,6 +1,6 @@
 # BruinSplit
 
-<img src="BruinSplit/frontend/bruinsplit/src/assests/finalogofinal.png" alt="React" width="140">
+<img src="BruinSplit/frontend/bruinsplit/src/assets/finalogofinal.png" alt="BruinSplit Logo" width="140">
 Uber, Lyft, and Waymo rides are increasing in price, and students tend to grab a ride to the same destination at the same time while paying full price. If two students both go to LAX at 8pm after their finals, why not split the cost? 
 
 Built to address this, Bruinsplit is a web app that helps UCLA students find other students to split the cost of a ride somewhere. It will let users create an account, create/post or join rides based on time, origin, and destination; users can also communicate with members of a ride and add other users as friends.
