@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { API_URL } from '../config/api'
 import Person from '../assets/person.png';
 import './loginsignup.css';
 import { useNavigate } from 'react-router-dom'
@@ -28,7 +29,7 @@ export default function LoginSignup() {
         
         try {
             if(loggedIn) {
-                const response = await fetch('http://localhost:8080/api/auth/login', {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json'
@@ -52,7 +53,7 @@ export default function LoginSignup() {
                 navigate('/');
             }
             else {
-                const response = await fetch('http://localhost:8080/api/auth/signup', {
+                const response = await fetch(`${API_URL}/api/auth/signup`, {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json'

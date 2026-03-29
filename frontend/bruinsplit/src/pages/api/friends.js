@@ -1,5 +1,6 @@
 import axios from 'axios';
-const url = "http://localhost:8080/api";
+import { API_URL } from '../../config/api';
+const url = `${API_URL}/api`;
 
 // POST /api/friends/request/:userId - send friend request
 export const sendFriendRequest = async (addresseeId) => {
