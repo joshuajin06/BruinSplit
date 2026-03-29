@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_URL } from '../../config/api';
 
-const url = "http://localhost:8080/api";
+const url = `${API_URL}/api`;
 
 
 export const getProfile = async () => {

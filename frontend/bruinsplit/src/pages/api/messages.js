@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const backend_url = "http://localhost:8080/api";
+import { API_URL } from '../../config/api';
+const backend_url = `${API_URL}/api`;
 
 // backend url link with axios instance
 const apiClient = axios.create({
