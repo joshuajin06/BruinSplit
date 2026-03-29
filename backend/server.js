@@ -27,7 +27,13 @@ import { errorHandler } from './src/middleware/errorHandler.js';
 const app = express();
 
 // middleware (runs on every request)
-app.use(cors()); // allow the frontend to access the backend
+app.use(cors({  // allow the frontend to access the backend
+  origin: [
+    'http://localhost:5173',                    // local dev
+    'https://bruinsplit.vercel.app',             // Vercel preview
+  ],
+  credentials: true
+}));
 app.use(express.json()); // parse JSON request bodies
 app.use(logger); // log every request
 
