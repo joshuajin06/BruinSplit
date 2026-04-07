@@ -59,6 +59,12 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 
+//health endpoint - for uptime pings
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+
 //start and run server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
